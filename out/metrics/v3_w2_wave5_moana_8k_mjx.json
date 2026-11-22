@@ -1,0 +1,61 @@
+{
+  "name": "Wave5_Moana_8K_Polish_And_MJX_Beach_4K",
+  "stage_path": "/dev/shm/zaychik-moana/island/usd/island.usda",
+  "moana_8k": {
+    "res": "4320x7680",
+    "pixels": 33177600,
+    "n_chips": 4,
+    "xla_compile_s": 130.32,
+    "ms": 17244.3,
+    "fps": 0.058,
+    "mrays_per_s": 3.85,
+    "hbm_gb": 4.653,
+    "unique_tris": 48976082,
+    "inst_blas_tris": 10529522,
+    "inst_effective_tris": 22293094230,
+    "hlo": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 1,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 34814,
+      "send_recv_ops": 0
+    }
+  },
+  "moana_mjx_beach_4k": {
+    "res": "2160x3840",
+    "pixels": 8294400,
+    "n_chips": 4,
+    "mjx_ngeom": 45,
+    "hum_xy": [
+      -6.897,
+      -1.516
+    ],
+    "hum_z_ground": -0.0792,
+    "quad_xy": [
+      -6.721,
+      -2.808
+    ],
+    "quad_z_ground": -0.1361,
+    "xla_compile_s": 127.06,
+    "ms": 5403.12,
+    "fps": 0.185,
+    "mrays_per_s": 3.07,
+    "hlo": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 1,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 34967,
+      "send_recv_ops": 0
+    }
+  },
+  "artifacts": {
+    "multiangle_8k_png": "out/figures/v3_w2_moana_8k_multiangle.png",
+    "mjx_beach_4k_png": "out/figures/v3_w2_moana_mjx_beach_4k.png"
+  }
+}
