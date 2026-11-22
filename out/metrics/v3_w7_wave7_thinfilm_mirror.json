@@ -1,0 +1,124 @@
+{
+  "experiment": "v3_w7_wave7_thinfilm_mirror",
+  "backend": "tpu",
+  "n_chips": 4,
+  "spectral_quadrature_bins": 8,
+  "wavelength_range_nm": [
+    420.0,
+    680.0
+  ],
+  "bubble_thickness_nm": [
+    280.0,
+    620.0
+  ],
+  "anisotropic_roughness": {
+    "alpha_u": 0.05,
+    "alpha_v": 0.45
+  },
+  "runs": [
+    {
+      "label": "isotropic_no_thinfilm_baseline",
+      "scene": "thinfilm_anisotropic_studio",
+      "tris": 29008,
+      "res": "640x640",
+      "spp": 128,
+      "max_bounces": 6,
+      "thinfilm": false,
+      "anisotropic": false,
+      "n_chips": 4,
+      "compile_s": 45.5,
+      "ms": 24195.44,
+      "images_per_sec": 0.041,
+      "samples_per_min": 317.4,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 6774,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "label": "airy_thinfilm_anisotropic_ggx",
+      "scene": "thinfilm_anisotropic_studio",
+      "tris": 29008,
+      "res": "640x640",
+      "spp": 128,
+      "max_bounces": 6,
+      "thinfilm": true,
+      "anisotropic": true,
+      "n_chips": 4,
+      "compile_s": 40.25,
+      "ms": 23953.38,
+      "images_per_sec": 0.042,
+      "samples_per_min": 320.6,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 6823,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "label": "mirror_gallery_2bounce",
+      "scene": "obsidian_gold_infinite_mirror_gallery",
+      "tris": 17676,
+      "res": "640x640",
+      "spp": 128,
+      "max_bounces": 2,
+      "thinfilm": false,
+      "anisotropic": false,
+      "n_chips": 4,
+      "compile_s": 20.38,
+      "ms": 4463.47,
+      "images_per_sec": 0.224,
+      "samples_per_min": 1720.6,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 6177,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "label": "mirror_gallery_12bounce",
+      "scene": "obsidian_gold_infinite_mirror_gallery",
+      "tris": 17676,
+      "res": "640x640",
+      "spp": 128,
+      "max_bounces": 12,
+      "thinfilm": false,
+      "anisotropic": false,
+      "n_chips": 4,
+      "compile_s": 64.17,
+      "ms": 48138.43,
+      "images_per_sec": 0.021,
+      "samples_per_min": 159.5,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 6177,
+        "send_recv_ops": 0
+      }
+    }
+  ]
+}

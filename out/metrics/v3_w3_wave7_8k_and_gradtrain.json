@@ -1,0 +1,471 @@
+{
+  "backend": "tpu",
+  "device_kind": "TPU v5",
+  "jax_version": "0.10.2",
+  "interpret": false,
+  "hlo_checks": {
+    "garden_4k": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 1,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 1805,
+      "send_recv_ops": 0,
+      "zero_copy_verified": true
+    },
+    "garden_8k": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 1,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 2094,
+      "send_recv_ops": 0,
+      "zero_copy_verified": true
+    },
+    "garden_32v_grad_50000": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 4,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 2818,
+      "send_recv_ops": 0,
+      "zero_copy_verified": true
+    },
+    "garden_32v_grad_100000": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 4,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 2818,
+      "send_recv_ops": 0,
+      "zero_copy_verified": true
+    }
+  },
+  "native_8k_garden": {
+    "records": [
+      {
+        "scene": "garden",
+        "res_label": "4K",
+        "res": "3840x2160",
+        "pixels_m": 8.29,
+        "n_gaussians": 5834784,
+        "n_pad": 5834784,
+        "sh_degree": 3,
+        "n_chips": 4,
+        "macro_size": 64,
+        "macro_rep": 4,
+        "k_macro": 8192,
+        "k_large_per_chip": 2048,
+        "k_tile": 512,
+        "ms": 382.31,
+        "fps": 2.616,
+        "mpix_per_s": 21.7,
+        "compile_s": 0.84,
+        "hbm_per_chip_gb": 6.08,
+        "hbm_temp_per_chip_gb": 5.56,
+        "mean_alpha": 0.9352,
+        "low_alp_frac": 0.03503
+      },
+      {
+        "scene": "garden",
+        "res_label": "8K",
+        "res": "7680x4320",
+        "pixels_m": 33.18,
+        "n_gaussians": 5834784,
+        "n_pad": 5834784,
+        "sh_degree": 3,
+        "n_chips": 4,
+        "macro_size": 64,
+        "macro_rep": 5,
+        "k_macro": 8192,
+        "k_large_per_chip": 2048,
+        "k_tile": 512,
+        "ms": 1136.6,
+        "fps": 0.88,
+        "mpix_per_s": 29.19,
+        "compile_s": 88.87,
+        "hbm_per_chip_gb": 22.83,
+        "hbm_temp_per_chip_gb": 22.31,
+        "mean_alpha": 0.8494,
+        "low_alp_frac": 0.11737
+      }
+    ],
+    "crop_showcase_path": "/dev/shm/zaychik-w3-v7/out/v3_w3_realworld_8k_crop.png",
+    "crop_roi_8k": {
+      "x0": 2880,
+      "y0": 980,
+      "x1": 4800,
+      "y1": 2060
+    }
+  },
+  "fastgrad_32views_garden": [
+    {
+      "scene": "MipNeRF360_Garden_32Views",
+      "n_views_total": 32,
+      "n_views_per_chip": 8,
+      "n_chips": 4,
+      "data_parallel": true,
+      "res": "128x128",
+      "n_gaussians": 50000,
+      "n_steps": 600,
+      "compile_s": 50.54,
+      "total_train_s": 25.52,
+      "steps_per_s": 23.42,
+      "ms_per_step": 42.7,
+      "view_steps_per_s": 749.4,
+      "init_psnr_db": 20.28,
+      "final_psnr_db": 30.62,
+      "psnr_gain_db": 10.34,
+      "milestones": {
+        "time_to_28db": {
+          "step": 78,
+          "wall_s": 3.221,
+          "psnr_db": 28.56
+        },
+        "time_to_30db": {
+          "step": 178,
+          "wall_s": 7.498,
+          "psnr_db": 30.3
+        }
+      },
+      "history": [
+        {
+          "step": 0,
+          "wall_s": 0.0,
+          "psnr_db": 20.28,
+          "mse": 0.00938
+        },
+        {
+          "step": 28,
+          "wall_s": 1.071,
+          "psnr_db": 26.86,
+          "loss": 0.01011
+        },
+        {
+          "step": 53,
+          "wall_s": 2.145,
+          "psnr_db": 27.64,
+          "loss": 0.00884
+        },
+        {
+          "step": 78,
+          "wall_s": 3.221,
+          "psnr_db": 28.56,
+          "loss": 0.00775
+        },
+        {
+          "step": 103,
+          "wall_s": 4.294,
+          "psnr_db": 29.26,
+          "loss": 0.00708
+        },
+        {
+          "step": 128,
+          "wall_s": 5.362,
+          "psnr_db": 29.67,
+          "loss": 0.00684
+        },
+        {
+          "step": 153,
+          "wall_s": 6.43,
+          "psnr_db": 29.97,
+          "loss": 0.00651
+        },
+        {
+          "step": 178,
+          "wall_s": 7.498,
+          "psnr_db": 30.3,
+          "loss": 0.00617
+        },
+        {
+          "step": 203,
+          "wall_s": 8.566,
+          "psnr_db": 30.62,
+          "loss": 0.00586
+        },
+        {
+          "step": 228,
+          "wall_s": 9.633,
+          "psnr_db": 30.75,
+          "loss": 0.00572
+        },
+        {
+          "step": 253,
+          "wall_s": 10.7,
+          "psnr_db": 30.93,
+          "loss": 0.00552
+        },
+        {
+          "step": 278,
+          "wall_s": 11.767,
+          "psnr_db": 31.02,
+          "loss": 0.00543
+        },
+        {
+          "step": 303,
+          "wall_s": 12.834,
+          "psnr_db": 31.17,
+          "loss": 0.00526
+        },
+        {
+          "step": 328,
+          "wall_s": 13.901,
+          "psnr_db": 31.0,
+          "loss": 0.00535
+        },
+        {
+          "step": 353,
+          "wall_s": 14.969,
+          "psnr_db": 31.14,
+          "loss": 0.00523
+        },
+        {
+          "step": 378,
+          "wall_s": 16.038,
+          "psnr_db": 31.17,
+          "loss": 0.00518
+        },
+        {
+          "step": 403,
+          "wall_s": 17.111,
+          "psnr_db": 31.31,
+          "loss": 0.00505
+        },
+        {
+          "step": 428,
+          "wall_s": 18.177,
+          "psnr_db": 30.93,
+          "loss": 0.00523
+        },
+        {
+          "step": 453,
+          "wall_s": 19.243,
+          "psnr_db": 30.8,
+          "loss": 0.0053
+        },
+        {
+          "step": 478,
+          "wall_s": 20.31,
+          "psnr_db": 30.84,
+          "loss": 0.00527
+        },
+        {
+          "step": 503,
+          "wall_s": 21.376,
+          "psnr_db": 30.94,
+          "loss": 0.00523
+        },
+        {
+          "step": 528,
+          "wall_s": 22.443,
+          "psnr_db": 30.84,
+          "loss": 0.00528
+        },
+        {
+          "step": 553,
+          "wall_s": 23.509,
+          "psnr_db": 30.76,
+          "loss": 0.00535
+        },
+        {
+          "step": 578,
+          "wall_s": 24.577,
+          "psnr_db": 30.52,
+          "loss": 0.00547
+        },
+        {
+          "step": 600,
+          "wall_s": 25.517,
+          "psnr_db": 30.63,
+          "loss": 0.00545
+        }
+      ]
+    },
+    {
+      "scene": "MipNeRF360_Garden_32Views",
+      "n_views_total": 32,
+      "n_views_per_chip": 8,
+      "n_chips": 4,
+      "data_parallel": true,
+      "res": "128x128",
+      "n_gaussians": 100000,
+      "n_steps": 600,
+      "compile_s": 57.49,
+      "total_train_s": 42.37,
+      "steps_per_s": 14.1,
+      "ms_per_step": 70.92,
+      "view_steps_per_s": 451.2,
+      "init_psnr_db": 19.46,
+      "final_psnr_db": 28.7,
+      "psnr_gain_db": 9.24,
+      "milestones": {
+        "time_to_28db": {
+          "step": 78,
+          "wall_s": 5.332,
+          "psnr_db": 28.25
+        }
+      },
+      "history": [
+        {
+          "step": 0,
+          "wall_s": 0.0,
+          "psnr_db": 19.46,
+          "mse": 0.011336
+        },
+        {
+          "step": 28,
+          "wall_s": 1.779,
+          "psnr_db": 26.89,
+          "loss": 0.01162
+        },
+        {
+          "step": 53,
+          "wall_s": 3.555,
+          "psnr_db": 27.64,
+          "loss": 0.0103
+        },
+        {
+          "step": 78,
+          "wall_s": 5.332,
+          "psnr_db": 28.25,
+          "loss": 0.00914
+        },
+        {
+          "step": 103,
+          "wall_s": 7.108,
+          "psnr_db": 28.68,
+          "loss": 0.00839
+        },
+        {
+          "step": 128,
+          "wall_s": 8.883,
+          "psnr_db": 28.99,
+          "loss": 0.00786
+        },
+        {
+          "step": 153,
+          "wall_s": 10.659,
+          "psnr_db": 29.32,
+          "loss": 0.00737
+        },
+        {
+          "step": 178,
+          "wall_s": 12.434,
+          "psnr_db": 29.33,
+          "loss": 0.0072
+        },
+        {
+          "step": 203,
+          "wall_s": 14.209,
+          "psnr_db": 29.43,
+          "loss": 0.00705
+        },
+        {
+          "step": 228,
+          "wall_s": 15.983,
+          "psnr_db": 29.3,
+          "loss": 0.0071
+        },
+        {
+          "step": 253,
+          "wall_s": 17.756,
+          "psnr_db": 29.44,
+          "loss": 0.00694
+        },
+        {
+          "step": 278,
+          "wall_s": 19.53,
+          "psnr_db": 29.27,
+          "loss": 0.00687
+        },
+        {
+          "step": 303,
+          "wall_s": 21.304,
+          "psnr_db": 29.23,
+          "loss": 0.00705
+        },
+        {
+          "step": 328,
+          "wall_s": 23.077,
+          "psnr_db": 28.71,
+          "loss": 0.00762
+        },
+        {
+          "step": 353,
+          "wall_s": 24.851,
+          "psnr_db": 28.91,
+          "loss": 0.00766
+        },
+        {
+          "step": 378,
+          "wall_s": 26.623,
+          "psnr_db": 29.07,
+          "loss": 0.00766
+        },
+        {
+          "step": 403,
+          "wall_s": 28.395,
+          "psnr_db": 29.28,
+          "loss": 0.00758
+        },
+        {
+          "step": 428,
+          "wall_s": 30.169,
+          "psnr_db": 29.03,
+          "loss": 0.00772
+        },
+        {
+          "step": 453,
+          "wall_s": 31.941,
+          "psnr_db": 29.12,
+          "loss": 0.00771
+        },
+        {
+          "step": 478,
+          "wall_s": 33.714,
+          "psnr_db": 29.02,
+          "loss": 0.00774
+        },
+        {
+          "step": 503,
+          "wall_s": 35.485,
+          "psnr_db": 28.62,
+          "loss": 0.008
+        },
+        {
+          "step": 528,
+          "wall_s": 37.257,
+          "psnr_db": 28.51,
+          "loss": 0.00812
+        },
+        {
+          "step": 553,
+          "wall_s": 39.029,
+          "psnr_db": 28.65,
+          "loss": 0.00803
+        },
+        {
+          "step": 578,
+          "wall_s": 40.801,
+          "psnr_db": 28.64,
+          "loss": 0.00799
+        },
+        {
+          "step": 600,
+          "wall_s": 42.365,
+          "psnr_db": 28.7,
+          "loss": 0.00797
+        }
+      ]
+    }
+  ],
+  "fastgrad_visual_path": "/dev/shm/zaychik-w3-v7/out/v3_w3_garden_32v_grad_100000.png"
+}
