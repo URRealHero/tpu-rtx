@@ -1,0 +1,174 @@
+{
+  "experiment": "v3_w5_lone_monk_cinema",
+  "device_kind": "TPU v5",
+  "n_devices": 4,
+  "scene_meta": {
+    "scene_name": "lone_monk",
+    "verts": 3211765,
+    "tris": 5610618,
+    "n_materials": 32,
+    "n_textures": 22,
+    "tex_res": "512x512",
+    "n_lights": 1,
+    "n_blas_meshes": 129,
+    "n_instances": 7540,
+    "cam_fovy": 55.795,
+    "native_res": "1440x1080@100%"
+  },
+  "parity": {
+    "hero_z_mae_m": 0.01890595629811287,
+    "hero_fg_match": 0.9933827718098959,
+    "hlo": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 0,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 1111,
+      "send_recv_ops": 0
+    }
+  },
+  "neural_relighting": {
+    "arch": "IrradianceNRC3S_Demod_W128",
+    "n_params": 8077062,
+    "epochs": 360,
+    "train_time_s": 161.87,
+    "cal_scale": 1.000623,
+    "orbit_test": {
+      "res": "512x384",
+      "n_views": 4,
+      "stage1_psnr_db": 11.3798,
+      "neural_psnr_db": 28.8256,
+      "psnr_gain_db": 17.4458,
+      "neural_ssim": 0.92595,
+      "neural_msssim": 0.94338,
+      "lum_rel": 0.001345
+    },
+    "hero_official_plus_orbit": {
+      "res": "1024x768",
+      "n_views": 4,
+      "view0_stage1_psnr_db": 11.5821,
+      "view0_neural_psnr_db": 26.3134,
+      "view0_ssim": 0.84903,
+      "view0_msssim": 0.8807,
+      "view0_lum_rel": -0.001426,
+      "all_hero_neural_psnr_db": 26.0905,
+      "all_hero_ssim": 0.84545,
+      "all_hero_msssim": 0.8775,
+      "all_hero_lum_rel": -0.002302
+    }
+  },
+  "benchmarks": [
+    {
+      "resolution": "512x512",
+      "batch_size": 1,
+      "n_chips": 1,
+      "stage2": false,
+      "dt_ms": 174.889,
+      "img_per_sec": 5.718,
+      "mpix_per_sec": 1.5,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "512x512",
+      "batch_size": 1,
+      "n_chips": 1,
+      "stage2": true,
+      "dt_ms": 190.007,
+      "img_per_sec": 5.263,
+      "mpix_per_sec": 1.38,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "512x512",
+      "batch_size": 4,
+      "n_chips": 4,
+      "stage2": false,
+      "dt_ms": 179.729,
+      "img_per_sec": 22.256,
+      "mpix_per_sec": 5.83,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "512x512",
+      "batch_size": 4,
+      "n_chips": 4,
+      "stage2": true,
+      "dt_ms": 194.462,
+      "img_per_sec": 20.57,
+      "mpix_per_sec": 5.39,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "1024x768",
+      "batch_size": 4,
+      "n_chips": 4,
+      "stage2": false,
+      "dt_ms": 459.666,
+      "img_per_sec": 8.702,
+      "mpix_per_sec": 6.84,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "1024x768",
+      "batch_size": 4,
+      "n_chips": 4,
+      "stage2": true,
+      "dt_ms": 481.97,
+      "img_per_sec": 8.299,
+      "mpix_per_sec": 6.53,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "1920x1080",
+      "batch_size": 4,
+      "n_chips": 4,
+      "stage2": false,
+      "dt_ms": 1032.846,
+      "img_per_sec": 3.873,
+      "mpix_per_sec": 8.03,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "1920x1080",
+      "batch_size": 4,
+      "n_chips": 4,
+      "stage2": true,
+      "dt_ms": 1117.116,
+      "img_per_sec": 3.581,
+      "mpix_per_sec": 7.42,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "3840x2160",
+      "batch_size": 4,
+      "n_chips": 4,
+      "stage2": false,
+      "dt_ms": 3530.763,
+      "img_per_sec": 1.133,
+      "mpix_per_sec": 9.4,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "3840x2160",
+      "batch_size": 4,
+      "n_chips": 4,
+      "stage2": true,
+      "dt_ms": 3820.143,
+      "img_per_sec": 1.047,
+      "mpix_per_sec": 8.68,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    }
+  ]
+}

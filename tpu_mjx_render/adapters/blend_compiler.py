@@ -336,24 +336,31 @@ class _ShaderGraphWalker:
     return scale_off, uv_name
 
   def _resolve_socket_link(self, sock, group_stack: List[Any]):
-    """Follow link, unwinding GroupInput back into outer node tree if inside a ShaderNodeGroup."""
-    if sock is None or not sock.is_linked:
-      return None, group_stack
-    link = sock.links[0]
-    fn = link.from_node
-    fs = link.from_socket
-    if fn.type == "GROUP_INPUT" and group_stack:
-      caller_node, outer_stack = group_stack[-1], group_stack[:-1]
-      outer_sock = caller_node.inputs.get(fs.name, None)
-      if outer_sock is None:
-        # Match by index
-        idx = list(fn.outputs).index(fs)
-        if idx < len(caller_node.inputs):
-          outer_sock = caller_node.inputs[idx]
-      if outer_sock is not None and outer_sock.is_linked:
-        return self._resolve_socket_link(outer_sock, outer_stack)
-      return outer_sock, outer_stack
-    return (fn, fs), group_stack
+    """Follow link, unwinding Reroute nodes & GroupInput back into outer node tree."""
+    cur_sock = sock
+    cur_stack = list(group_stack)
+    for _ in range(32):
+      if cur_sock is None or not cur_sock.is_linked:
+        return None, cur_stack
+      link = cur_sock.links[0]
+      fn = link.from_node
+      fs = link.from_socket
+      if fn.type == "REROUTE":
+        cur_sock = fn.inputs[0] if len(fn.inputs) > 0 else None
+        continue
+      if fn.type == "GROUP_INPUT" and cur_stack:
+        caller_node, cur_stack = cur_stack[-1], cur_stack[:-1]
+        outer_sock = caller_node.inputs.get(fs.name, None)
+        if outer_sock is None:
+          idx = list(fn.outputs).index(fs)
+          if idx < len(caller_node.inputs):
+            outer_sock = caller_node.inputs[idx]
+        if outer_sock is not None and outer_sock.is_linked:
+          cur_sock = outer_sock
+          continue
+        return outer_sock, cur_stack
+      return (fn, fs), cur_stack
+    return None, cur_stack
 
   def _eval_scalar(self, sock, default: float, group_stack: List[Any], depth: int = 0) -> Tuple[float, Optional[np.ndarray]]:
     if sock is None or depth > 14:
@@ -634,13 +641,15 @@ class _ShaderGraphWalker:
     return d_arr, None
 
   def _find_first_tex_uv_meta(self, sock, depth: int = 0) -> Tuple[Tuple[float, float, float, float], Optional[str]]:
-    if sock is None or not sock.is_linked or depth > 10:
+    if sock is None or not sock.is_linked or depth > 12:
       return (1.0, 1.0, 0.0, 0.0), None
     fn = sock.links[0].from_node
+    if fn.type == "REROUTE" and len(fn.inputs) > 0:
+      return self._find_first_tex_uv_meta(fn.inputs[0], depth + 1)
     if fn.type == "TEX_IMAGE":
       return self._trace_uv_transform(fn.inputs.get("Vector", None))
     for inp in fn.inputs:
-      if inp.is_linked and inp.type in ("RGBA", "VALUE", "VECTOR"):
+      if inp.is_linked and inp.type in ("RGBA", "VALUE", "VECTOR", "CUSTOM"):
         so, uvn = self._find_first_tex_uv_meta(inp, depth + 1)
         if so != (1.0, 1.0, 0.0, 0.0) or uvn is not None:
           return so, uvn
@@ -914,7 +923,12 @@ def _extract_world_sky(scene) -> Tuple[Tuple[float, float, float], Tuple[float, 
     if col_s is not None and col_s.is_linked:
       fn = col_s.links[0].from_node
       if fn.type == "TEX_SKY":
-        c = np.array([0.45, 0.65, 0.95], dtype=np.float32)
+        st_eff = float(np.clip(st, 0.1, 3.0))
+        return (
+            (0.30 * st_eff, 0.52 * st_eff, 0.92 * st_eff),
+            (0.62 * st_eff, 0.74 * st_eff, 0.90 * st_eff),
+            (0.18 * st_eff, 0.17 * st_eff, 0.15 * st_eff),
+        )
       elif fn.type == "TEX_ENVIRONMENT" and fn.image is not None:
         try:
           w, h = fn.image.size[0], fn.image.size[1]
@@ -987,6 +1001,36 @@ def _extract_lights(scene) -> List[Dict[str, Any]]:
         "size": float(getattr(ld, "size", 0.5)),
         "spot_size": float(getattr(ld, "spot_size", math.pi * 0.25)),
     })
+  # Extract directional sun from Nishita/Sky Texture world shader if present
+  world = getattr(scene, "world", None)
+  if world is not None and getattr(world, "use_nodes", False) and world.node_tree is not None:
+    bg = next((n for n in world.node_tree.nodes if n.type == "BACKGROUND"), None)
+    bg_st = float(bg.inputs["Strength"].default_value) if (bg is not None and "Strength" in bg.inputs) else 1.0
+    sky = next((n for n in world.node_tree.nodes if n.type == "TEX_SKY"), None)
+    if sky is not None and (getattr(sky, "sun_disc", True) or float(getattr(sky, "sun_intensity", 1.0)) > 0.0):
+      el = float(getattr(sky, "sun_elevation", 0.785))
+      rot = float(getattr(sky, "sun_rotation", 0.0))
+      sun_int = float(getattr(sky, "sun_intensity", 1.0))
+      # Blender Nishita convention: sun_dir points TOWARD sun; light ray points FROM sun
+      to_sun = np.array([
+          -math.sin(rot) * math.cos(el),
+          -math.cos(rot) * math.cos(el),
+          math.sin(el),
+      ], dtype=np.float32)
+      if float(np.linalg.norm(to_sun)) < 1e-6:
+        sd = np.array(getattr(sky, "sun_direction", (0.0, 0.0, 1.0)), dtype=np.float32)
+        to_sun = sd / max(float(np.linalg.norm(sd)), 1e-12)
+      l_dir = (-to_sun / max(float(np.linalg.norm(to_sun)), 1e-12)).tolist()
+      lights.append({
+          "name": "WorldNishitaSun",
+          "type": "SUN",
+          "pos": (to_sun * 50.0).tolist(),
+          "dir": l_dir,
+          "color": [1.0, 0.95, 0.86],
+          "energy": float(3.2 * min(max(sun_int * max(bg_st, 0.25), 0.25), 2.5)),
+          "size": 0.5,
+          "spot_size": math.pi * 0.25,
+      })
   return lights
 
 
@@ -1147,6 +1191,8 @@ def compile_active_blend(
     all_mid.append(mid_f)
     all_alb.append(alb_f)
     all_rgh.append(rgh_f)
+    if not getattr(obj, "visible_shadow", True):
+      mc_f = np.where(mc_f >= 9.5, mc_f, mc_f + 10.0)
     all_mc.append(mc_f)
     v_off += n_verts
     obj.to_mesh_clear()
@@ -1288,8 +1334,9 @@ def render_cycles_gt_and_depth(
     include_hero: bool = True,
     max_yaw: float = 0.14,
     max_pitch: float = 0.08,
+    clean_noisy_mix: bool = False,
 ) -> None:
-  """Render Cycles 5.3.0 RGB GT (scene native color management) + EXR Z-depth inside Blender."""
+  """Render Cycles 5.3.0 RGB GT (scene native color management & compositor) + EXR Z-depth inside Blender."""
   assert HAS_BPY, "render_cycles_gt_and_depth must run inside Blender"
   from mathutils import Matrix
   scene = bpy.context.scene
@@ -1306,6 +1353,8 @@ def render_cycles_gt_and_depth(
   scene.cycles.use_denoising = True
   scene.cycles.use_adaptive_sampling = True
   scene.cycles.adaptive_threshold = 0.02
+  if clean_noisy_mix and float(getattr(scene.cycles, "sample_clamp_indirect", 0.0)) == 0.0:
+    scene.cycles.sample_clamp_indirect = 8.0
   scene.render.resolution_x = int(width)
   scene.render.resolution_y = int(height)
   scene.render.resolution_percentage = 100
@@ -1317,25 +1366,51 @@ def render_cycles_gt_and_depth(
   rgb_all = np.zeros((n_views, height, width, 3), dtype=np.uint8)
   f0_depth = np.zeros((height, width), dtype=np.float32)
 
-  # Set up compositor EXR depth output for Frame 0
+  # Set up compositor EXR depth output for Frame 0 WITHOUT overwriting scene's native compositor (e.g. Exposure/Glare)
   bpy.context.view_layer.use_pass_z = True
   orig_use_comp = bool(scene.render.use_compositing)
-  scene.render.use_compositing = True
   if hasattr(scene.render, "compositor_device"):
     scene.render.compositor_device = "CPU"
   orig_comp = getattr(scene, "compositing_node_group", None)
-  ng = bpy.data.node_groups.new("BlendCompilerDepthComp", "CompositorNodeTree")
-  scene.compositing_node_group = ng
-  rl = ng.nodes.new("CompositorNodeRLayers")
-  fout = ng.nodes.new("CompositorNodeOutputFile")
-  fout.directory = tmpdir
-  fout.file_name = "depth_"
-  fout.format.media_type = "IMAGE"
-  fout.format.file_format = "OPEN_EXR"
-  fout.format.color_depth = "32"
-  fout.file_output_items.clear()
-  fout.file_output_items.new("FLOAT", "Depth")
-  ng.links.new(rl.outputs["Depth"], fout.inputs["Depth"])
+  saved_mix_facs = []
+  if clean_noisy_mix and orig_comp is not None:
+    for node in orig_comp.nodes:
+      if node.type == "MIX":
+        for inp in node.inputs:
+          if inp.is_linked and any(getattr(lk.from_socket, "name", "") == "Noisy Image" for lk in inp.links):
+            fac_in = node.inputs[0]
+            saved_mix_facs.append((fac_in, float(fac_in.default_value)))
+            fac_in.default_value = 0.0
+            break
+
+  temp_fout = None
+  temp_ng = None
+  if orig_use_comp and orig_comp is not None:
+    rl_orig = next((n for n in orig_comp.nodes if n.type == "R_LAYERS"), None)
+    if rl_orig is not None:
+      temp_fout = orig_comp.nodes.new("CompositorNodeOutputFile")
+      temp_fout.directory = tmpdir
+      temp_fout.file_name = "depth_"
+      temp_fout.format.media_type = "IMAGE"
+      temp_fout.format.file_format = "OPEN_EXR"
+      temp_fout.format.color_depth = "32"
+      temp_fout.file_output_items.clear()
+      temp_fout.file_output_items.new("FLOAT", "Depth")
+      orig_comp.links.new(rl_orig.outputs["Depth"], temp_fout.inputs["Depth"])
+  if temp_fout is None:
+    scene.render.use_compositing = True
+    temp_ng = bpy.data.node_groups.new("BlendCompilerDepthComp", "CompositorNodeTree")
+    scene.compositing_node_group = temp_ng
+    rl = temp_ng.nodes.new("CompositorNodeRLayers")
+    fout = temp_ng.nodes.new("CompositorNodeOutputFile")
+    fout.directory = tmpdir
+    fout.file_name = "depth_"
+    fout.format.media_type = "IMAGE"
+    fout.format.file_format = "OPEN_EXR"
+    fout.format.color_depth = "32"
+    fout.file_output_items.clear()
+    fout.file_output_items.new("FLOAT", "Depth")
+    temp_ng.links.new(rl.outputs["Depth"], fout.inputs["Depth"])
 
   # Save original camera matrix
   orig_mat = cam_obj.matrix_world.copy()
@@ -1350,6 +1425,9 @@ def render_cycles_gt_and_depth(
         (0.0, 0.0, 0.0, 1.0),
     ))
     if k == 1:
+      if temp_fout is not None and orig_comp is not None:
+        orig_comp.nodes.remove(temp_fout)
+        temp_fout = None
       scene.compositing_node_group = orig_comp
       scene.render.use_compositing = orig_use_comp
     png_p = os.path.join(tmpdir, f"view_{k:03d}.png")
@@ -1375,8 +1453,14 @@ def render_cycles_gt_and_depth(
         bpy.data.images.remove(dimg)
 
   cam_obj.matrix_world = orig_mat
+  if temp_fout is not None and orig_comp is not None:
+    orig_comp.nodes.remove(temp_fout)
+  for fac_in, old_val in saved_mix_facs:
+    fac_in.default_value = old_val
   scene.compositing_node_group = orig_comp
   scene.render.use_compositing = orig_use_comp
+  if temp_ng is not None:
+    bpy.data.node_groups.remove(temp_ng)
   shutil.rmtree(tmpdir, ignore_errors=True)
 
   os.makedirs(os.path.dirname(os.path.abspath(out_gt_npz)), exist_ok=True)
@@ -1501,6 +1585,7 @@ def _main_blender():
   ap.add_argument("--orbit_views", type=int, default=24)
   ap.add_argument("--max_yaw", type=float, default=0.14)
   ap.add_argument("--max_pitch", type=float, default=0.08)
+  ap.add_argument("--clean_noisy_mix", action="store_true")
   args = ap.parse_args(argv)
 
   pack = compile_active_blend(scene_name=args.scene_name, max_tex_res=args.max_tex_res)
@@ -1511,14 +1596,14 @@ def _main_blender():
     render_cycles_gt_and_depth(
         pack, args.orbit_npz, width=args.orbit_w, height=args.orbit_h,
         samples=args.orbit_spp, n_views=args.orbit_views, phase_offset=0.0, include_hero=True,
-        max_yaw=args.max_yaw, max_pitch=args.max_pitch,
+        max_yaw=args.max_yaw, max_pitch=args.max_pitch, clean_noisy_mix=args.clean_noisy_mix,
     )
   if args.gt_npz:
     render_cycles_gt_and_depth(
         pack, args.gt_npz, width=args.gt_w, height=args.gt_h,
         samples=args.gt_spp, n_views=args.n_views, hero_png_path=args.hero_png,
         phase_offset=0.37, include_hero=True,
-        max_yaw=args.max_yaw, max_pitch=args.max_pitch,
+        max_yaw=args.max_yaw, max_pitch=args.max_pitch, clean_noisy_mix=args.clean_noisy_mix,
     )
 
 
