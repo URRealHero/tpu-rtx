@@ -1,0 +1,689 @@
+{
+  "experiment": "v3_w4_wave5_relight_quant",
+  "backend": "tpu",
+  "device_kind": "TPU v5",
+  "n_chips_total": 4,
+  "model": {
+    "arch": "CondFiLMMXURelighter_s2d_64_128_128_pix32_hw64",
+    "n_params": 1609750,
+    "train_bf16_s": 234.6,
+    "train_qat_s": 220.13,
+    "n_train_states": 72,
+    "gt_spp": 256,
+    "max_bounces": 4
+  },
+  "precision_pareto_accuracy": {
+    "fp32": {
+      "mean_psnr_db": 20.276,
+      "mean_ssim": 0.5365,
+      "mean_msssim": 0.6584,
+      "lum_bias_pct": 0.1304
+    },
+    "bf16": {
+      "mean_psnr_db": 20.276,
+      "mean_ssim": 0.5363,
+      "mean_msssim": 0.6583,
+      "lum_bias_pct": 0.0194
+    },
+    "int8_ptq": {
+      "mean_psnr_db": 20.229,
+      "mean_ssim": 0.5199,
+      "mean_msssim": 0.6462,
+      "lum_bias_pct": 0.6459
+    },
+    "int8_qat": {
+      "mean_psnr_db": 20.229,
+      "mean_ssim": 0.5209,
+      "mean_msssim": 0.6468,
+      "lum_bias_pct": 0.5805
+    }
+  },
+  "quality_by_scene": {
+    "classroom": {
+      "tod_sweep_static_gbuf": {
+        "fp32": {
+          "psnr_db": 19.683,
+          "ssim": 0.4821,
+          "msssim": 0.6143,
+          "lum_bias_pct": 0.1298
+        },
+        "bf16": {
+          "psnr_db": 19.683,
+          "ssim": 0.482,
+          "msssim": 0.6142,
+          "lum_bias_pct": 0.2405
+        },
+        "int8_ptq": {
+          "psnr_db": 19.677,
+          "ssim": 0.4746,
+          "msssim": 0.6075,
+          "lum_bias_pct": 0.5509
+        },
+        "int8_qat": {
+          "psnr_db": 19.674,
+          "ssim": 0.4751,
+          "msssim": 0.6077,
+          "lum_bias_pct": 0.3125
+        }
+      },
+      "tod_per_preset": [
+        {
+          "name": "Morning",
+          "az_deg": 158.0,
+          "el_deg": 32.0,
+          "temp_k": 4300.0,
+          "sun_scale": 0.9,
+          "area_scale": 0.65,
+          "sky_scale": 1.05,
+          "psnr_db": 20.014,
+          "ssim": 0.4942,
+          "msssim": 0.6286,
+          "lum_bias_pct": 0.9494,
+          "int8_qat_psnr_db": 19.943,
+          "int8_qat_ssim": 0.487
+        },
+        {
+          "name": "Noon",
+          "az_deg": 184.0,
+          "el_deg": 54.0,
+          "temp_k": 6200.0,
+          "sun_scale": 1.15,
+          "area_scale": 0.45,
+          "sky_scale": 1.25,
+          "psnr_db": 20.765,
+          "ssim": 0.4297,
+          "msssim": 0.5775,
+          "lum_bias_pct": 1.5463,
+          "int8_qat_psnr_db": 20.737,
+          "int8_qat_ssim": 0.4268
+        },
+        {
+          "name": "Golden Sunset",
+          "az_deg": 202.0,
+          "el_deg": 15.0,
+          "temp_k": 2600.0,
+          "sun_scale": 1.25,
+          "area_scale": 0.85,
+          "sky_scale": 0.85,
+          "psnr_db": 18.1,
+          "ssim": 0.5429,
+          "msssim": 0.6477,
+          "lum_bias_pct": 0.8277,
+          "int8_qat_psnr_db": 18.186,
+          "int8_qat_ssim": 0.5324
+        },
+        {
+          "name": "Blue Twilight",
+          "az_deg": 212.0,
+          "el_deg": 2.0,
+          "temp_k": 9500.0,
+          "sun_scale": 0.1,
+          "area_scale": 1.85,
+          "sky_scale": 0.7,
+          "psnr_db": 20.366,
+          "ssim": 0.4612,
+          "msssim": 0.6007,
+          "lum_bias_pct": 0.4173,
+          "int8_qat_psnr_db": 20.286,
+          "int8_qat_ssim": 0.4541
+        }
+      ],
+      "mat_sweep_static_gbuf": {
+        "fp32": {
+          "psnr_db": 19.932,
+          "ssim": 0.5057,
+          "msssim": 0.6359,
+          "lum_bias_pct": 3.7983
+        },
+        "bf16": {
+          "psnr_db": 19.916,
+          "ssim": 0.5052,
+          "msssim": 0.6355,
+          "lum_bias_pct": 3.8988
+        },
+        "int8_ptq": {
+          "psnr_db": 19.821,
+          "ssim": 0.4966,
+          "msssim": 0.6277,
+          "lum_bias_pct": 4.1305
+        },
+        "int8_qat": {
+          "psnr_db": 19.795,
+          "ssim": 0.4945,
+          "msssim": 0.6253,
+          "lum_bias_pct": 3.9037
+        }
+      },
+      "mat_per_preset": [
+        {
+          "name": "Matte Clay",
+          "roughness": 0.88,
+          "metallic": 0.0,
+          "albedo": [
+            0.76,
+            0.44,
+            0.34
+          ],
+          "psnr_db": 19.994,
+          "ssim": 0.5072,
+          "msssim": 0.6375,
+          "lum_bias_pct": 4.1069,
+          "int8_qat_psnr_db": 19.841,
+          "int8_qat_ssim": 0.4961
+        },
+        {
+          "name": "Satin",
+          "roughness": 0.32,
+          "metallic": 0.15,
+          "albedo": [
+            0.86,
+            0.84,
+            0.8
+          ],
+          "psnr_db": 20.203,
+          "ssim": 0.513,
+          "msssim": 0.6447,
+          "lum_bias_pct": 2.6309,
+          "int8_qat_psnr_db": 20.066,
+          "int8_qat_ssim": 0.5021
+        },
+        {
+          "name": "Brushed Gold",
+          "roughness": 0.22,
+          "metallic": 0.94,
+          "albedo": [
+            0.96,
+            0.74,
+            0.26
+          ],
+          "psnr_db": 19.415,
+          "ssim": 0.4927,
+          "msssim": 0.6212,
+          "lum_bias_pct": 5.6073,
+          "int8_qat_psnr_db": 19.335,
+          "int8_qat_ssim": 0.4829
+        },
+        {
+          "name": "Chrome",
+          "roughness": 0.03,
+          "metallic": 1.0,
+          "albedo": [
+            0.94,
+            0.96,
+            0.98
+          ],
+          "psnr_db": 20.094,
+          "ssim": 0.508,
+          "msssim": 0.6385,
+          "lum_bias_pct": 3.2546,
+          "int8_qat_psnr_db": 19.977,
+          "int8_qat_ssim": 0.4971
+        }
+      ],
+      "unseen_rand_views": {
+        "fp32": {
+          "psnr_db": 19.297,
+          "ssim": 0.4868,
+          "msssim": 0.6162,
+          "lum_bias_pct": 0.89
+        },
+        "bf16": {
+          "psnr_db": 19.3,
+          "ssim": 0.4865,
+          "msssim": 0.6159,
+          "lum_bias_pct": 0.7684
+        },
+        "int8_ptq": {
+          "psnr_db": 19.282,
+          "ssim": 0.4787,
+          "msssim": 0.6089,
+          "lum_bias_pct": 0.5958
+        },
+        "int8_qat": {
+          "psnr_db": 19.305,
+          "ssim": 0.4796,
+          "msssim": 0.6096,
+          "lum_bias_pct": 0.7134
+        }
+      }
+    },
+    "cornell_workshop": {
+      "tod_sweep_static_gbuf": {
+        "fp32": {
+          "psnr_db": 20.498,
+          "ssim": 0.5746,
+          "msssim": 0.6874,
+          "lum_bias_pct": 2.897
+        },
+        "bf16": {
+          "psnr_db": 20.514,
+          "ssim": 0.5744,
+          "msssim": 0.6873,
+          "lum_bias_pct": 2.7676
+        },
+        "int8_ptq": {
+          "psnr_db": 20.548,
+          "ssim": 0.5509,
+          "msssim": 0.6715,
+          "lum_bias_pct": 1.8852
+        },
+        "int8_qat": {
+          "psnr_db": 20.531,
+          "ssim": 0.5526,
+          "msssim": 0.6728,
+          "lum_bias_pct": 1.7704
+        }
+      },
+      "tod_per_preset": [
+        {
+          "name": "Morning",
+          "az_deg": 158.0,
+          "el_deg": 32.0,
+          "temp_k": 4300.0,
+          "sun_scale": 0.9,
+          "area_scale": 0.65,
+          "sky_scale": 1.05,
+          "psnr_db": 21.568,
+          "ssim": 0.5404,
+          "msssim": 0.6676,
+          "lum_bias_pct": 3.2156,
+          "int8_qat_psnr_db": 21.531,
+          "int8_qat_ssim": 0.5225
+        },
+        {
+          "name": "Noon",
+          "az_deg": 184.0,
+          "el_deg": 54.0,
+          "temp_k": 6200.0,
+          "sun_scale": 1.15,
+          "area_scale": 0.45,
+          "sky_scale": 1.25,
+          "psnr_db": 21.014,
+          "ssim": 0.5986,
+          "msssim": 0.7043,
+          "lum_bias_pct": 0.4695,
+          "int8_qat_psnr_db": 20.994,
+          "int8_qat_ssim": 0.5752
+        },
+        {
+          "name": "Golden Sunset",
+          "az_deg": 202.0,
+          "el_deg": 15.0,
+          "temp_k": 2600.0,
+          "sun_scale": 1.25,
+          "area_scale": 0.85,
+          "sky_scale": 0.85,
+          "psnr_db": 21.607,
+          "ssim": 0.6044,
+          "msssim": 0.7083,
+          "lum_bias_pct": 0.9167,
+          "int8_qat_psnr_db": 21.472,
+          "int8_qat_ssim": 0.5797
+        },
+        {
+          "name": "Blue Twilight",
+          "az_deg": 212.0,
+          "el_deg": 2.0,
+          "temp_k": 9500.0,
+          "sun_scale": 0.1,
+          "area_scale": 1.85,
+          "sky_scale": 0.7,
+          "psnr_db": 18.618,
+          "ssim": 0.5542,
+          "msssim": 0.6686,
+          "lum_bias_pct": 8.1802,
+          "int8_qat_psnr_db": 18.765,
+          "int8_qat_ssim": 0.5331
+        }
+      ],
+      "mat_sweep_static_gbuf": {
+        "fp32": {
+          "psnr_db": 22.24,
+          "ssim": 0.6141,
+          "msssim": 0.7244,
+          "lum_bias_pct": 0.0474
+        },
+        "bf16": {
+          "psnr_db": 22.246,
+          "ssim": 0.6139,
+          "msssim": 0.7243,
+          "lum_bias_pct": 0.1565
+        },
+        "int8_ptq": {
+          "psnr_db": 22.083,
+          "ssim": 0.5863,
+          "msssim": 0.706,
+          "lum_bias_pct": 1.2283
+        },
+        "int8_qat": {
+          "psnr_db": 22.115,
+          "ssim": 0.5897,
+          "msssim": 0.7083,
+          "lum_bias_pct": 1.2541
+        }
+      },
+      "mat_per_preset": [
+        {
+          "name": "Matte Clay",
+          "roughness": 0.88,
+          "metallic": 0.0,
+          "albedo": [
+            0.76,
+            0.44,
+            0.34
+          ],
+          "psnr_db": 22.437,
+          "ssim": 0.6247,
+          "msssim": 0.7337,
+          "lum_bias_pct": 0.5555,
+          "int8_qat_psnr_db": 22.284,
+          "int8_qat_ssim": 0.5999
+        },
+        {
+          "name": "Satin",
+          "roughness": 0.32,
+          "metallic": 0.15,
+          "albedo": [
+            0.86,
+            0.84,
+            0.8
+          ],
+          "psnr_db": 22.467,
+          "ssim": 0.6275,
+          "msssim": 0.735,
+          "lum_bias_pct": 0.2399,
+          "int8_qat_psnr_db": 22.36,
+          "int8_qat_ssim": 0.6038
+        },
+        {
+          "name": "Brushed Gold",
+          "roughness": 0.22,
+          "metallic": 0.94,
+          "albedo": [
+            0.96,
+            0.74,
+            0.26
+          ],
+          "psnr_db": 22.414,
+          "ssim": 0.6067,
+          "msssim": 0.7208,
+          "lum_bias_pct": 0.018,
+          "int8_qat_psnr_db": 22.308,
+          "int8_qat_ssim": 0.583
+        },
+        {
+          "name": "Chrome",
+          "roughness": 0.03,
+          "metallic": 1.0,
+          "albedo": [
+            0.94,
+            0.96,
+            0.98
+          ],
+          "psnr_db": 21.711,
+          "ssim": 0.5969,
+          "msssim": 0.7075,
+          "lum_bias_pct": 0.3312,
+          "int8_qat_psnr_db": 21.56,
+          "int8_qat_ssim": 0.572
+        }
+      ],
+      "unseen_rand_views": {
+        "fp32": {
+          "psnr_db": 20.58,
+          "ssim": 0.5555,
+          "msssim": 0.6704,
+          "lum_bias_pct": 0.6318
+        },
+        "bf16": {
+          "psnr_db": 20.581,
+          "ssim": 0.5554,
+          "msssim": 0.6704,
+          "lum_bias_pct": 0.5357
+        },
+        "int8_ptq": {
+          "psnr_db": 20.502,
+          "ssim": 0.5326,
+          "msssim": 0.6548,
+          "lum_bias_pct": 0.5772
+        },
+        "int8_qat": {
+          "psnr_db": 20.501,
+          "ssim": 0.5342,
+          "msssim": 0.6558,
+          "lum_bias_pct": 0.5629
+        }
+      }
+    }
+  },
+  "throughput_benchmarks": [
+    {
+      "precision": "fp32",
+      "resolution": "1920x1080",
+      "n_chips": 1,
+      "ms": 27.325,
+      "fps": 36.6,
+      "mpixels_per_s": 75.89,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 11,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 755,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "precision": "bf16",
+      "resolution": "1920x1080",
+      "n_chips": 1,
+      "ms": 12.397,
+      "fps": 80.66,
+      "mpixels_per_s": 167.26,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 11,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 800,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "precision": "int8",
+      "resolution": "1920x1080",
+      "n_chips": 1,
+      "ms": 12.391,
+      "fps": 80.71,
+      "mpixels_per_s": 167.35,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 11,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 1122,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "precision": "fp32",
+      "resolution": "1920x1080",
+      "n_chips": 4,
+      "ms": 6.977,
+      "fps": 143.33,
+      "mpixels_per_s": 297.2,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 11,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 758,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "precision": "bf16",
+      "resolution": "1920x1080",
+      "n_chips": 4,
+      "ms": 3.253,
+      "fps": 307.44,
+      "mpixels_per_s": 637.51,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 11,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 803,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "precision": "int8",
+      "resolution": "1920x1080",
+      "n_chips": 4,
+      "ms": 3.295,
+      "fps": 303.47,
+      "mpixels_per_s": 629.27,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 11,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 1125,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "precision": "fp32",
+      "resolution": "3840x2160",
+      "n_chips": 1,
+      "ms": 105.78,
+      "fps": 9.45,
+      "mpixels_per_s": 78.41,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 11,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 755,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "precision": "bf16",
+      "resolution": "3840x2160",
+      "n_chips": 1,
+      "ms": 47.315,
+      "fps": 21.14,
+      "mpixels_per_s": 175.3,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 11,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 800,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "precision": "int8",
+      "resolution": "3840x2160",
+      "n_chips": 1,
+      "ms": 47.454,
+      "fps": 21.07,
+      "mpixels_per_s": 174.79,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 11,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 1122,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "precision": "fp32",
+      "resolution": "3840x2160",
+      "n_chips": 4,
+      "ms": 26.881,
+      "fps": 37.2,
+      "mpixels_per_s": 308.56,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 11,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 758,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "precision": "bf16",
+      "resolution": "3840x2160",
+      "n_chips": 4,
+      "ms": 12.722,
+      "fps": 78.6,
+      "mpixels_per_s": 651.96,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 11,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 803,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "precision": "int8",
+      "resolution": "3840x2160",
+      "n_chips": 4,
+      "ms": 12.806,
+      "fps": 78.09,
+      "mpixels_per_s": 647.69,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 11,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 1125,
+        "send_recv_ops": 0
+      }
+    }
+  ]
+}
