@@ -40,7 +40,7 @@ from tpu_mjx_render.scenes import get_scene_xml
 
 
 HUMANOID_PPO_XML = """<mujoco model="humanoid_21dof_ppo">
-  <option timestep="0.005" iterations="2" ls_iterations="4" integrator="implicitfast">
+  <option timestep="0.005" iterations="2" ls_iterations="4" integrator="implicitfast" solver="CG">
     <flag eulerdamp="disable"/>
   </option>
   <visual>
@@ -56,13 +56,13 @@ HUMANOID_PPO_XML = """<mujoco model="humanoid_21dof_ppo">
   </asset>
   <default>
     <joint armature="0.03" damping="2.5" limited="true"/>
-    <geom condim="3" friction="0.9 0.02 0.002" solref="0.02 1"/>
+    <geom condim="3" friction="0.9 0.02 0.002" solref="0.02 1" contype="0" conaffinity="1"/>
     <motor ctrllimited="true" ctrlrange="-1 1"/>
   </default>
   <worldbody>
     <light name="sun" pos="1.5 -1.5 3.5" dir="-0.3 0.3 -1" directional="false" castshadow="true" diffuse="0.9 0.88 0.84" specular="0.3 0.3 0.3"/>
-    <camera name="track" mode="trackcom" pos="2.2 -1.6 0.55" xyaxes="0.59 0.81 0 -0.20 0.15 0.97" fovy="46"/>
-    <geom name="floor" type="plane" pos="0 0 0" size="8 8 0.1" material="grid"/>
+    <camera name="front" pos="2.4 -1.8 1.35" xyaxes="0.60 0.80 0 -0.20 0.15 0.97" fovy="50"/>
+    <geom name="floor" type="plane" pos="0 0 0" size="8 8 0.1" material="grid" contype="1" conaffinity="0"/>
     <geom name="pedestal_block" type="box" pos="0.95 0.55 0.15" size="0.18 0.18 0.15" rgba="0.22 0.62 0.85 1" contype="0" conaffinity="0"/>
     <geom name="arena_sphere" type="sphere" pos="-0.85 0.65 0.22" size="0.22" rgba="0.86 0.24 0.22 1" contype="0" conaffinity="0"/>
     <geom name="arena_cyl" type="cylinder" pos="0.55 -0.85 0.20" size="0.14 0.20" rgba="0.24 0.78 0.44 1" contype="0" conaffinity="0"/>
@@ -623,6 +623,7 @@ def run_vision_ppo_rtx(
     gamma: float = 0.99,
     gae_lambda: float = 0.95,
     seed: int = 0,
+    split_rollout_update: Optional[bool] = None,
 ) -> Dict[str, Any]:
   devs = jax.devices()[:n_chips]
   assert len(devs) == n_chips, f"Need {n_chips} chips, found {len(devs)}"
@@ -688,7 +689,133 @@ def run_vision_ppo_rtx(
   def _dp_mean(x):
     return jax.lax.pmean(x, "dp") if n_chips > 1 else x
 
-  def _ppo_iter_local(p, opt_st, n_st, env_st, r_acc, chip_rng_in, mx_l):
+  if split_rollout_update is None:
+    split_rollout_update = False
+
+  def _one_step_local(p, n_st, st, acc, step_rng_in, mx_l):
+    step_rng = step_rng_in[0] if step_rng_in.ndim >= 2 or (step_rng_in.ndim == 1 and step_rng_in.shape[0] == 1) else step_rng_in
+    rgb_cur = st.obs["rgb"]
+    rgb_prv = st.obs["prev_rgb"]
+    obs_n = _normalize_obs_2f(rgb_cur, rgb_prv, n_st)
+    mean, log_std, val = model.apply({"params": p}, obs_n)
+    std = jnp.exp(log_std)
+    k_act, k_rst = jax.random.split(step_rng)
+    act = mean + std * jax.random.normal(k_act, mean.shape)
+    logp = _gaussian_logp(act, mean, log_std)
+
+    next_st = jax.vmap(lambda s, a: env.step_physics(mx_l, s, a))(st, act)
+    r_keys = jax.random.split(k_rst, local_envs)
+    fresh = jax.vmap(lambda k: env.reset_physics(mx_l, k, stagger_steps=False))(r_keys)
+    d_flag = next_st.done > 0.5
+
+    def _where_leaf(f_leaf, c_leaf):
+      mask = d_flag.reshape((local_envs,) + (1,) * (c_leaf.ndim - 1))
+      return jnp.where(mask, f_leaf, c_leaf)
+
+    reset_st = jax.tree_util.tree_map(_where_leaf, fresh, next_st)
+    new_acc = acc * gamma * (1.0 - next_st.done) + next_st.reward
+    if env_name == "panda_pick_cube":
+      aux_m = (next_st.info["success"], next_st.info["d_grip_box"])
+    elif env_name == "humanoid_21dof":
+      aux_m = (next_st.info["alive"], next_st.info["torso_z"])
+    else:
+      aux_m = (next_st.info["balanced"], next_st.info["pole_cos"])
+
+    step_rec = (
+        rgb_cur,
+        rgb_prv,
+        act,
+        logp,
+        next_st.reward,
+        next_st.done,
+        next_st.info["trunc"],
+        val,
+        new_acc,
+        aux_m,
+    )
+    return reset_st, new_acc, d_flag, rgb_cur, step_rec
+
+  def _render_step_local(reset_st, d_flag, rgb_cur):
+    new_rgb = env.render_local(reset_st.data)
+    new_prev = jnp.where(d_flag[:, None, None, None], new_rgb, rgb_cur)
+    return reset_st._replace(obs={"rgb": new_rgb, "prev_rgb": new_prev})
+
+  def _gae_and_update_local(p, opt_st, n_st, env_st_out, traj_list_or_tuple, chip_rng_in):
+    chip_rng = chip_rng_in[0] if chip_rng_in.ndim >= 2 or (chip_rng_in.ndim == 1 and chip_rng_in.shape[0] == 1) else chip_rng_in
+    _, epoch_rng = jax.random.split(chip_rng)
+    rgb_t, prev_t, act_t, logp_t, rew_t, done_t, trunc_t, val_t, acc_t, aux_t = traj_list_or_tuple
+
+    rgb_f32 = rgb_t.astype(jnp.float32)
+    b_obs_mean = _dp_mean(jnp.mean(rgb_f32, axis=(0, 1, 2, 3), keepdims=True)[0])
+    b_obs_var = _dp_mean(jnp.mean((rgb_f32 - b_obs_mean[None, ...]) ** 2, axis=(0, 1, 2, 3), keepdims=True)[0])
+    b_ret_mean = _dp_mean(jnp.mean(acc_t))
+    b_ret_var = _dp_mean(jnp.mean((acc_t - b_ret_mean) ** 2))
+    mom_obs = 0.02
+    mom_ret = 0.05
+    new_n_st = NormState(
+        obs_mean=(1.0 - mom_obs) * n_st.obs_mean + mom_obs * b_obs_mean,
+        obs_var=(1.0 - mom_obs) * n_st.obs_var + mom_obs * b_obs_var,
+        ret_var=(1.0 - mom_ret) * n_st.ret_var + mom_ret * jnp.maximum(b_ret_var, 1.0),
+    )
+
+    last_obs_n = _normalize_obs_2f(env_st_out.obs["rgb"], env_st_out.obs["prev_rgb"], new_n_st)
+    _, _, last_val = model.apply({"params": p}, last_obs_n)
+
+    ret_scale = jnp.maximum(jnp.sqrt(new_n_st.ret_var), 1.0)
+    rew_scaled = rew_t / ret_scale + gamma * trunc_t * jax.lax.stop_gradient(val_t)
+
+    def _gae(adv_next, xs):
+      r, d, v, v_next = xs
+      nonterm = 1.0 - d
+      delta = r + gamma * v_next * nonterm - v
+      adv = delta + gamma * gae_lambda * nonterm * adv_next
+      return adv, adv
+
+    v_next_all = jnp.concatenate([val_t[1:], last_val[None, :]], axis=0)
+    _, adv_t = jax.lax.scan(
+        _gae,
+        jnp.zeros((local_envs,), dtype=jnp.float32),
+        (rew_scaled, done_t, val_t, v_next_all),
+        reverse=True,
+    )
+    ret_t = adv_t + val_t
+
+    adv_mean = _dp_mean(jnp.mean(adv_t))
+    adv_var = _dp_mean(jnp.mean((adv_t - adv_mean) ** 2))
+    adv_norm = (adv_t - adv_mean) / (jnp.sqrt(adv_var) + 1e-6)
+
+    n_local = rollout_len * local_envs
+    rgb_f = rgb_t.reshape((n_local, res, res, 3))
+    prev_f = prev_t.reshape((n_local, res, res, 3))
+    act_f = act_t.reshape((n_local, env.action_size))
+    old_lp_f = logp_t.reshape((n_local,))
+    old_val_f = val_t.reshape((n_local,))
+    adv_f = adv_norm.reshape((n_local,))
+    ret_f = ret_t.reshape((n_local,))
+
+    roll_metrics = {
+        "mean_reward": _dp_mean(jnp.mean(rew_t)),
+        "done_frac": _dp_mean(jnp.mean(done_t)),
+        "ret_scale": ret_scale,
+    }
+    if env_name == "panda_pick_cube":
+      succ_t, dgb_t = aux_t
+      roll_metrics["success_rate"] = _dp_mean(jnp.mean(succ_t))
+      roll_metrics["d_grip_box"] = _dp_mean(jnp.mean(dgb_t))
+    elif env_name == "humanoid_21dof":
+      alv_t, tz_t = aux_t
+      roll_metrics["success_rate"] = _dp_mean(jnp.mean(alv_t))
+      roll_metrics["torso_z"] = _dp_mean(jnp.mean(tz_t))
+    else:
+      bal_t, pcos_t = aux_t
+      roll_metrics["success_rate"] = _dp_mean(jnp.mean(bal_t))
+      roll_metrics["pole_cos"] = _dp_mean(jnp.mean(pcos_t))
+
+    batch = (rgb_f, prev_f, act_f, old_lp_f, old_val_f, adv_f, ret_f)
+    p_new, opt_new, up_metrics = _ppo_update_local(p, opt_st, new_n_st, batch, epoch_rng)
+    return p_new, opt_new, new_n_st, {**roll_metrics, **up_metrics}
+
+  def _rollout_and_gae_local(p, n_st, env_st, r_acc, chip_rng_in, mx_l):
     chip_rng = chip_rng_in[0] if chip_rng_in.ndim >= 2 or (chip_rng_in.ndim == 1 and chip_rng_in.shape[0] == 1) else chip_rng_in
     roll_rng, epoch_rng = jax.random.split(chip_rng)
 
@@ -790,6 +917,31 @@ def run_vision_ppo_rtx(
     adv_f = adv_norm.reshape((n_local,))
     ret_f = ret_t.reshape((n_local,))
 
+    roll_metrics = {
+        "mean_reward": _dp_mean(jnp.mean(rew_t)),
+        "done_frac": _dp_mean(jnp.mean(done_t)),
+        "ret_scale": ret_scale,
+    }
+    if env_name == "panda_pick_cube":
+      succ_t, dgb_t = aux_t
+      roll_metrics["success_rate"] = _dp_mean(jnp.mean(succ_t))
+      roll_metrics["d_grip_box"] = _dp_mean(jnp.mean(dgb_t))
+    elif env_name == "humanoid_21dof":
+      alv_t, tz_t = aux_t
+      roll_metrics["success_rate"] = _dp_mean(jnp.mean(alv_t))
+      roll_metrics["torso_z"] = _dp_mean(jnp.mean(tz_t))
+    else:
+      bal_t, pcos_t = aux_t
+      roll_metrics["success_rate"] = _dp_mean(jnp.mean(bal_t))
+      roll_metrics["pole_cos"] = _dp_mean(jnp.mean(pcos_t))
+
+    batch = (rgb_f, prev_f, act_f, old_lp_f, old_val_f, adv_f, ret_f)
+    return new_n_st, env_st_out, r_acc_out, batch, roll_metrics, epoch_rng
+
+  def _ppo_update_local(p, opt_st, new_n_st, batch, epoch_rng):
+    rgb_f, prev_f, act_f, old_lp_f, old_val_f, adv_f, ret_f = batch
+    n_local = rollout_len * local_envs
+
     def _ppo_loss(pr, mb):
       mb_rgb, mb_prv, mb_act, mb_old_lp, mb_old_val, mb_adv, mb_ret = mb
       mb_obs = _normalize_obs_2f(mb_rgb, mb_prv, new_n_st)
@@ -839,43 +991,61 @@ def run_vision_ppo_rtx(
     ep_keys = jax.random.split(epoch_rng, num_epochs)
     (p_new, opt_new), ep_stats = jax.lax.scan(_epoch_step, (p, opt_st), ep_keys)
     mean_loss, mean_pi_loss, mean_v_loss, mean_ent, mean_kl = jax.tree_util.tree_map(jnp.mean, ep_stats)
-
-    metrics = {
-        "mean_reward": _dp_mean(jnp.mean(rew_t)),
+    up_metrics = {
         "mean_loss": mean_loss,
         "pi_loss": mean_pi_loss,
         "v_loss": mean_v_loss,
         "entropy": mean_ent,
         "approx_kl": mean_kl,
-        "done_frac": _dp_mean(jnp.mean(done_t)),
-        "ret_scale": ret_scale,
     }
-    if env_name == "panda_pick_cube":
-      succ_t, dgb_t = aux_t
-      metrics["success_rate"] = _dp_mean(jnp.mean(succ_t))
-      metrics["d_grip_box"] = _dp_mean(jnp.mean(dgb_t))
-    elif env_name == "humanoid_21dof":
-      alv_t, tz_t = aux_t
-      metrics["success_rate"] = _dp_mean(jnp.mean(alv_t))
-      metrics["torso_z"] = _dp_mean(jnp.mean(tz_t))
-    else:
-      bal_t, pcos_t = aux_t
-      metrics["success_rate"] = _dp_mean(jnp.mean(bal_t))
-      metrics["pole_cos"] = _dp_mean(jnp.mean(pcos_t))
+    return p_new, opt_new, up_metrics
 
+  def _ppo_iter_local(p, opt_st, n_st, env_st, r_acc, chip_rng_in, mx_l):
+    new_n_st, env_st_out, r_acc_out, batch, roll_metrics, epoch_rng = _rollout_and_gae_local(
+        p, n_st, env_st, r_acc, chip_rng_in, mx_l
+    )
+    p_new, opt_new, up_metrics = _ppo_update_local(p, opt_st, new_n_st, batch, epoch_rng)
+    metrics = {**roll_metrics, **up_metrics}
     return p_new, opt_new, new_n_st, env_st_out, r_acc_out, metrics
 
-  _ppo_sm = shard_map(
-      _ppo_iter_local,
-      mesh=mesh,
-      in_specs=(P(), P(), P(), P("dp"), P("dp"), P("dp"), P()),
-      out_specs=(P(), P(), P(), P("dp"), P("dp"), P()),
-      **sm_kw,
-  )
+  if split_rollout_update:
+    _step_sm = shard_map(
+        _one_step_local,
+        mesh=mesh,
+        in_specs=(P(), P(), P("dp"), P("dp"), P("dp"), P()),
+        out_specs=(P("dp"), P("dp"), P("dp"), P("dp"), P("dp")),
+        **sm_kw,
+    )
+    _rend_sm = shard_map(
+        _render_step_local,
+        mesh=mesh,
+        in_specs=(P("dp"), P("dp"), P("dp")),
+        out_specs=P("dp"),
+        **sm_kw,
+    )
+    _gae_upd_sm = shard_map(
+        _gae_and_update_local,
+        mesh=mesh,
+        in_specs=(P(), P(), P(), P("dp"), P(None, "dp"), P("dp")),
+        out_specs=(P(), P(), P(), P()),
+        **sm_kw,
+    )
+    step_jit = jax.jit(_step_sm)
+    rend_jit = jax.jit(_rend_sm)
+    gae_upd_jit = jax.jit(_gae_upd_sm)
+    stack_jit = jax.jit(lambda recs: jax.tree_util.tree_map(lambda *xs: jnp.stack(xs, axis=0), *recs))
+  else:
+    _ppo_sm = shard_map(
+        _ppo_iter_local,
+        mesh=mesh,
+        in_specs=(P(), P(), P(), P("dp"), P("dp"), P("dp"), P()),
+        out_specs=(P(), P(), P(), P("dp"), P("dp"), P()),
+        **sm_kw,
+    )
 
-  @jax.jit
-  def ppo_iter(p, ost, nst, est, racc, crng):
-    return _ppo_sm(p, ost, nst, est, racc, crng, mx_rep)
+    @jax.jit
+    def ppo_iter(p, ost, nst, est, racc, crng):
+      return _ppo_sm(p, ost, nst, est, racc, crng, mx_rep)
 
   # Deterministic policy evaluation helper (fresh non-staggered episodes, mean action)
   def _eval_local(p, n_st, keys_local, mx_l):
@@ -923,7 +1093,30 @@ def run_vision_ppo_rtx(
 
   rng, k0, k_ev = jax.random.split(rng, 3)
   chip_rngs0 = jax.device_put(jax.random.split(k0, n_chips), sharding)
-  hlo_ppo = tpu_rtx.audit_hlo(ppo_iter.lower(params, opt_state, norm_state, state0, ret_acc0, chip_rngs0))
+  if split_rollout_update:
+    hlo_step = tpu_rtx.audit_hlo(step_jit.lower(params, norm_state, state0, ret_acc0, chip_rngs0, mx_rep))
+    step_out_s = jax.eval_shape(
+        lambda p, ns, st, ra, cr, mx: step_jit(p, ns, st, ra, cr, mx),
+        params, norm_state, state0, ret_acc0, chip_rngs0, mx_rep,
+    )
+    hlo_rend = tpu_rtx.audit_hlo(rend_jit.lower(step_out_s[0], step_out_s[2], step_out_s[3]))
+    sharding_traj = jax.sharding.NamedSharding(mesh, P(None, "dp"))
+    traj_s = jax.tree_util.tree_map(
+        lambda x: jax.ShapeDtypeStruct((rollout_len, *x.shape), x.dtype, sharding=sharding_traj),
+        step_out_s[4],
+    )
+    hlo_upd = tpu_rtx.audit_hlo(gae_upd_jit.lower(params, opt_state, norm_state, state0, traj_s, chip_rngs0))
+    hlo_ppo = {
+        "host_callbacks": hlo_step["host_callbacks"] + hlo_rend["host_callbacks"] + hlo_upd["host_callbacks"],
+        "send_recv_ops": hlo_step["send_recv_ops"] + hlo_rend["send_recv_ops"] + hlo_upd["send_recv_ops"],
+        "gather_ops": hlo_step["gather_ops"] + hlo_rend["gather_ops"] + hlo_upd["gather_ops"],
+        "zero_copy_verified": bool(hlo_step["zero_copy_verified"] and hlo_rend["zero_copy_verified"] and hlo_upd["zero_copy_verified"]),
+        "step_hlo": hlo_step,
+        "rend_hlo": hlo_rend,
+        "upd_hlo": hlo_upd,
+    }
+  else:
+    hlo_ppo = tpu_rtx.audit_hlo(ppo_iter.lower(params, opt_state, norm_state, state0, ret_acc0, chip_rngs0))
   assert hlo_ppo["host_callbacks"] == 0, f"Host callbacks detected in PPO HLO: {hlo_ppo}"
   assert hlo_ppo["send_recv_ops"] == 0, f"Send/Recv detected in PPO HLO: {hlo_ppo}"
   assert hlo_ppo["gather_ops"] == 0, f"Gather ops detected in PPO HLO: {hlo_ppo}"
@@ -941,9 +1134,20 @@ def run_vision_ppo_rtx(
   for it in range(num_iters):
     rng, k = jax.random.split(rng)
     chip_rngs = jax.device_put(jax.random.split(k, n_chips), sharding)
-    params, opt_state, norm_state, cur_state, cur_acc, m_out = ppo_iter(
-        params, opt_state, norm_state, cur_state, cur_acc, chip_rngs
-    )
+    if split_rollout_update:
+      step_recs = []
+      for _t in range(rollout_len):
+        rng, ks = jax.random.split(rng)
+        s_rngs = jax.device_put(jax.random.split(ks, n_chips), sharding)
+        rst, cur_acc, d_flag, rgb_cur, s_rec = step_jit(params, norm_state, cur_state, cur_acc, s_rngs, mx_rep)
+        cur_state = rend_jit(rst, d_flag, rgb_cur)
+        step_recs.append(s_rec)
+      traj_tb = stack_jit(step_recs)
+      params, opt_state, norm_state, m_out = gae_upd_jit(params, opt_state, norm_state, cur_state, traj_tb, chip_rngs)
+    else:
+      params, opt_state, norm_state, cur_state, cur_acc, m_out = ppo_iter(
+          params, opt_state, norm_state, cur_state, cur_acc, chip_rngs
+      )
     jax.block_until_ready(m_out["mean_reward"])
     if it == 0:
       t_compile_end = time.time()
@@ -1006,6 +1210,7 @@ def run_vision_ppo_rtx(
 def main():
   ap = argparse.ArgumentParser()
   ap.add_argument("--step", default="suite", choices=["probe", "single", "suite"])
+  ap.add_argument("--labels", nargs="*", default=None)
   ap.add_argument("--env", default="cartpole", choices=["cartpole", "panda_pick_cube", "humanoid_21dof"])
   ap.add_argument("--num_envs", type=int, default=2048)
   ap.add_argument("--rollout_len", type=int, default=20)
@@ -1041,13 +1246,16 @@ def main():
 
   # Full Wave 4 Vision PPO scaling suite
   configs = [
-      dict(label="cartpole_rtx_b2048_4c", env_name="cartpole", num_envs=2048, rollout_len=20, num_iters=100, num_epochs=2, num_minibatches=4, action_repeat=2, lr_peak=5e-4, lr_end=5e-5),
-      dict(label="cartpole_rtx_b4096_4c", env_name="cartpole", num_envs=4096, rollout_len=20, num_iters=80, num_epochs=2, num_minibatches=4, action_repeat=1, lr_peak=5e-4, lr_end=5e-5),
-      dict(label="panda_rtx_b1024_4c", env_name="panda_pick_cube", num_envs=1024, rollout_len=20, num_iters=120, num_epochs=2, num_minibatches=4, action_repeat=1, lr_peak=4e-4, lr_end=4e-5),
-      dict(label="panda_rtx_b2048_4c", env_name="panda_pick_cube", num_envs=2048, rollout_len=20, num_iters=100, num_epochs=2, num_minibatches=4, action_repeat=1, lr_peak=4e-4, lr_end=4e-5),
-      dict(label="humanoid_rtx_b1024_4c", env_name="humanoid_21dof", num_envs=1024, rollout_len=20, num_iters=120, num_epochs=2, num_minibatches=4, action_repeat=1, lr_peak=3e-4, lr_end=3e-5),
-      dict(label="humanoid_rtx_b2048_4c", env_name="humanoid_21dof", num_envs=2048, rollout_len=20, num_iters=100, num_epochs=2, num_minibatches=4, action_repeat=1, lr_peak=3e-4, lr_end=3e-5),
+      dict(label="cartpole_rtx_b2048_4c", env_name="cartpole", num_envs=2048, rollout_len=20, num_iters=120, num_epochs=2, num_minibatches=4, action_repeat=2, lr_peak=5e-4, lr_end=5e-5),
+      dict(label="cartpole_rtx_b4096_4c", env_name="cartpole", num_envs=4096, rollout_len=20, num_iters=120, num_epochs=2, num_minibatches=4, action_repeat=1, lr_peak=5e-4, lr_end=5e-5),
+      dict(label="panda_rtx_b1024_4c", env_name="panda_pick_cube", num_envs=1024, rollout_len=20, num_iters=140, num_epochs=2, num_minibatches=4, action_repeat=1, lr_peak=4e-4, lr_end=4e-5),
+      dict(label="panda_rtx_b2048_4c", env_name="panda_pick_cube", num_envs=2048, rollout_len=20, num_iters=120, num_epochs=2, num_minibatches=4, action_repeat=1, lr_peak=4e-4, lr_end=4e-5),
+      dict(label="humanoid_rtx_b1024_4c", env_name="humanoid_21dof", num_envs=1024, rollout_len=20, num_iters=140, num_epochs=2, num_minibatches=4, action_repeat=1, lr_peak=3e-4, lr_end=3e-5),
+      dict(label="humanoid_rtx_b2048_4c", env_name="humanoid_21dof", num_envs=2048, rollout_len=20, num_iters=120, num_epochs=2, num_minibatches=4, action_repeat=1, lr_peak=3e-4, lr_end=3e-5),
   ]
+  if args.labels:
+    want = set(args.labels)
+    configs = [c for c in configs if c["label"] in want]
 
   if os.path.exists(args.out_json):
     with open(args.out_json, "r") as f:

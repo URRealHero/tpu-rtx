@@ -24,19 +24,19 @@ import tpu_rtx
 
 
 STUDIO_ENV_ASSET = """
-    <texture type="skybox" builtin="gradient" rgb1="0.10 0.13 0.18" rgb2="0.02 0.03 0.045" width="128" height="128"/>
+    <texture type="skybox" builtin="gradient" rgb1="0.15 0.20 0.28" rgb2="0.04 0.055 0.085" width="128" height="128"/>
     <texture name="studio_grid" type="2d" builtin="checker" mark="edge"
-      rgb1="0.095 0.115 0.145" rgb2="0.062 0.076 0.100" markrgb="0.22 0.27 0.35" width="128" height="128"/>
-    <material name="studio_grid" texture="studio_grid" texuniform="true" texrepeat="3 3" specular="0.22" shininess="0.35" reflectance="0.15"/>
+      rgb1="0.14 0.17 0.22" rgb2="0.095 0.115 0.15" markrgb="0.28 0.34 0.44" width="128" height="128"/>
+    <material name="studio_grid" texture="studio_grid" texuniform="true" texrepeat="3 3" specular="0.25" shininess="0.35" reflectance="0.15"/>
 """
 
 STUDIO_LIGHTS = """
     <light name="studio_key" pos="1.9 -1.9 2.9" dir="-0.45 0.45 -1" directional="false" castshadow="true"
-      diffuse="0.90 0.84 0.76" specular="0.45 0.42 0.36" ambient="0.02 0.02 0.025"/>
+      diffuse="0.92 0.86 0.78" specular="0.45 0.42 0.36" ambient="0.04 0.04 0.045"/>
     <light name="studio_rim" pos="-1.8 1.7 1.8" dir="0.5 -0.5 -0.45" directional="false" castshadow="false"
-      diffuse="0.26 0.48 0.82" specular="0.42 0.62 0.92" ambient="0.0 0.0 0.0"/>
+      diffuse="0.32 0.56 0.90" specular="0.48 0.68 0.96" ambient="0.0 0.0 0.0"/>
     <light name="studio_fill" pos="-1.5 -1.4 1.7" dir="0.4 0.4 -0.6" directional="false" castshadow="false"
-      diffuse="0.20 0.22 0.26" specular="0.10 0.10 0.12" ambient="0.0 0.0 0.0"/>
+      diffuse="0.30 0.33 0.38" specular="0.12 0.12 0.14" ambient="0.0 0.0 0.0"/>
 """
 
 
@@ -156,7 +156,7 @@ def _panda_studio_xml() -> str:
   </default>
   <worldbody>
     {STUDIO_LIGHTS}
-    <camera name="hero" fovy="40" pos="1.12 -0.82 0.62" xyaxes="0.60 0.80 0 -0.28 0.21 0.94"/>
+    <camera name="hero" fovy="42" pos="1.18 -1.18 0.72" xyaxes="0.814 0.580 0 -0.176 0.247 0.953"/>
     <geom name="floor" size="0 0 0.05" type="plane" material="studio_grid"/>
     <geom name="init_space" size="0.24 0.26 0.005" type="box" pos="0.63 0 0.005" material="pad_dark" contype="0" conaffinity="0"/>
     <geom name="pad_accent" size="0.08 0.08 0.006" type="box" pos="0.65 0 0.006" rgba="0.10 0.42 0.68 1" contype="0" conaffinity="0"/>
@@ -325,7 +325,7 @@ def _dual_arm_studio_xml() -> str:
   </default>
   <worldbody>
     {STUDIO_LIGHTS}
-    <camera name="diag_overview" fovy="44" pos="1.25 -0.78 0.72" xyaxes="0.54 0.84 0 -0.46 0.30 0.84"/>
+    <camera name="diag_overview" fovy="44" pos="1.65 -1.25 1.05" xyaxes="0.725 0.689 0 -0.298 0.314 0.901"/>
     <geom name="floor" size="0 0 0.05" type="plane" material="studio_grid"/>
     <geom name="head_mast" type="cylinder" pos="0.06 0.0 0.45" size="0.022 0.45" rgba="0.20 0.22 0.26 1" contype="0" conaffinity="0"/>
     <geom name="head_bar" type="box" pos="0.10 0.0 0.92" size="0.045 0.09 0.028" rgba="0.14 0.16 0.20 1" contype="0" conaffinity="0"/>
@@ -416,7 +416,7 @@ def _quadruped_studio_xml() -> str:
   </asset>
   <worldbody>
     {STUDIO_LIGHTS}
-    <camera name="hero" pos="1.05 -0.92 0.56" xyaxes="0.66 0.75 0 -0.22 0.19 0.96" fovy="38"/>
+    <camera name="hero" pos="1.12 -1.02 0.60" xyaxes="0.687 0.727 0 -0.172 0.162 0.972" fovy="38"/>
     <geom name="floor" type="plane" pos="0 0 0" size="6 6 0.1" material="studio_grid"/>
     <geom name="test_pad" type="box" pos="0 0 0.008" size="0.55 0.36 0.008" rgba="0.14 0.17 0.22 1" contype="0" conaffinity="0"/>
     <body name="trunk" pos="0 0 0.355" euler="-3 4 0">
@@ -439,8 +439,8 @@ def studio_agx_post_tpu(
     normal: jax.Array,
     seg_id: jax.Array,
     floor_gid: int,
-    exposure: float = 1.18,
-    rim_strength: float = 0.22,
+    exposure: float = 1.38,
+    rim_strength: float = 0.24,
 ) -> jax.Array:
   """Zero-copy TPU studio rim sheen + Blender 4.x AgX Filmic Tonemap + sRGB OETF."""
   rgb_f = rgb.astype(jnp.float32)
@@ -473,10 +473,10 @@ def studio_agx_post_tpu(
       [-0.0990297440797205, -0.0989611768448433, 1.15107367264116],
   ], dtype=jnp.float32)
 
-  # Convert sRGB-like shader output to linear before AgX
-  hdr_lin = jnp.power(jnp.maximum(hdr, 1e-6), 2.1)
+  # Convert sRGB-like shader output to linear before AgX (gentle gamma to keep rich dark studio floor detail)
+  hdr_lin = jnp.power(jnp.maximum(hdr, 1e-6), 1.65)
   val = jnp.einsum("ij,hwj->hwi", agx_inset, jnp.maximum(hdr_lin, 1e-10), precision=jax.lax.Precision.HIGHEST)
-  min_ev, max_ev = -6.8, 4.2
+  min_ev, max_ev = -6.0, 4.2
   val = jnp.log2(jnp.maximum(val, 1e-10))
   val = jnp.clip((val - min_ev) / (max_ev - min_ev), 0.0, 1.0)
   x = val
@@ -514,10 +514,12 @@ def _pose_embodiment(name: str, m: mujoco.MjModel) -> mujoco.MjData:
     _setj("left_hip_y", 0.42)     # left leg pushing off behind
     _setj("left_knee", -0.35)
     _setj("left_ankle_y", 0.42)
-    _setj("right_shoulder1", 0.55)
-    _setj("right_elbow", -1.15)
-    _setj("left_shoulder1", -0.65)
-    _setj("left_elbow", -0.95)
+    _setj("right_shoulder1", 0.72)
+    _setj("right_shoulder2", -0.35)
+    _setj("right_elbow", -1.25)
+    _setj("left_shoulder1", -0.78)
+    _setj("left_shoulder2", 0.35)
+    _setj("left_elbow", -0.85)
   elif name == "quadruped_trot":
     # Diagonal trot: FL & RR lifted forward, FR & RL planted
     def _setd(jname: str, deg: float):
