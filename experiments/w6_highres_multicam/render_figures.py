@@ -159,22 +159,33 @@ def compose_complex_multicam_4k(vis_dir: str, out_dir: str):
 
 def compose_8k_hero(vis_dir: str, out_dir: str):
   d4 = os.path.join(vis_dir, "cluttered_8k_down4.npy")
-  c4 = os.path.join(vis_dir, "cluttered_8k_crop_1280x960.npy")
+  c4_exact = os.path.join(vis_dir, "cluttered_8k_crop_1440x1080.npy")
+  c4_legacy = os.path.join(vis_dir, "cluttered_8k_crop_1280x960.npy")
+  c4 = c4_exact if os.path.exists(c4_exact) else c4_legacy
   if not (os.path.exists(d4) and os.path.exists(c4)):
     d4 = os.path.join(vis_dir, "panda_8k_down4.npy")
-    c4 = os.path.join(vis_dir, "panda_8k_crop_1280x960.npy")
+    c4_p = os.path.join(vis_dir, "panda_8k_crop_1440x1080.npy")
+    c4 = c4_p if os.path.exists(c4_p) else os.path.join(vis_dir, "panda_8k_crop_1280x960.npy")
   if not (os.path.exists(d4) and os.path.exists(c4)):
     return
   ov = _to_u8(np.load(d4))      # (1080, 1920, 3)
-  crop = _to_u8(np.load(c4))    # (960, 1280, 3)
-  crop_rs = _resize_u8(crop, 1440, 1080, resample=Image.NEAREST)
-  canvas = Image.new("RGB", (1920 + 1440, 1080 + 70), (14, 18, 26))
+  crop = _to_u8(np.load(c4))
+  is_exact = (crop.shape[0] == 1080 and crop.shape[1] == 1440)
+  crop_rs = crop if is_exact else _resize_u8(crop, 1440, 1080, resample=Image.NEAREST)
+
+  canvas = Image.new("RGB", (1920 + 1440 + 8, 1080 + 70), (14, 18, 26))
   im_ov = Image.fromarray(ov)
-  _draw_label(im_ov, "Full 8K UHD (7680x4320 = 33.18M px, 4x4 downscaled to 1920x1080)", (18, 16))
+  # Draw crisp ROI box on 4x4 downscaled overview matching [1620:2700, 3120:4560]
+  if is_exact:
+    ov_draw = ImageDraw.Draw(im_ov)
+    ov_draw.rectangle([3120 // 4, 1620 // 4, 4560 // 4, 2700 // 4], outline=(0, 229, 255), width=4)
+  _draw_label(im_ov, "Full Native 8K UHD (7680x4320 = 33.18M px, 4x4 downscaled to 1920x1080)", (18, 16))
   im_cr = Image.fromarray(crop_rs)
-  _draw_label(im_cr, "100% Native 8K Pixel Crop (1280x960 ROI)", (18, 16))
+  _draw_label(im_cr, "1:1 Native 8K Pixel Detail Inset (1440x1080 ROI, Zero Upscaling)", (18, 16))
   canvas.paste(im_ov, (0, 70))
-  canvas.paste(im_cr, (1920, 70))
+  canvas.paste(im_cr, (1928, 70))
+  draw_c = ImageDraw.Draw(canvas)
+  draw_c.line([(1924, 70), (1924, 1150)], fill=(0, 229, 255), width=4)
   _draw_label(canvas, "TPU v5p 4-Chip Spatial-Sharded 8K UHD Stage 1 + M2_spatial_128 BF16 (Zero Host Callbacks)", (20, 16))
   out_p = os.path.join(out_dir, "v3_w6_8k_hero.png")
   canvas.save(out_p)

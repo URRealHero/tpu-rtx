@@ -482,6 +482,8 @@ def run_8k_spatial_4c(neural_ckpt: str, out_json: str, export_dir: str, scene_fi
     params_rep = jax.device_put(params_m2, rep_sp)
 
     m2_flags = (False, True) if m2_filter == "both" else ((False,) if m2_filter == "s1" else (True,))
+    s1_dep_ref = None
+    s1_rgb_ref = None
     for with_m2 in m2_flags:
       def _sp_fn(d_1, u_1, mx_l, prm, lr_s, lds, los, nzs):
         dn = jax.vmap(lambda x, c: mjx.step(mx_l, x.replace(ctrl=c)))(d_1, u_1)
@@ -514,6 +516,15 @@ def run_8k_spatial_4c(neural_ckpt: str, out_json: str, export_dir: str, scene_fi
       dt_e2e = (time.perf_counter() - t1) / 4
       gpix_s = (R_8K / 1e9) / max(dt_e2e, 1e-9)
 
+      dep_np = np.asarray(dep8k[0], np.float32)
+      rgb_np = np.asarray(rgb8k[0], np.float32)
+      assert np.all(np.isfinite(dep_np)) and np.all(np.isfinite(rgb_np))
+      if not with_m2:
+        s1_dep_ref = dep_np
+        s1_rgb_ref = rgb_np
+      depth_mae_vs_s1 = float(np.mean(np.abs(dep_np - s1_dep_ref))) if s1_dep_ref is not None else 0.0
+      rgb_delta_mae = float(np.mean(np.abs(rgb_np - s1_rgb_ref))) if (with_m2 and s1_rgb_ref is not None) else None
+
       rec = {
           "status": "ok",
           "scene": scene_label,
@@ -527,6 +538,9 @@ def run_8k_spatial_4c(neural_ckpt: str, out_json: str, export_dir: str, scene_fi
           "e2e_fps": 1.0 / max(dt_e2e, 1e-9),
           "gpix_per_s": gpix_s,
           "warmup_s": round(warmup_s, 3),
+          "depth_mae_vs_s1": depth_mae_vs_s1,
+          "depth_valid_frac": float(np.mean(dep_np > 0.0)),
+          "rgb_delta_mae": rgb_delta_mae,
           "host_callbacks": hlo["host_callbacks"],
           "send_recv_ops": hlo["send_recv_ops"],
           "conv_ops": hlo["conv_ops"],
@@ -535,18 +549,19 @@ def run_8k_spatial_4c(neural_ckpt: str, out_json: str, export_dir: str, scene_fi
       out_rows.append(rec)
       with open(out_json, "w") as f:
         json.dump({"resolution": f"{W_8K}x{H_8K}", "runs": out_rows}, f, indent=2)
-      print(f"8K {scene_label} {'S1+M2' if with_m2 else 'S1'}: e2e={dt_e2e*1e3:.2f}ms fps={rec['e2e_fps']:.2f} ({gpix_s:.3f} GPix/s)", flush=True)
+      print(f"8K {scene_label} {'S1+M2' if with_m2 else 'S1'}: e2e={dt_e2e*1e3:.2f}ms fps={rec['e2e_fps']:.2f} ({gpix_s:.3f} GPix/s, depth_mae={depth_mae_vs_s1:.2e})", flush=True)
 
       if with_m2 and export_dir:
         os.makedirs(export_dir, exist_ok=True)
-        # Save a crisp 100%-zoom 1280x960 crop centered on gripper+cube (and full 4x downsampled overview)
-        rgb_np = np.asarray(rgb8k[0], np.float32)
+        # Save exact 1:1 1440x1080 pixel detail inset centered on workspace + 4x4 downscaled full-8K overview (1920x1080)
         if scene_label == "panda_pick_cube":
-          np.save(os.path.join(export_dir, "panda_8k_crop_1280x960.npy"), rgb_np[1700:2660, 2900:4180])
+          np.save(os.path.join(export_dir, "panda_8k_crop_1440x1080.npy"), rgb_np[1620:2700, 3120:4560])
           np.save(os.path.join(export_dir, "panda_8k_down4.npy"), rgb_np[::4, ::4])
         else:
           np.save(os.path.join(export_dir, "cluttered_8k_down4.npy"), rgb_np[::4, ::4])
-          np.save(os.path.join(export_dir, "cluttered_8k_crop_1280x960.npy"), rgb_np[1700:2660, 2900:4180])
+          np.save(os.path.join(export_dir, "cluttered_8k_crop_1440x1080.npy"), rgb_np[1620:2700, 3120:4560])
+          if s1_rgb_ref is not None:
+            np.save(os.path.join(export_dir, "cluttered_8k_s1_crop_1440x1080.npy"), s1_rgb_ref[1620:2700, 3120:4560])
 
   return {"resolution": f"{W_8K}x{H_8K}", "runs": out_rows}
 

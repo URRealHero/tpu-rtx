@@ -115,11 +115,11 @@ def make_robotwin_bimanual_xml() -> str:
   left_arm = _panda_arm_xml("L_", "0.02 0.28 0.01", yaw_rad=-0.18, wrist_cam_name="left_wrist_camera")
   right_arm = _panda_arm_xml("R_", "0.02 -0.28 0.01", yaw_rad=0.18, wrist_cam_name="right_wrist_camera")
 
-  l_qpos = "-0.12 0.45 -0.05 -1.82 -0.02 2.32 0.78 0.035 0.035"
-  r_qpos = "0.14 0.52 0.08 -1.78 0.04 2.28 0.78 0.028 0.028"
+  l_qpos = "0.04 0.45 -0.05 -1.82 -0.02 2.32 0.78 0.035 0.035"
+  r_qpos = "-0.04 0.52 0.08 -1.78 0.04 2.28 0.78 0.028 0.028"
   cube_qpos = "0.62 -0.03 0.054 1.0 0.0 0.0 0.0"
-  l_ctrl = "-0.12 0.45 -0.05 -1.82 -0.02 2.32 0.78 0.035"
-  r_ctrl = "0.14 0.52 0.08 -1.78 0.04 2.28 0.78 0.028"
+  l_ctrl = "0.04 0.45 -0.05 -1.82 -0.02 2.32 0.78 0.035"
+  r_ctrl = "-0.04 0.52 0.08 -1.78 0.04 2.28 0.78 0.028"
 
   return f"""<mujoco model="robotwin_bimanual_panda_tabletop">
   <compiler angle="radian" autolimits="true"/>
@@ -167,8 +167,8 @@ def make_robotwin_bimanual_xml() -> str:
     <light name="sun_overhead" pos="0.6 0.3 1.9" dir="-0.15 -0.15 -1" directional="false" castshadow="true"
       diffuse="0.88 0.85 0.80" specular="0.3 0.3 0.3"/>
 
-    <!-- RoboTwin Head Camera (overlooking bimanual arms + tabletop) -->
-    <camera name="head_camera" fovy="48" pos="0.12 0.0 0.92" xyaxes="0 -1 0 0.850 0 0.526"/>
+    <!-- RoboTwin Head Camera (overlooking bimanual arms + tabletop, clear of head_bar x=0.055..0.145) -->
+    <camera name="head_camera" fovy="52" pos="0.18 0.0 0.92" xyaxes="0 -1 0 0.850 0 0.526"/>
     <!-- Surround showcase cameras -->
     <camera name="diag_overview" fovy="45" pos="1.25 -0.78 0.72" xyaxes="0.54 0.84 0 -0.46 0.30 0.84"/>
     <camera name="front_overview" fovy="44" pos="1.32 0.00 0.56" xyaxes="0 1 0 -0.62 0 0.78"/>

@@ -81,6 +81,11 @@ def _audit_hlo(lowered: Any) -> Dict[str, Any]:
 def make_isaac_tabletop_lidar_xml() -> str:
   """Cluttered Panda tabletop scene + 360-degree LiDAR mast camera rig."""
   xml = make_cluttered_tabletop_8cam_xml()
+  # Pull cam6_diag back cleanly so full robot base, Panda arm, LiDAR rig, and cluttered tabletop fit without cropping
+  xml = xml.replace(
+      '<camera name="cam6_diag" fovy="45" pos="0.25 -0.58 0.42" xyaxes="0.82 0.57 0 -0.32 0.46 0.83"/>',
+      '<camera name="cam6_diag" fovy="46" pos="1.58 -1.25 1.05" xyaxes="0.7507 0.6606 0 -0.2947 0.3349 0.8949"/>',
+  )
   lidar_cam = (
       '    <camera name="lidar_rig" fovy="60" pos="0.30 -0.34 0.42" '
       'xyaxes="0 -1 0 1 0 0"/>\n'

@@ -1,0 +1,43 @@
+{
+  "experiment": "v3_w6_8k_and_multicam8",
+  "worker": "w6",
+  "8k_spatial_4c": [
+    {
+      "status": "ok",
+      "scene": "panda_pick_cube",
+      "stage": "stage1_pallas_v2",
+      "resolution": "7680x4320",
+      "pixels_per_frame": 33177600,
+      "n_chips": 4,
+      "spatial_split": "W=7680 -> 4x1920 (16200 blocks/chip)",
+      "batch_size": 1,
+      "dt_e2e_ms": 187.18819774949225,
+      "e2e_fps": 5.342217148424426,
+      "gpix_per_s": 0.17724194366356624,
+      "warmup_s": 255.043,
+      "host_callbacks": 0,
+      "send_recv_ops": 0,
+      "conv_ops": 0,
+      "hlo_zero_copy": true
+    },
+    {
+      "status": "ok",
+      "scene": "cluttered_tabletop",
+      "stage": "stage1_pallas_v2",
+      "resolution": "7680x4320",
+      "pixels_per_frame": 33177600,
+      "n_chips": 4,
+      "spatial_split": "W=7680 -> 4x1920 (16200 blocks/chip)",
+      "batch_size": 1,
+      "dt_e2e_ms": 308.7611852461123,
+      "e2e_fps": 3.2387490649218234,
+      "gpix_per_s": 0.10745392097635029,
+      "warmup_s": 380.322,
+      "host_callbacks": 0,
+      "send_recv_ops": 0,
+      "conv_ops": 0,
+      "hlo_zero_copy": true
+    }
+  ],
+  "ncam_runs": []
+}

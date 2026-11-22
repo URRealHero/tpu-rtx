@@ -1,0 +1,20 @@
+{
+  "status": "ok",
+  "bimanual_3cam_bench": [
+    {
+      "pipeline": "robotwin_3cam_rgb_depth_seg",
+      "n_arms": 2,
+      "n_cameras": 3,
+      "res": "128x128",
+      "batch_size": 256,
+      "dt_e2e_ms": 381.50986966502387,
+      "e2e_fps": 671.0180269380056,
+      "cam_frames_per_s": 2013.0540808140167,
+      "host_callbacks": 0,
+      "send_recv_ops": 0,
+      "gather_ops": 0
+    }
+  ],
+  "showcase_6cam_960x1080_ms": 363.5781796668501,
+  "export_npz": "/dev/shm/zaychik-tpu-mjx-w6/out/vis/robotwin_bimanual_4k_data.npz"
+}
