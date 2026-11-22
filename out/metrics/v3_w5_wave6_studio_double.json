@@ -1,0 +1,329 @@
+{
+  "experiment": "v3_w5_wave6_studio_double",
+  "device_kind": "TPU v5",
+  "n_devices": 4,
+  "scenes": {
+    "fishy_cat": {
+      "title": "Blender Fishy Cat (Stylized DOF/Fur/Water)",
+      "scene_meta": {
+        "scene_name": "fishy_cat",
+        "verts": 547298,
+        "tris": 906728,
+        "n_materials": 5,
+        "n_textures": 1,
+        "tex_res": "512x512",
+        "n_lights": 2,
+        "n_blas_meshes": 17,
+        "n_instances": 7255,
+        "cam_fovy": 11.14,
+        "native_res": "1120x512@100%"
+      },
+      "bvh_stats": {
+        "n_tris_orig": 906728,
+        "n_leaves": 7084,
+        "n_l1": 111,
+        "n_l2": 2,
+        "bvh_build_s": 1.262
+      },
+      "parity": {
+        "hero_z_mae_m": 1.2172256708145142,
+        "hero_z_med_m": 0.025787353515625,
+        "hero_fg_match": 0.9302211216517857,
+        "hero_z_dof_raw": {
+          "z_mae_m": 2.0118582248687744,
+          "z_med_m": 0.10776996612548828,
+          "fg_match": 0.9101736886160714
+        },
+        "hlo": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 0,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 1203,
+          "send_recv_ops": 0
+        }
+      },
+      "neural_relighting": {
+        "arch": "IrradianceNRC3S_Demod_W128",
+        "n_params": 8077062,
+        "epochs": 240,
+        "train_time_s": 86.36,
+        "cal_scale": 0.998631,
+        "orbit_test": {
+          "res": "560x256",
+          "n_views": 5,
+          "stage1_psnr_db": 11.2043,
+          "neural_psnr_db": 28.8019,
+          "psnr_gain_db": 17.5976,
+          "neural_ssim": 0.95921,
+          "neural_msssim": 0.96052,
+          "lum_rel": 0.002538
+        },
+        "hero_official_plus_orbit": {
+          "res": "1120x512",
+          "n_views": 5,
+          "view0_stage1_psnr_db": 11.1144,
+          "view0_neural_psnr_db": 26.2697,
+          "view0_ssim": 0.92883,
+          "view0_msssim": 0.92936,
+          "view0_lum_rel": 0.024633,
+          "all_hero_neural_psnr_db": 26.4061,
+          "all_hero_ssim": 0.9296,
+          "all_hero_msssim": 0.92839,
+          "all_hero_lum_rel": 0.014639
+        }
+      },
+      "benchmarks": [
+        {
+          "resolution": "1120x512",
+          "batch_size": 1,
+          "n_chips": 1,
+          "stage2": false,
+          "dt_ms": 287.805,
+          "img_per_sec": 3.475,
+          "mpix_per_sec": 1.99,
+          "host_callbacks": 0,
+          "send_recv_ops": 0
+        },
+        {
+          "resolution": "1120x512",
+          "batch_size": 1,
+          "n_chips": 1,
+          "stage2": true,
+          "dt_ms": 305.637,
+          "img_per_sec": 3.272,
+          "mpix_per_sec": 1.88,
+          "host_callbacks": 0,
+          "send_recv_ops": 0
+        },
+        {
+          "resolution": "1120x512",
+          "batch_size": 4,
+          "n_chips": 4,
+          "stage2": false,
+          "dt_ms": 377.427,
+          "img_per_sec": 10.598,
+          "mpix_per_sec": 6.08,
+          "host_callbacks": 0,
+          "send_recv_ops": 0
+        },
+        {
+          "resolution": "1120x512",
+          "batch_size": 4,
+          "n_chips": 4,
+          "stage2": true,
+          "dt_ms": 395.54,
+          "img_per_sec": 10.113,
+          "mpix_per_sec": 5.8,
+          "host_callbacks": 0,
+          "send_recv_ops": 0
+        },
+        {
+          "resolution": "1920x1080",
+          "batch_size": 4,
+          "n_chips": 4,
+          "stage2": false,
+          "dt_ms": 1118.116,
+          "img_per_sec": 3.577,
+          "mpix_per_sec": 7.42,
+          "host_callbacks": 0,
+          "send_recv_ops": 0
+        },
+        {
+          "resolution": "1920x1080",
+          "batch_size": 4,
+          "n_chips": 4,
+          "stage2": true,
+          "dt_ms": 1202.222,
+          "img_per_sec": 3.327,
+          "mpix_per_sec": 6.9,
+          "host_callbacks": 0,
+          "send_recv_ops": 0
+        },
+        {
+          "resolution": "3840x2160",
+          "batch_size": 4,
+          "n_chips": 4,
+          "stage2": false,
+          "dt_ms": 3961.548,
+          "img_per_sec": 1.01,
+          "mpix_per_sec": 8.37,
+          "host_callbacks": 0,
+          "send_recv_ops": 0
+        },
+        {
+          "resolution": "3840x2160",
+          "batch_size": 4,
+          "n_chips": 4,
+          "stage2": true,
+          "dt_ms": 4250.025,
+          "img_per_sec": 0.941,
+          "mpix_per_sec": 7.81,
+          "host_callbacks": 0,
+          "send_recv_ops": 0
+        }
+      ]
+    },
+    "monster_sss": {
+      "title": "Blender Monster Under the Bed (Cycles SSS/Wood)",
+      "scene_meta": {
+        "scene_name": "monster_sss",
+        "verts": 801257,
+        "tris": 1602400,
+        "n_materials": 19,
+        "n_textures": 13,
+        "tex_res": "512x512",
+        "n_lights": 9,
+        "n_blas_meshes": 33,
+        "n_instances": 36,
+        "cam_fovy": 23.913,
+        "native_res": "1024x1024@100%"
+      },
+      "bvh_stats": {
+        "n_tris_orig": 1602400,
+        "n_leaves": 12519,
+        "n_l1": 196,
+        "n_l2": 4,
+        "bvh_build_s": 2.474
+      },
+      "parity": {
+        "hero_z_mae_m": 0.00012119223538320512,
+        "hero_z_med_m": 1.9073486328125e-06,
+        "hero_fg_match": 1.0,
+        "hero_z_dof_raw": null,
+        "hlo": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 0,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 1467,
+          "send_recv_ops": 0
+        }
+      },
+      "neural_relighting": {
+        "arch": "IrradianceNRC3S_Demod_W128",
+        "n_params": 8077062,
+        "epochs": 240,
+        "train_time_s": 169.26,
+        "cal_scale": 0.999815,
+        "orbit_test": {
+          "res": "512x512",
+          "n_views": 6,
+          "stage1_psnr_db": 11.866,
+          "neural_psnr_db": 36.9843,
+          "psnr_gain_db": 25.1183,
+          "neural_ssim": 0.96695,
+          "neural_msssim": 0.97647,
+          "lum_rel": -3.7e-05
+        },
+        "hero_official_plus_orbit": {
+          "res": "1024x1024",
+          "n_views": 5,
+          "view0_stage1_psnr_db": 11.8084,
+          "view0_neural_psnr_db": 35.3378,
+          "view0_ssim": 0.95466,
+          "view0_msssim": 0.96527,
+          "view0_lum_rel": -0.005275,
+          "all_hero_neural_psnr_db": 35.0052,
+          "all_hero_ssim": 0.95334,
+          "all_hero_msssim": 0.96394,
+          "all_hero_lum_rel": -0.00597
+        }
+      },
+      "benchmarks": [
+        {
+          "resolution": "1024x1024",
+          "batch_size": 1,
+          "n_chips": 1,
+          "stage2": false,
+          "dt_ms": 296.056,
+          "img_per_sec": 3.378,
+          "mpix_per_sec": 3.54,
+          "host_callbacks": 0,
+          "send_recv_ops": 0
+        },
+        {
+          "resolution": "1024x1024",
+          "batch_size": 1,
+          "n_chips": 1,
+          "stage2": true,
+          "dt_ms": 396.639,
+          "img_per_sec": 2.521,
+          "mpix_per_sec": 2.64,
+          "host_callbacks": 0,
+          "send_recv_ops": 0
+        },
+        {
+          "resolution": "1024x1024",
+          "batch_size": 4,
+          "n_chips": 4,
+          "stage2": false,
+          "dt_ms": 296.672,
+          "img_per_sec": 13.483,
+          "mpix_per_sec": 14.14,
+          "host_callbacks": 0,
+          "send_recv_ops": 0
+        },
+        {
+          "resolution": "1024x1024",
+          "batch_size": 4,
+          "n_chips": 4,
+          "stage2": true,
+          "dt_ms": 397.306,
+          "img_per_sec": 10.068,
+          "mpix_per_sec": 10.56,
+          "host_callbacks": 0,
+          "send_recv_ops": 0
+        },
+        {
+          "resolution": "1920x1080",
+          "batch_size": 4,
+          "n_chips": 4,
+          "stage2": false,
+          "dt_ms": 525.202,
+          "img_per_sec": 7.616,
+          "mpix_per_sec": 15.79,
+          "host_callbacks": 0,
+          "send_recv_ops": 0
+        },
+        {
+          "resolution": "1920x1080",
+          "batch_size": 4,
+          "n_chips": 4,
+          "stage2": true,
+          "dt_ms": 609.651,
+          "img_per_sec": 6.561,
+          "mpix_per_sec": 13.61,
+          "host_callbacks": 0,
+          "send_recv_ops": 0
+        },
+        {
+          "resolution": "3840x2160",
+          "batch_size": 4,
+          "n_chips": 4,
+          "stage2": false,
+          "dt_ms": 2034.651,
+          "img_per_sec": 1.966,
+          "mpix_per_sec": 16.31,
+          "host_callbacks": 0,
+          "send_recv_ops": 0
+        },
+        {
+          "resolution": "3840x2160",
+          "batch_size": 4,
+          "n_chips": 4,
+          "stage2": true,
+          "dt_ms": 2322.415,
+          "img_per_sec": 1.722,
+          "mpix_per_sec": 14.29,
+          "host_callbacks": 0,
+          "send_recv_ops": 0
+        }
+      ]
+    }
+  }
+}
