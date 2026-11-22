@@ -365,8 +365,15 @@ def make_stratified_3d_poses(ds, B: int, K_inst: int):
 
   base_oxp = _tile(ds["obj_xpos"])
   base_oxm = _tile(ds["obj_xmat"])
-  cxp = jnp.asarray(_tile(ds["cam_xpos"]))
-  cxm = jnp.asarray(_tile(ds["cam_xmat"]))
+  # Frame the entire 3D instanced lattice cleanly without sitting inside any pedestal
+  cpos_h = np.array([2.4, -2.2, 1.8], dtype=np.float32)
+  ctgt_h = np.array([0.0, 0.5, 0.3], dtype=np.float32)
+  fwd_h = ctgt_h - cpos_h; fwd_h /= np.linalg.norm(fwd_h)
+  r_h = np.cross(fwd_h, np.array([0.0, 0.0, 1.0], np.float32)); r_h /= np.linalg.norm(r_h)
+  u_h = np.cross(r_h, fwd_h)
+  cmat_h = np.stack([r_h, u_h, -fwd_h], axis=1).astype(np.float32)
+  cxp = jnp.asarray(np.broadcast_to(cpos_h[None, :], (B, 3)).copy())
+  cxm = jnp.asarray(np.broadcast_to(cmat_h[None, :, :], (B, 3, 3)).copy())
 
   ixp_l, ixm_l = [], []
   for m in range(3):
@@ -411,6 +418,9 @@ def run_w3_tlas_1b_10b_4c(out_path: str, png_8k_path: str, png_crop_path: str, c
 
   if configs is None:
     configs = [(96, 16, 4), (960, 30, 4), (9600, 64, 4)]
+  else:
+    k_set = {c[0] for c in configs}
+    data["track_3b_tlas2_billion_8k"] = [r for r in data["track_3b_tlas2_billion_8k"] if r.get("k_instances") not in k_set]
   # Test K_inst = 96 (1.02B), 960 (10.22B), and 9600 (102.18B effective tris) at 4K & Spatial-Sharded 8K!
   for K_inst, grp_sz, top_g in configs:
     eff_tris = blas_tris * K_inst
@@ -519,25 +529,32 @@ def run_w3_sponza_megascene(out_path: str, png_4k_path: str):
     bucket_faces[b].append(f + bucket_voff[b])
     bucket_voff[b] += vz.shape[0]
 
-  # Subdivide Sponza architectural buckets by k=20 (262,267 * 400 = 104,906,800 unique tris!)
-  items_meta, dev_c = [], []
-  hbm_b = 0
-  t_b0 = time.perf_counter()
-  mid = 0
-  for b in range(8):
-    if not bucket_verts[b]:
-      continue
-    vb = np.vstack(bucket_verts[b])
-    fb = np.vstack(bucket_faces[b])
+  # Subdivide Sponza architectural buckets by k=20 (262,267 * 400 = 104,906,800 unique tris!) in parallel
+  def _build_sponza_bucket(b_idx: int):
+    vb = np.vstack(bucket_verts[b_idx])
+    fb = np.vstack(bucket_faces[b_idx])
     nv, nf, nn = subdivide_mesh_barycentric(vb, fb, 20)
     del vb, fb
-    it = build_compact_bvh_mesh_item(mid, {"name": f"sponza_b{b}", "verts": nv, "faces": nf, "vert_normals": nn, "rgba": arch_palette[b]}, "spatial_l1_morton")
+    it = build_compact_bvh_mesh_item(b_idx, {"name": f"sponza_b{b_idx}", "verts": nv, "faces": nf, "vert_normals": nn, "rgba": arch_palette[b_idx]}, "spatial_l1_morton")
     del nv, nf, nn
+    return it
+
+  active_b = [b for b in range(8) if bucket_verts[b]]
+  t_b0 = time.perf_counter()
+  with ThreadPoolExecutor(max_workers=len(active_b)) as ex:
+    built_buckets = list(ex.map(_build_sponza_bucket, active_b))
+
+  items_meta, dev_c = [], []
+  hbm_b = 0
+  mid = 0
+  for it in built_buckets:
+    it = dataclasses.replace(it, mesh_id=mid)
     hbm_b += it.l2_roots_aabb.nbytes + it.l2_aabbs.nbytes + it.l0_aabbs.nbytes + it.leaf_bank.nbytes
     dev_c.append((jax.device_put(it.l2_roots_aabb, rep), jax.device_put(it.l2_aabbs, rep), jax.device_put(it.l0_aabbs, rep), jax.device_put(it.leaf_bank, rep)))
     items_meta.append(_strip(it))
     mid += 1
-    gc.collect()
+  del built_buckets
+  gc.collect()
 
   # Plus high-poly interior hero statue inside the colonnade atrium (k=32 -> ~3.8M tris)
   suz_nv, suz_nf, suz_nn = subdivide_mesh_barycentric(base_meshes[0]["verts"] * 8.0, base_meshes[0]["faces"], 32)
@@ -589,7 +606,7 @@ def run_w3_sponza_megascene(out_path: str, png_4k_path: str):
       img.save(png_4k_path)
       print(f"Saved Sponza Megascene 4K PNG to {png_4k_path} ({img.size})", flush=True)
 
-    n_steps = 2
+    n_steps = 1
     t0 = time.perf_counter()
     for _ in range(n_steps):
       rgb = fn_sp(oxp_r, oxm_r, cxp_r, cxm_r)

@@ -1,0 +1,36 @@
+{
+  "experiment": "v3_w7_cinema_pt_showcase",
+  "scene": "lone_monk",
+  "tris": 5610618,
+  "tex_atlas_shape": [
+    5,
+    512,
+    512,
+    4
+  ],
+  "n_local_lights": 1,
+  "has_sun": false,
+  "exposure": 0.18,
+  "res": "504x896",
+  "gt_res": "504x896",
+  "n_chips": 4,
+  "spp": 128,
+  "max_bounces": 4,
+  "compile_s": 125.11,
+  "ms": 13610.3,
+  "images_per_sec": 0.073,
+  "samples_per_min": 564.3,
+  "psnr_vs_cycles_5_3_db": 10.91,
+  "ssim_vs_cycles_5_3": 0.2066,
+  "hlo_zero_copy": true,
+  "hlo_ops": {
+    "host_callbacks": 0,
+    "dot_ops": 0,
+    "conv_ops": 0,
+    "while_ops": 2,
+    "gather_ops": 0,
+    "custom_calls": 0,
+    "hlo_lines": 5197,
+    "send_recv_ops": 0
+  }
+}

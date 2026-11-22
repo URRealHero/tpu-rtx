@@ -1286,6 +1286,8 @@ def render_cycles_gt_and_depth(
     hero_png_path: Optional[str] = None,
     phase_offset: float = 0.0,
     include_hero: bool = True,
+    max_yaw: float = 0.14,
+    max_pitch: float = 0.08,
 ) -> None:
   """Render Cycles 5.3.0 RGB GT (scene native color management) + EXR Z-depth inside Blender."""
   assert HAS_BPY, "render_cycles_gt_and_depth must run inside Blender"
@@ -1294,7 +1296,8 @@ def render_cycles_gt_and_depth(
   cam_obj = scene.camera or next(o for o in bpy.data.objects if o.type == "CAMERA")
 
   cam_xpos, cam_xmat = _generate_perturbed_views_in_blender(
-      scene, pack.cam_pos, pack.cam_xmat, n_views, phase_offset=phase_offset, include_hero=include_hero
+      scene, pack.cam_pos, pack.cam_xmat, n_views,
+      phase_offset=phase_offset, max_yaw=max_yaw, max_pitch=max_pitch, include_hero=include_hero,
   )
 
   scene.render.engine = "CYCLES"
@@ -1318,6 +1321,8 @@ def render_cycles_gt_and_depth(
   bpy.context.view_layer.use_pass_z = True
   orig_use_comp = bool(scene.render.use_compositing)
   scene.render.use_compositing = True
+  if hasattr(scene.render, "compositor_device"):
+    scene.render.compositor_device = "CPU"
   orig_comp = getattr(scene, "compositing_node_group", None)
   ng = bpy.data.node_groups.new("BlendCompilerDepthComp", "CompositorNodeTree")
   scene.compositing_node_group = ng
@@ -1346,6 +1351,7 @@ def render_cycles_gt_and_depth(
     ))
     if k == 1:
       scene.compositing_node_group = orig_comp
+      scene.render.use_compositing = orig_use_comp
     png_p = os.path.join(tmpdir, f"view_{k:03d}.png")
     scene.render.filepath = png_p
     bpy.ops.render.render(write_still=True)
@@ -1493,6 +1499,8 @@ def _main_blender():
   ap.add_argument("--orbit_h", type=int, default=256)
   ap.add_argument("--orbit_spp", type=int, default=32)
   ap.add_argument("--orbit_views", type=int, default=24)
+  ap.add_argument("--max_yaw", type=float, default=0.14)
+  ap.add_argument("--max_pitch", type=float, default=0.08)
   args = ap.parse_args(argv)
 
   pack = compile_active_blend(scene_name=args.scene_name, max_tex_res=args.max_tex_res)
@@ -1503,12 +1511,14 @@ def _main_blender():
     render_cycles_gt_and_depth(
         pack, args.orbit_npz, width=args.orbit_w, height=args.orbit_h,
         samples=args.orbit_spp, n_views=args.orbit_views, phase_offset=0.0, include_hero=True,
+        max_yaw=args.max_yaw, max_pitch=args.max_pitch,
     )
   if args.gt_npz:
     render_cycles_gt_and_depth(
         pack, args.gt_npz, width=args.gt_w, height=args.gt_h,
         samples=args.gt_spp, n_views=args.n_views, hero_png_path=args.hero_png,
         phase_offset=0.37, include_hero=True,
+        max_yaw=args.max_yaw, max_pitch=args.max_pitch,
     )
 
 

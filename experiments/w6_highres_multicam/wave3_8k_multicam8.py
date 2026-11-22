@@ -254,7 +254,7 @@ def pallas_raycast_ncam_v2(
   plane_fx = tuple(float(s0.geom_size[g, 0]) > 0.0 for g in gids)
   plane_fy = tuple(float(s0.geom_size[g, 1]) > 0.0 for g in gids)
   znear_f = float(s0.znear)
-  do_in_vmem_shadow = (shadow_l_idx >= 0) and (G <= 36)
+  do_in_vmem_shadow = (shadow_l_idx >= 0) and (G <= 56)
 
   def _ncam_kernel(
       cam_ref, lray_ref, gf_ref, light_ref,
@@ -423,7 +423,7 @@ def pallas_raycast_ncam_v2(
   ]
 
 
-def run_8k_spatial_4c(neural_ckpt: str, out_json: str, export_dir: str, scene_filter: Optional[List[str]] = None) -> Dict[str, Any]:
+def run_8k_spatial_4c(neural_ckpt: str, out_json: str, export_dir: str, scene_filter: Optional[List[str]] = None, m2_filter: str = "both") -> Dict[str, Any]:
   """Benchmark 8K UHD (7680x4320, 33.18M px) Stage 1 & Stage 1+2 (BF16) on 4-chip spatial split."""
   pallas_interp = (jax.default_backend() == "cpu")
   devs = jax.devices()[:4]
@@ -481,7 +481,8 @@ def run_8k_spatial_4c(neural_ckpt: str, out_json: str, export_dir: str, scene_fi
     mx_rep = jax.device_put(mx, rep_sp)
     params_rep = jax.device_put(params_m2, rep_sp)
 
-    for with_m2 in (False, True):
+    m2_flags = (False, True) if m2_filter == "both" else ((False,) if m2_filter == "s1" else (True,))
+    for with_m2 in m2_flags:
       def _sp_fn(d_1, u_1, mx_l, prm, lr_s, lds, los, nzs):
         dn = jax.vmap(lambda x, c: mjx.step(mx_l, x.replace(ctrl=c)))(d_1, u_1)
         gb = _pallas_raycast_strip(
@@ -720,6 +721,7 @@ def main():
   ap.add_argument("--n_chips", type=int, default=4)
   ap.add_argument("--res_list", type=int, nargs="*", default=None)
   ap.add_argument("--scenes", nargs="*", default=None)
+  ap.add_argument("--m2_filter", default="both", choices=["both", "s1", "m2"])
   ap.add_argument("--neural_ckpt", default="/dev/shm/zaychik-tpu-mjx/out/metrics/M2_spatial_128_params.pkl")
   ap.add_argument("--out_json", required=True)
   ap.add_argument("--export_dir", default="/dev/shm/zaychik-tpu-mjx-w6/out/vis")
@@ -728,7 +730,7 @@ def main():
 
   os.makedirs(os.path.dirname(args.out_json) or ".", exist_ok=True)
   if args.phase == "8k":
-    res = run_8k_spatial_4c(args.neural_ckpt, args.out_json, args.export_dir, scene_filter=args.scenes)
+    res = run_8k_spatial_4c(args.neural_ckpt, args.out_json, args.export_dir, scene_filter=args.scenes, m2_filter=args.m2_filter)
   elif args.phase == "ncam":
     res = {"n_chips": args.n_chips, "ncam_runs": run_ncam_suite(args.n_chips, res_filter=args.res_list, out_json=args.out_json)}
   elif args.phase == "grid4k":

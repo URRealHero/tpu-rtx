@@ -38,9 +38,10 @@ from bvh_pbr_pt import (
     _sample_ggx_half,
     _smith_g1,
     audit_hlo_zero_copy,
+    build_pbr_wide_bvh,
     pbr_raycast_tpu,
 )
-from complex_scenes_pt import MeshBuilder, _look_at_mat, build_classroom_sunlit
+from complex_scenes_pt import MeshBuilder, _look_at_mat
 
 
 @dataclasses.dataclass(frozen=True)
@@ -50,20 +51,20 @@ class CausticConfig:
   n_light_rays_h: int = 512
   n_light_rays_w: int = 1024
   bounds_xy: Tuple[float, float, float, float] = (-1.45, 1.45, -1.45, 1.45)
-  target_xy_bounds: Tuple[float, float, float, float] = (-0.92, 0.92, -0.78, 0.72)
-  caustic_power: float = 4.6
+  target_xy_bounds: Tuple[float, float, float, float] = (-0.85, 0.85, -0.78, 0.65)
+  caustic_power: float = 42.0
 
 
 @dataclasses.dataclass(frozen=True)
 class VolumetricConfig:
   enabled: bool = False
-  sigma_t: float = 0.088
-  scatter_albedo: float = 0.92
-  hg_g: float = 0.78
-  height_scale: float = 2.8
+  sigma_t: float = 0.075
+  scatter_albedo: float = 0.94
+  hg_g: float = 0.72
+  height_scale: float = 3.2
   n_steps: int = 28
-  max_dist: float = 9.0
-  multi_scatter_boost: float = 0.04
+  max_dist: float = 10.0
+  multi_scatter_boost: float = 0.0
 
 
 def _henyey_greenstein(cos_theta: jax.Array, g: float) -> jax.Array:
@@ -232,7 +233,9 @@ def _tpu_joint_atrous_denoise(
       nbr_sq = nbr_sq + sl * sl
   nbr_mu = nbr_sum / 8.0
   nbr_std = jnp.sqrt(jnp.maximum(nbr_sq / 8.0 - nbr_mu * nbr_mu, 0.0))
-  lum_cap = jnp.where(spec_mask > 0.5, lum, jnp.minimum(lum, nbr_mu + 3.0 * nbr_std + 0.12))
+  # Strong single-pixel firefly suppression even inside glass/metallic reflections
+  cap_thresh = jnp.where(spec_mask > 0.5, nbr_mu + 2.6 * nbr_std + 0.22, nbr_mu + 2.8 * nbr_std + 0.10)
+  lum_cap = jnp.minimum(lum, cap_thresh)
   scale_ff = jnp.where(lum > 1e-6, lum_cap / jnp.maximum(lum, 1e-6), 1.0)
   cur = rad_lin * scale_ff[..., None]
 
@@ -570,11 +573,11 @@ def build_physical_fx_pathtracer(
 
         cos_hg = jnp.sum(rd0 * sun_d[None, None, :], axis=-1)[:, None, :]
         phase_hg = _henyey_greenstein(cos_hg, v_cfg.hg_g)
-        # Single-scattering sunbeams + crisp low-haze 2nd-order scattering
+        # Single-scattering sunbeams (zero milky ambient haze in shadows!)
         in_scat_single = T_k[..., None] * sigma_s_k[..., None] * phase_hg[..., None] * sun_emit[None, None, None, :] * vis_vol[..., None]
-        ambient_scat = jnp.array([0.014, 0.018, 0.026], dtype=jnp.float32)[None, None, None, :]
-        in_scat_multi = T_k[..., None] * sigma_s_k[..., None] * v_cfg.multi_scatter_boost * (
-            ambient_scat + 0.03 * sun_emit[None, None, None, :] * (0.10 + 0.90 * vis_vol[..., None])
+        ambient_scat = jnp.array([0.002, 0.003, 0.005], dtype=jnp.float32)[None, None, None, :]
+        in_scat_multi = T_k[..., None] * sigma_s_k[..., None] * (
+            ambient_scat + v_cfg.multi_scatter_boost * sun_emit[None, None, None, :] * vis_vol[..., None]
         )
         L_vol = jnp.sum((in_scat_single + in_scat_multi) * dt[:, None, :, None], axis=1)
         final_rad = T_surf[..., None] * final_rad + L_vol
@@ -631,6 +634,69 @@ def build_physical_fx_pathtracer(
   return render_fn, mesh, rep
 
 
+class CinemaMeshBuilder(MeshBuilder):
+  """MeshBuilder supporting exact flat-face normals for boxes/tiles and smooth normals for curved glass."""
+
+  def __init__(self):
+    super().__init__()
+    self.vnorms: List[np.ndarray] = []
+
+  def add_mesh(self, v, f, albedo, roughness, mat_code, smooth: bool = True):
+    v = np.asarray(v, dtype=np.float32)
+    f = np.asarray(f, dtype=np.int32)
+    if smooth:
+      v0, v1, v2 = v[f[:, 0]], v[f[:, 1]], v[f[:, 2]]
+      fn = np.cross(v1 - v0, v2 - v0)
+      vn = np.empty((v.shape[0], 3), dtype=np.float32)
+      ff = f.ravel()
+      for c in range(3):
+        vn[:, c] = np.bincount(ff, weights=np.repeat(fn[:, c], 3), minlength=v.shape[0])
+      vn = vn / np.maximum(np.linalg.norm(vn, axis=-1, keepdims=True), 1e-12)
+      self.vnorms.append(vn.astype(np.float32))
+      super().add_mesh(v, f, albedo, roughness, mat_code)
+    else:
+      # Unshare corners so flat faces have exact flat face normals (zero corner pillow-shading!)
+      v_u = v[f.ravel()]
+      fn = np.cross(v_u[1::3] - v_u[0::3], v_u[2::3] - v_u[0::3])
+      fn = fn / np.maximum(np.linalg.norm(fn, axis=-1, keepdims=True), 1e-12)
+      n_u = np.repeat(fn, 3, axis=0).astype(np.float32)
+      f_u = np.arange(v_u.shape[0], dtype=np.int32).reshape(-1, 3)
+      self.vnorms.append(n_u)
+      super().add_mesh(v_u, f_u, albedo, roughness, mat_code)
+
+  def add_box(self, center, half_extents, albedo, roughness=0.6, mat_code=0.0, rot_euler=(0.0, 0.0, 0.0)):
+    hx, hy, hz = half_extents
+    v = np.array([
+        [-hx, -hy, -hz], [hx, -hy, -hz], [hx, hy, -hz], [-hx, hy, -hz],
+        [-hx, -hy, hz], [hx, -hy, hz], [hx, hy, hz], [-hx, hy, hz],
+    ], dtype=np.float32)
+    f = np.array([
+        [0, 2, 1], [0, 3, 2], [4, 5, 6], [4, 6, 7],
+        [0, 1, 5], [0, 5, 4], [2, 3, 7], [2, 7, 6],
+        [0, 4, 7], [0, 7, 3], [1, 2, 6], [1, 6, 5],
+    ], dtype=np.int32)
+    rx, ry, rz = rot_euler
+    if rx != 0.0 or ry != 0.0 or rz != 0.0:
+      cx, sx = math.cos(rx), math.sin(rx)
+      cy, sy = math.cos(ry), math.sin(ry)
+      cz, sz = math.cos(rz), math.sin(rz)
+      Rx = np.array([[1, 0, 0], [0, cx, -sx], [0, sx, cx]], dtype=np.float32)
+      Ry = np.array([[cy, 0, sy], [0, 1, 0], [-sy, 0, cy]], dtype=np.float32)
+      Rz = np.array([[cz, -sz, 0], [sz, cz, 0], [0, 0, 1]], dtype=np.float32)
+      v = v @ (Rz @ Ry @ Rx).T
+    v = v + np.asarray(center, dtype=np.float32)[None, :]
+    self.add_mesh(v, f, albedo, roughness, mat_code, smooth=False)
+
+  def build(self, name: str) -> PBRWideBVHMesh:
+    v = np.concatenate(self.verts, axis=0)
+    f = np.concatenate(self.faces, axis=0)
+    n = np.concatenate(self.vnorms, axis=0)
+    a = np.concatenate(self.albs, axis=0)
+    r = np.concatenate(self.rghs, axis=0)
+    m = np.concatenate(self.mcodes, axis=0)
+    return build_pbr_wide_bvh(name, v, f, a, r, m, vert_normals=n)
+
+
 def _add_crystal_goblet(mb: MeshBuilder, center_xy: Tuple[float, float], z0: float = 0.0,
                         albedo: Tuple[float, float, float] = (0.94, 0.98, 1.0),
                         mat_code: float = 2.04, n_seg: int = 64):
@@ -677,53 +743,119 @@ def _add_crystal_goblet(mb: MeshBuilder, center_xy: Tuple[float, float], z0: flo
 
 
 def build_caustics_studio_scene():
-  """Optical Glass & Caustics Studio: Crown/Emerald/Amber Beer-Lambert spheres + goblet + chrome."""
-  mb = MeshBuilder()
-  # Dark charcoal-slate & warm walnut architectural tile floor (high contrast for glowing caustics!)
+  """Optical Glass & Caustics Studio: Angled key spotlight casting razor-sharp caustics across tile floor."""
+  mb = CinemaMeshBuilder()
+  # Solid sub-floor + seamless charcoal-slate & warm walnut architectural tile floor (zero cracks!)
+  mb.add_box((0.0, 0.0, -0.06), (1.50, 1.50, 0.03), (0.12, 0.12, 0.14), roughness=0.35, mat_code=0.0)
   n_tx, n_ty = 8, 8
   for ix in range(n_tx):
     for iy in range(n_ty):
       tx = -1.45 + (ix + 0.5) * (2.90 / n_tx)
       ty = -1.45 + (iy + 0.5) * (2.90 / n_ty)
       is_dark = ((ix + iy) % 2) == 0
-      tile_col = (0.14, 0.14, 0.16) if is_dark else (0.28, 0.22, 0.17)
-      mb.add_box((tx, ty, -0.04), (2.90 / n_tx * 0.496, 2.90 / n_ty * 0.496, 0.04), tile_col, roughness=0.26, mat_code=0.0)
+      tile_col = (0.14, 0.14, 0.16) if is_dark else (0.30, 0.23, 0.17)
+      mb.add_box((tx, ty, -0.04), (2.90 / n_tx * 0.5005, 2.90 / n_ty * 0.5005, 0.04), tile_col, roughness=0.28, mat_code=0.0)
 
-  # Enclosed Cornell Optical Room (rich architectural tones, no blown-out white)
+  # Enclosed Cornell Optical Room
   wall_back = (0.34, 0.33, 0.31)
-  mb.add_box((0.0, 0.0, 2.39), (1.50, 1.50, 0.04), (0.28, 0.28, 0.28), roughness=0.78, mat_code=0.0)       # Ceiling
+  mb.add_box((0.0, 0.0, 2.39), (1.50, 1.50, 0.04), (0.28, 0.28, 0.29), roughness=0.78, mat_code=0.0)       # Ceiling
   mb.add_box((0.0, 1.49, 1.175), (1.50, 0.04, 1.22), wall_back, roughness=0.72, mat_code=0.0)              # Back wall
-  mb.add_box((-1.49, 0.0, 1.175), (0.04, 1.50, 1.22), (0.50, 0.11, 0.10), roughness=0.70, mat_code=0.0)    # Crimson left
-  mb.add_box((1.49, 0.0, 1.175), (0.04, 1.50, 1.22), (0.10, 0.38, 0.52), roughness=0.70, mat_code=0.0)     # Deep teal right
-  # Tight overhead tungsten spotlight housing
-  mb.add_box((0.24, -0.16, 2.33), (0.10, 0.10, 0.015), (1.0, 0.94, 0.84), roughness=0.2, mat_code=3.6)
+  mb.add_box((-1.49, 0.0, 1.175), (0.04, 1.50, 1.22), (0.56, 0.13, 0.11), roughness=0.70, mat_code=0.0)    # Crimson left
+  mb.add_box((1.49, 0.0, 1.175), (0.04, 1.50, 1.22), (0.11, 0.42, 0.56), roughness=0.70, mat_code=0.0)     # Deep teal right
+  mb.add_box((-1.05, 0.80, 1.62), (0.07, 0.07, 0.015), (1.0, 0.94, 0.84), roughness=0.2, mat_code=3.6)
 
-  # 1. Clear Crown Crystal Sphere (IOR=1.52, very low Beer-Lambert absorption)
-  mb.add_sphere((-0.44, 0.10, 0.33), 0.33, (0.96, 0.98, 1.0), roughness=0.015, mat_code=2.0, n_lat=48, n_lon=96)
-  # 2. Emerald Beer-Lambert Crystal Sphere (IOR=1.58, emerald absorption)
-  mb.add_sphere((0.46, 0.18, 0.27), 0.27, (0.18, 0.96, 0.44), roughness=0.015, mat_code=2.2, n_lat=48, n_lon=96)
-  # 3. Amber Glass Cylinder Lens (IOR=1.62, warm amber Beer-Lambert absorption)
-  mb.add_cylinder((-0.02, -0.50, 0.0), 0.20, 0.31, (0.99, 0.56, 0.12), roughness=0.015, mat_code=2.33, n_seg=64)
-  # 4. Crystal Wine Goblet / Chalice (IOR=1.53, subtle ice-blue crystal)
-  _add_crystal_goblet(mb, (0.02, 0.36), z0=0.0, albedo=(0.94, 0.98, 1.0), mat_code=2.04, n_seg=64)
+  # 1. Clear Crown Crystal Sphere (IOR=1.52)
+  mb.add_sphere((-0.46, 0.18, 0.33), 0.33, (0.97, 0.99, 1.0), roughness=0.015, mat_code=2.0, n_lat=48, n_lon=96)
+  # 2. Emerald Beer-Lambert Crystal Sphere (IOR=1.58)
+  mb.add_sphere((0.36, 0.24, 0.27), 0.27, (0.18, 0.96, 0.44), roughness=0.015, mat_code=2.2, n_lat=48, n_lon=96)
+  # 3. Amber Glass Cylinder Lens (IOR=1.62)
+  mb.add_cylinder((-0.06, -0.44, 0.0), 0.20, 0.31, (0.99, 0.58, 0.12), roughness=0.015, mat_code=2.33, n_seg=64)
+  # 4. Crystal Wine Goblet / Chalice (IOR=1.53)
+  _add_crystal_goblet(mb, (-0.04, 0.44), z0=0.0, albedo=(0.95, 0.98, 1.0), mat_code=2.04, n_seg=64)
   # 5. Chrome Mirror Reference Sphere (back left)
-  mb.add_sphere((-0.82, 0.72, 0.24), 0.24, (0.94, 0.95, 0.97), roughness=0.02, mat_code=0.98, n_lat=36, n_lon=64)
+  mb.add_sphere((-0.84, 0.82, 0.24), 0.24, (0.94, 0.95, 0.97), roughness=0.02, mat_code=0.98, n_lat=36, n_lon=64)
   # 6. Matte Terracotta accent cube
   mb.add_box((0.86, -0.34, 0.12), (0.12, 0.12, 0.12), (0.82, 0.30, 0.20), roughness=0.45, mat_code=0.05, rot_euler=(0, 0, 0.45))
 
   bvh = mb.build("caustics_beer_lambert_studio")
-  cxp, cxm = _look_at_mat((0.0, -2.55, 1.15), (0.02, 0.08, 0.26))
+  cxp, cxm = _look_at_mat((0.0, -2.55, 1.15), (0.04, 0.02, 0.24))
+  key_dir = np.array([0.12 - (-1.05), -0.22 - 0.80, 0.18 - 1.56], np.float32)
+  key_dir = key_dir / np.linalg.norm(key_dir)
   rig = LightRig(
-      area_center=(0.24, -0.16, 2.26),
-      area_normal=(-0.12, 0.10, -1.0),
-      area_radius=0.075,
-      area_emit=(135.0, 122.0, 102.0),
+      area_center=(-1.05, 0.80, 1.56),
+      area_normal=tuple(float(x) for x in key_dir),
+      area_radius=0.065,
+      area_emit=(320.0, 285.0, 235.0),
       has_sun=False,
-      sky_zenith=(0.10, 0.12, 0.18),
-      sky_horizon=(0.07, 0.08, 0.11),
-      exposure=0.88,
+      sky_zenith=(0.14, 0.16, 0.22),
+      sky_horizon=(0.10, 0.11, 0.14),
+      exposure=1.02,
   )
   return bvh, cxp, cxm, 44.0, 0.05, 20.0, rig
+
+
+def build_cathedral_godrays_scene():
+  """Dark Stone Cathedral Hall with tall slatted lancet windows casting dramatic golden God Rays."""
+  mb = CinemaMeshBuilder()
+  # Dark basalt & slate checkerboard floor (seamless + solid subfloor)
+  mb.add_box((0.0, 0.2, -0.06), (2.7, 3.05, 0.03), (0.10, 0.10, 0.11), roughness=0.4, mat_code=0.0)
+  for ix in range(10):
+    for iy in range(12):
+      tx = -2.6 + (ix + 0.5) * (5.2 / 10)
+      ty = -2.8 + (iy + 0.5) * (6.0 / 12)
+      col = (0.12, 0.12, 0.13) if (ix + iy) % 2 == 0 else (0.19, 0.16, 0.13)
+      mb.add_box((tx, ty, -0.04), (5.2 / 10 * 0.5005, 6.0 / 12 * 0.5005, 0.04), col, roughness=0.34, mat_code=0.0)
+
+  stone = (0.13, 0.13, 0.15)
+  dark_stone = (0.09, 0.09, 0.11)
+  # Back, front, right, ceiling enclosing dark cathedral hall
+  mb.add_box((0.0, 3.24, 1.8), (2.7, 0.05, 1.85), stone, roughness=0.82, mat_code=0.0)
+  mb.add_box((0.0, -2.84, 1.8), (2.7, 0.05, 1.85), stone, roughness=0.82, mat_code=0.0)
+  mb.add_box((2.64, 0.2, 1.8), (0.05, 3.05, 1.85), stone, roughness=0.82, mat_code=0.0)
+  mb.add_box((0.0, 0.2, 3.64), (2.7, 3.05, 0.05), dark_stone, roughness=0.85, mat_code=0.0)
+  # Ceiling beams
+  for by in [-1.8, -0.6, 0.6, 1.8]:
+    mb.add_box((0.0, by, 3.45), (2.6, 0.10, 0.16), (0.16, 0.11, 0.08), roughness=0.55, mat_code=0.0)
+
+  # West wall (x = -2.6) with 4 tall narrow lancet windows (y = -1.65, -0.55, 0.55, 1.65; z in [0.65, 3.05])
+  mb.add_box((-2.64, 0.2, 0.325), (0.10, 3.05, 0.325), dark_stone, roughness=0.80, mat_code=0.0)  # Sill
+  mb.add_box((-2.64, 0.2, 3.35), (0.10, 3.05, 0.30), dark_stone, roughness=0.80, mat_code=0.0)    # Header
+  # Stone piers between windows
+  pier_ys = [-2.50, -1.10, 0.00, 1.10, 2.50]
+  pier_hy = [0.40, 0.24, 0.24, 0.24, 0.45]
+  for py, hy in zip(pier_ys, pier_hy):
+    mb.add_box((-2.64, py, 1.85), (0.10, hy, 1.25), stone, roughness=0.78, mat_code=0.0)
+  # Horizontal stone mullions inside windows for crisp stacked godray beams
+  for wz in [1.35, 2.05, 2.65]:
+    mb.add_box((-2.62, 0.0, wz), (0.08, 2.25, 0.045), dark_stone, roughness=0.75, mat_code=0.0)
+
+  # Interior stone colonnade pillars + altar pedestal + gold orb catching sunbeam
+  for py in [-1.10, 0.00, 1.10]:
+    mb.add_cylinder((-1.35, py, 0.0), 0.12, 3.40, (0.20, 0.19, 0.21), roughness=0.72, mat_code=0.0, n_seg=24)
+  mb.add_box((0.25, 0.45, 0.42), (0.36, 0.36, 0.42), (0.22, 0.20, 0.19), roughness=0.55, mat_code=0.0)
+  mb.add_sphere((0.25, 0.45, 1.06), 0.22, (0.96, 0.76, 0.28), roughness=0.14, mat_code=0.95, n_lat=32, n_lon=64)
+  # Dark oak benches
+  for by in [-1.45, -0.35, 1.55]:
+    mb.add_box((0.85, by, 0.24), (0.65, 0.16, 0.03), (0.22, 0.14, 0.09), roughness=0.45, mat_code=0.0)
+    mb.add_box((0.35, by, 0.11), (0.04, 0.14, 0.11), (0.16, 0.10, 0.07), roughness=0.5, mat_code=0.0)
+    mb.add_box((1.35, by, 0.11), (0.04, 0.14, 0.11), (0.16, 0.10, 0.07), roughness=0.5, mat_code=0.0)
+
+  bvh = mb.build("dark_cathedral_godrays")
+  cxp, cxm = _look_at_mat((1.65, -2.45, 1.42), (-0.75, 0.45, 1.15))
+  rig = LightRig(
+      area_center=(0.2, 0.2, 3.45),
+      area_normal=(0.0, 0.0, -1.0),
+      area_radius=0.55,
+      area_emit=(0.45, 0.50, 0.62),
+      has_sun=True,
+      sun_dir=(-0.86, 0.16, 0.48),
+      sun_cos_half_angle=0.9994,
+      sun_emit=(72.0, 48.0, 20.0),
+      sky_zenith=(0.05, 0.08, 0.15),
+      sky_horizon=(0.04, 0.05, 0.08),
+      exposure=0.95,
+  )
+  return bvh, cxp, cxm, 48.0, 0.05, 25.0, rig
 
 
 def stitch_strip(out_arr: jax.Array) -> np.ndarray:
@@ -801,7 +933,7 @@ def main():
   ap = argparse.ArgumentParser()
   ap.add_argument("--res", type=int, default=640)
   ap.add_argument("--caustic_spp", type=int, default=192)
-  ap.add_argument("--vol_spp", type=int, default=64)
+  ap.add_argument("--vol_spp", type=int, default=128)
   ap.add_argument("--out_json", default="out/metrics/v3_w7_physical_fx.json")
   ap.add_argument("--out_png", default="out/figures/v3_w7_physical_fx_caustics_volumetrics.png")
   args = ap.parse_args()
@@ -829,30 +961,21 @@ def main():
   recs.append(r_c_full)
   panels.append((f"+ Forward Caustic Photon Focusing ({args.caustic_spp} spp + TPU Denoise | {r_c_full['ms']:.0f}ms)", img_c_full))
 
-  # (B) Volumetric Fog / Participating Media & God Rays Comparison (high-contrast moody interior)
-  bvh_v, cxp_v, cxm_v, fovy_v, zn_v, zf_v, rig_v = build_classroom_sunlit()
-  rig_v_god = dataclasses.replace(
-      rig_v,
-      sun_dir=(-0.82, -0.24, 0.44),
-      sun_emit=(48.0, 36.0, 21.0),
-      area_emit=(0.65, 0.58, 0.50),
-      sky_zenith=(0.08, 0.14, 0.26),
-      sky_horizon=(0.06, 0.08, 0.11),
-      exposure=0.84,
-  )
+  # (B) Volumetric Fog / Participating Media & God Rays Comparison (high-contrast dark stone cathedral)
+  bvh_v, cxp_v, cxm_v, fovy_v, zn_v, zf_v, rig_v = build_cathedral_godrays_scene()
   r_v_base, img_v_base = _run_config(
-      "atrium_surface_only_baseline", bvh_v, cxp_v, cxm_v, fovy_v, zn_v, zf_v, rig_v_god,
+      "cathedral_surface_only_baseline", bvh_v, cxp_v, cxm_v, fovy_v, zn_v, zf_v, rig_v,
       devs, H, W, spp=args.vol_spp, max_bounces=4, volumetric_cfg=VolumetricConfig(enabled=False),
   )
   recs.append(r_v_base)
-  panels.append((f"Slatted Window Atrium Surface-Only ({args.vol_spp} spp + TPU Denoise | {r_v_base['ms']:.0f}ms)", img_v_base))
+  panels.append((f"Dark Cathedral Lancet Windows Surface-Only ({args.vol_spp} spp | {r_v_base['ms']:.0f}ms)", img_v_base))
 
   r_v_god, img_v_god = _run_config(
-      "atrium_volumetric_godrays_hg", bvh_v, cxp_v, cxm_v, fovy_v, zn_v, zf_v, rig_v_god,
+      "cathedral_volumetric_godrays_hg", bvh_v, cxp_v, cxm_v, fovy_v, zn_v, zf_v, rig_v,
       devs, H, W, spp=args.vol_spp, max_bounces=4, volumetric_cfg=VolumetricConfig(enabled=True),
   )
   recs.append(r_v_god)
-  panels.append((f"+ Volumetric Media & HG God Rays (g=0.78, 36-step, {args.vol_spp} spp | {r_v_god['ms']:.0f}ms)", img_v_god))
+  panels.append((f"+ Volumetric Media & HG God Rays (g=0.72, 28-step, {args.vol_spp} spp | {r_v_god['ms']:.0f}ms)", img_v_god))
 
   # Save 2x2 hero comparison PNG
   pad, hdr = 14, 40

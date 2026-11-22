@@ -31,8 +31,8 @@ import numpy as np
 
 def _blender_export_main():
   import bpy
-  sys.path.insert(0, "/dev/shm/zaychik-tpu-mjx-w7")
-  from tpu_mjx_render.adapters.blend_compiler import (
+  sys.path.insert(0, "/dev/shm/zaychik-tpu-mjx-w7/tpu_mjx_render/adapters")
+  from blend_compiler import (
       _ShaderGraphWalker,
       _extract_camera,
       _extract_lights,
@@ -237,6 +237,57 @@ def _blender_export_main():
   sky_z, sky_h, sky_g = _extract_world_sky(scene)
   view_exp = float(getattr(scene.view_settings, "exposure", 0.0))
 
+  # Extract Nishita / Sky Texture sun if no explicit SUN light exists
+  if not any(l["type"] == "SUN" for l in lights) and getattr(scene, "world", None) and scene.world.use_nodes:
+    for nd in scene.world.node_tree.nodes:
+      if nd.type == "TEX_SKY":
+        elev = float(getattr(nd, "sun_elevation", 0.7))
+        rot = float(getattr(nd, "sun_rotation", 0.0))
+        s_dir = np.array([
+            math.sin(rot) * math.cos(elev),
+            -math.cos(rot) * math.cos(elev),
+            math.sin(elev),
+        ], dtype=np.float32)
+        s_dir = s_dir / max(float(np.linalg.norm(s_dir)), 1e-12)
+        lights.append({
+            "name": "Nishita_Sky_Sun",
+            "type": "SUN",
+            "pos": [0.0, 0.0, 10.0],
+            "dir": (-s_dir).tolist(),
+            "color": [1.0, 0.93, 0.82],
+            "energy": 9.0 * float(getattr(nd, "sun_intensity", 1.0)),
+            "size": 0.5,
+        })
+        sky_z = (0.38, 0.62, 1.05)
+        sky_h = (0.72, 0.84, 1.02)
+        sky_g = (0.18, 0.16, 0.14)
+        break
+      if nd.type == "TEX_ENVIRONMENT" and nd.image is not None:
+        try:
+          iw, ih = nd.image.size[0], nd.image.size[1]
+          if iw > 0 and ih > 0 and len(nd.image.pixels) == iw * ih * 4:
+            px_f = np.empty(iw * ih * 4, dtype=np.float32)
+            nd.image.pixels.foreach_get(px_f)
+            px = px_f.reshape(ih, iw, 4)[..., :3]
+            lum = 0.2126 * px[..., 0] + 0.7152 * px[..., 1] + 0.0722 * px[..., 2]
+            py, px_x = np.unravel_index(int(np.argmax(lum)), lum.shape)
+            phi = (float(px_x) / float(iw) - 0.5) * 2.0 * math.pi
+            theta = (1.0 - float(py) / float(ih)) * math.pi
+            s_dir = np.array([math.sin(theta) * math.cos(phi), math.sin(theta) * math.sin(phi), math.cos(theta)], np.float32)
+            peak_c = np.clip(px[py, px_x], 0.5, 40.0)
+            lights.append({
+                "name": "HDRI_Peak_Sun",
+                "type": "SUN",
+                "pos": [0.0, 0.0, 10.0],
+                "dir": (-s_dir).tolist(),
+                "color": (peak_c / max(float(np.max(peak_c)), 1e-4)).tolist(),
+                "energy": float(min(max(np.max(peak_c), 2.0), 16.0)),
+                "size": 0.5,
+            })
+            break
+        except Exception:
+          pass
+
   np.savez(
       args.out_npz,
       verts=verts,
@@ -252,6 +303,8 @@ def _blender_export_main():
       cam_xmat=cam_xmat,
       cam_fovy=np.float32(cam_fovy),
       cam_shift=np.array(cam_shift, dtype=np.float32),
+      cam_znear=np.float32(znear),
+      cam_zfar=np.float32(max(zfar, 120.0)),
       native_res=np.array(native_res, dtype=np.int32),
       lights_json=np.bytes_(json.dumps(lights)),
       sky_zenith=np.array(sky_z, dtype=np.float32),
@@ -264,7 +317,10 @@ def _blender_export_main():
       flush=True,
   )
 
-  # Render clean denoised Cycles 5.3.0 GT reference
+  # Render clean denoised Cycles 5.3.0 GT reference (CPU-safe, disable GPU Vulkan compositor on headless)
+  scene.render.use_compositing = False
+  if hasattr(scene.render, "compositor_device"):
+    scene.render.compositor_device = "CPU"
   scene.render.engine = "CYCLES"
   scene.cycles.device = "CPU"
   scene.cycles.samples = args.gt_spp
@@ -342,6 +398,8 @@ def _tpu_main():
   cam_pos = ds["cam_pos"][None, :].astype(np.float32)
   cam_xmat = ds["cam_xmat"][None, :, :].astype(np.float32)
   cam_fovy = float(ds["cam_fovy"])
+  cam_znear = float(ds["cam_znear"]) if "cam_znear" in ds else 0.05
+  cam_zfar = float(ds["cam_zfar"]) if "cam_zfar" in ds else 120.0
   lights_list = json.loads(bytes(ds["lights_json"]).decode("utf-8"))
   sky_z = np.asarray(ds["sky_zenith"], dtype=np.float32)
   sky_h = np.asarray(ds["sky_horizon"], dtype=np.float32)
@@ -526,7 +584,7 @@ def _tpu_main():
   H = ((gt_h + 7) // 8) * 8
   W_local = W // n_chips
 
-  exposure = args.exposure if args.exposure is not None else (0.72 * (2.0 ** bl_exp) if "classroom" not in args.scene_label else 0.72)
+  exposure = args.exposure if args.exposure is not None else (0.72 * (2.0 ** max(bl_exp, -0.6)) if "classroom" not in args.scene_label else 0.72)
 
   mesh = Mesh(np.array(devs), ("dp",))
   rep = NamedSharding(mesh, P())
@@ -732,7 +790,7 @@ def _tpu_main():
     return out_hw[..., 0], out_hw[..., 1:4], out_hw[..., 4], out_hw[..., 5], out_hw[..., 6], out_hw[..., 7]
 
   aspect = float(W) / float(H)
-  half_h = 0.05 * math.tan(0.5 * cam_fovy * (math.pi / 180.0))
+  half_h = cam_znear * math.tan(0.5 * cam_fovy * (math.pi / 180.0))
   half_w = half_h * aspect
   sky_z_j, sky_h_j, sky_g_j = jnp.asarray(sky_z), jnp.asarray(sky_h), jnp.asarray(sky_g)
 
@@ -791,13 +849,13 @@ def _tpu_main():
       v = (gy.reshape(1, R) + jitter[..., 1]) / float(H)
       x = -half_w + (2.0 * half_w) * u
       y = half_h - (2.0 * half_h) * v
-      raw = jnp.stack([x, y, jnp.full_like(x, -0.05)], axis=-1)
+      raw = jnp.stack([x, y, jnp.full_like(x, -cam_znear)], axis=-1)
       ld = raw / jnp.maximum(jnp.linalg.norm(raw, axis=-1, keepdims=True), 1e-12)
       neg_z = jnp.maximum(-ld[..., 2], 1e-6)
       rd0 = jnp.einsum("ij,brj->bri", cxm[0], ld, precision=jax.lax.Precision.HIGHEST)
       rd0 = rd0 / jnp.maximum(jnp.linalg.norm(rd0, axis=-1, keepdims=True), 1e-12)
-      ro0 = cxp[0][None, None, :] + (0.05 / neg_z)[..., None] * rd0
-      t_max0 = jnp.broadcast_to(((120.0 - 0.05) / neg_z), (spp_par, R))
+      ro0 = cxp[0][None, None, :] + (cam_znear / neg_z)[..., None] * rd0
+      t_max0 = jnp.broadcast_to(((cam_zfar - cam_znear) / neg_z), (spp_par, R))
       thr0 = jnp.ones((spp_par, R, 3), dtype=jnp.float32)
       alive0 = jnp.ones((spp_par, R), dtype=jnp.bool_)
       rad0 = jnp.zeros((spp_par, R, 3), dtype=jnp.float32)

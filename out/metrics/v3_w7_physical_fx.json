@@ -1,0 +1,111 @@
+{
+  "experiment": "v3_w7_physical_fx",
+  "backend": "tpu",
+  "n_chips": 4,
+  "runs": [
+    {
+      "label": "glass_no_caustics_baseline",
+      "scene": "caustics_beer_lambert_studio",
+      "tris": 25416,
+      "res": "640x640",
+      "spp": 192,
+      "max_bounces": 5,
+      "caustics": false,
+      "volumetrics": false,
+      "n_chips": 4,
+      "compile_s": 50.45,
+      "ms": 37672.93,
+      "images_per_sec": 0.027,
+      "samples_per_min": 305.8,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 4279,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "label": "glass_beer_lambert_caustics_full",
+      "scene": "caustics_beer_lambert_studio",
+      "tris": 25416,
+      "res": "640x640",
+      "spp": 192,
+      "max_bounces": 5,
+      "caustics": true,
+      "volumetrics": false,
+      "n_chips": 4,
+      "compile_s": 83.89,
+      "ms": 64136.47,
+      "images_per_sec": 0.016,
+      "samples_per_min": 179.6,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 1,
+        "while_ops": 3,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 5781,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "label": "cathedral_surface_only_baseline",
+      "scene": "dark_cathedral_godrays",
+      "tris": 6032,
+      "res": "640x640",
+      "spp": 64,
+      "max_bounces": 4,
+      "caustics": false,
+      "volumetrics": false,
+      "n_chips": 4,
+      "compile_s": 18.01,
+      "ms": 5351.09,
+      "images_per_sec": 0.187,
+      "samples_per_min": 717.6,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 4547,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "label": "cathedral_volumetric_godrays_hg",
+      "scene": "dark_cathedral_godrays",
+      "tris": 6032,
+      "res": "640x640",
+      "spp": 64,
+      "max_bounces": 4,
+      "caustics": false,
+      "volumetrics": true,
+      "n_chips": 4,
+      "compile_s": 21.45,
+      "ms": 10593.41,
+      "images_per_sec": 0.094,
+      "samples_per_min": 362.5,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 4998,
+        "send_recv_ops": 0
+      }
+    }
+  ]
+}

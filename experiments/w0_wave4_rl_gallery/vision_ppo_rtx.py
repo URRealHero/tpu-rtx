@@ -258,6 +258,7 @@ class RTXCartpoleEnv:
     dx = self._dx_template.replace(qpos=qpos, qvel=qvel)
     dx = mjx.kinematics(mx_l, dx)
     dx = mjx.com_pos(mx_l, dx)
+    dx = mjx.camlight(mx_l, dx)
     step_c = (
         jax.random.randint(k_st, (), 0, max(1, self.episode_length), dtype=jnp.int32)
         if stagger_steps
@@ -363,6 +364,7 @@ class RTXPandaPickCubeEnv:
     dx = self._dx_template.replace(qpos=qpos, ctrl=self._init_ctrl)
     dx = mjx.kinematics(mx_l, dx)
     dx = mjx.com_pos(mx_l, dx)
+    dx = mjx.camlight(mx_l, dx)
     target_pos = jnp.array([0.65, 0.0, 0.14], dtype=jnp.float32) + jax.random.uniform(
         k_tgt,
         (3,),
@@ -487,6 +489,7 @@ class RTXHumanoidEnv:
     dx = self._dx_template.replace(qpos=qpos, qvel=qvel, ctrl=jnp.zeros(self.action_size, dtype=jnp.float32))
     dx = mjx.kinematics(mx_l, dx)
     dx = mjx.com_pos(mx_l, dx)
+    dx = mjx.camlight(mx_l, dx)
     step_c = (
         jax.random.randint(k_st, (), 0, max(1, self.episode_length), dtype=jnp.int32)
         if stagger_steps
