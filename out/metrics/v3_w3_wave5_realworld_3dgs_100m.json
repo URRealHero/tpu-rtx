@@ -1,0 +1,344 @@
+{
+  "backend": "tpu",
+  "device_kind": "TPU v5",
+  "jax_version": "0.10.2",
+  "interpret": false,
+  "hlo_checks": {
+    "realworld_ply_1080p": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 1,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 2150,
+      "send_recv_ops": 0,
+      "zero_copy_verified": true
+    },
+    "realworld_ply_4K": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 1,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 1805,
+      "send_recv_ops": 0,
+      "zero_copy_verified": true
+    },
+    "robowild_kitchen_panda_4k": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 1,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 5972,
+      "send_recv_ops": 0,
+      "zero_copy_verified": true
+    },
+    "mega_50m_1080p": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 1,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 1178,
+      "send_recv_ops": 0,
+      "zero_copy_verified": true
+    },
+    "mega_50m_4K": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 1,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 1175,
+      "send_recv_ops": 0,
+      "zero_copy_verified": true
+    },
+    "mega_100m_1080p": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 1,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 1178,
+      "send_recv_ops": 0,
+      "zero_copy_verified": true
+    },
+    "mega_100m_4K": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 1,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 1175,
+      "send_recv_ops": 0,
+      "zero_copy_verified": true
+    },
+    "realworld_bonsai_jax_grad": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 3,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 2058,
+      "send_recv_ops": 0,
+      "zero_copy_verified": true
+    }
+  },
+  "realworld_3dgs_scenes": [
+    {
+      "scene": "bonsai",
+      "res_label": "1080p",
+      "res": "1920x1080",
+      "n_gaussians": 1244819,
+      "sh_degree": 3,
+      "n_chips": 4,
+      "ms": 147.35,
+      "fps": 6.79,
+      "compile_s": 0.54,
+      "mean_alpha": 0.9532,
+      "low_alp_frac": 0.03865
+    },
+    {
+      "scene": "kitchen",
+      "res_label": "1080p",
+      "res": "1920x1080",
+      "n_gaussians": 1852335,
+      "sh_degree": 3,
+      "n_chips": 4,
+      "ms": 191.99,
+      "fps": 5.21,
+      "compile_s": 9.29,
+      "mean_alpha": 0.9854,
+      "low_alp_frac": 0.00424
+    },
+    {
+      "scene": "garden",
+      "res_label": "1080p",
+      "res": "1920x1080",
+      "n_gaussians": 5834784,
+      "sh_degree": 3,
+      "n_chips": 4,
+      "ms": 383.86,
+      "fps": 2.61,
+      "compile_s": 9.08,
+      "mean_alpha": 0.9523,
+      "low_alp_frac": 0.02493
+    },
+    {
+      "scene": "bicycle",
+      "res_label": "1080p",
+      "res": "1920x1080",
+      "n_gaussians": 6131954,
+      "sh_degree": 3,
+      "n_chips": 4,
+      "ms": 515.93,
+      "fps": 1.94,
+      "compile_s": 9.41,
+      "mean_alpha": 0.9472,
+      "low_alp_frac": 0.02007
+    },
+    {
+      "scene": "bonsai",
+      "res_label": "4K",
+      "res": "3840x2160",
+      "n_gaussians": 1244819,
+      "sh_degree": 3,
+      "n_chips": 4,
+      "ms": 237.99,
+      "fps": 4.2,
+      "compile_s": 55.85,
+      "mean_alpha": 0.9327,
+      "low_alp_frac": 0.05429
+    },
+    {
+      "scene": "kitchen",
+      "res_label": "4K",
+      "res": "3840x2160",
+      "n_gaussians": 1852335,
+      "sh_degree": 3,
+      "n_chips": 4,
+      "ms": 251.44,
+      "fps": 3.98,
+      "compile_s": 65.59,
+      "mean_alpha": 0.9557,
+      "low_alp_frac": 0.03368
+    },
+    {
+      "scene": "garden",
+      "res_label": "4K",
+      "res": "3840x2160",
+      "n_gaussians": 5834784,
+      "sh_degree": 3,
+      "n_chips": 4,
+      "ms": 382.49,
+      "fps": 2.61,
+      "compile_s": 75.55,
+      "mean_alpha": 0.9352,
+      "low_alp_frac": 0.03503
+    },
+    {
+      "scene": "bicycle",
+      "res_label": "4K",
+      "res": "3840x2160",
+      "n_gaussians": 6131954,
+      "sh_degree": 3,
+      "n_chips": 4,
+      "ms": 386.09,
+      "fps": 2.59,
+      "compile_s": 85.0,
+      "mean_alpha": 0.8865,
+      "low_alp_frac": 0.07596
+    }
+  ],
+  "robowild_realtosim_4k": {
+    "scene": "RoboWild_Kitchen_MJX_Panda",
+    "res": "3840x2160",
+    "n_chips": 4,
+    "n_gaussians": 1852335,
+    "table_fit_median_res": 0.0162,
+    "ms": 252.21,
+    "fps": 3.96,
+    "compile_s": 67.14,
+    "mjx_robot_pixels": 270212,
+    "occluded_by_real_3dgs_pixels": 1094,
+    "cast_shadow_on_table_pixels": 156525
+  },
+  "megascale_50m_100m_bench": [
+    {
+      "n_gaussians": 50000000,
+      "n_chips": 4,
+      "res_label": "1080p",
+      "res": "1920x1080",
+      "ms": 485.85,
+      "fps": 2.06,
+      "compile_s": 0.56,
+      "hbm_per_chip_gb": 12.59,
+      "hbm_4chip_total_gb": 50.38,
+      "hbm_arg_per_chip_gb": 0.85,
+      "hbm_temp_per_chip_gb": 11.7,
+      "hbm_utilization_pct_of_380gb": 13.26,
+      "k_macro": 4096,
+      "k_tile": 256,
+      "micro_tiles": 32640,
+      "cull_ratio_per_tile": 195312.5,
+      "mean_alpha": 0.9998
+    },
+    {
+      "n_gaussians": 50000000,
+      "n_chips": 4,
+      "res_label": "4K",
+      "res": "3840x2160",
+      "ms": 544.57,
+      "fps": 1.84,
+      "compile_s": 0.61,
+      "hbm_per_chip_gb": 12.62,
+      "hbm_4chip_total_gb": 50.48,
+      "hbm_arg_per_chip_gb": 0.85,
+      "hbm_temp_per_chip_gb": 11.6,
+      "hbm_utilization_pct_of_380gb": 13.28,
+      "k_macro": 4096,
+      "k_tile": 256,
+      "micro_tiles": 130560,
+      "cull_ratio_per_tile": 195312.5,
+      "mean_alpha": 0.9999
+    },
+    {
+      "n_gaussians": 100000000,
+      "n_chips": 4,
+      "res_label": "1080p",
+      "res": "1920x1080",
+      "ms": 1036.41,
+      "fps": 0.96,
+      "compile_s": 1.11,
+      "hbm_per_chip_gb": 24.34,
+      "hbm_4chip_total_gb": 97.38,
+      "hbm_arg_per_chip_gb": 1.7,
+      "hbm_temp_per_chip_gb": 22.6,
+      "hbm_utilization_pct_of_380gb": 25.63,
+      "k_macro": 4096,
+      "k_tile": 256,
+      "micro_tiles": 32640,
+      "cull_ratio_per_tile": 390625.0,
+      "mean_alpha": 0.9999
+    },
+    {
+      "n_gaussians": 100000000,
+      "n_chips": 4,
+      "res_label": "4K",
+      "res": "3840x2160",
+      "ms": 1095.32,
+      "fps": 0.91,
+      "compile_s": 1.17,
+      "hbm_per_chip_gb": 24.47,
+      "hbm_4chip_total_gb": 97.88,
+      "hbm_arg_per_chip_gb": 1.7,
+      "hbm_temp_per_chip_gb": 22.6,
+      "hbm_utilization_pct_of_380gb": 25.76,
+      "k_macro": 4096,
+      "k_tile": 256,
+      "micro_tiles": 130560,
+      "cull_ratio_per_tile": 390625.0,
+      "mean_alpha": 1.0
+    }
+  ],
+  "realworld_bonsai_grad": {
+    "scene": "MipNeRF360_Bonsai_Foreground_Crop",
+    "n_views": 8,
+    "res": "128x128",
+    "n_gaussians": 2048,
+    "n_steps": 300,
+    "compile_s": 15.1,
+    "total_train_s": 5.28,
+    "steps_per_s": 56.63,
+    "ms_per_step": 17.66,
+    "init_psnr_db": 20.02,
+    "final_psnr_db": 34.66,
+    "psnr_gain_db": 14.64,
+    "history": [
+      {
+        "step": 0,
+        "psnr_db": 20.02,
+        "mse": 0.009949
+      },
+      {
+        "step": 50,
+        "psnr_db": 30.26,
+        "loss": 0.00848
+      },
+      {
+        "step": 100,
+        "psnr_db": 31.95,
+        "loss": 0.00685
+      },
+      {
+        "step": 150,
+        "psnr_db": 34.21,
+        "loss": 0.00494
+      },
+      {
+        "step": 200,
+        "psnr_db": 35.28,
+        "loss": 0.00412
+      },
+      {
+        "step": 250,
+        "psnr_db": 35.84,
+        "loss": 0.00375
+      },
+      {
+        "step": 300,
+        "psnr_db": 36.09,
+        "loss": 0.00359
+      }
+    ]
+  }
+}

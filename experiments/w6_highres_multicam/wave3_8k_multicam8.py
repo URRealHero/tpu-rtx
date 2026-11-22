@@ -442,8 +442,10 @@ def run_8k_spatial_4c(neural_ckpt: str, out_json: str, export_dir: str, scene_fi
   rep_sp = jax.sharding.NamedSharding(mesh_sp, P())
   sm_kw = {"check_rep": False} if "check_rep" in inspect.signature(shard_map).parameters else {"check_vma": False}
 
+  HALO = 16
   W_STRIP = W_8K // 4  # 1920 = 240 * 8
-  R_STRIP = H_8K * W_STRIP  # 8,294,400 = 16,200 * 512
+  W_STRIP_HALO = W_STRIP + 2 * HALO  # 1952 (4320 * 1952 = 8,432,640 = 16,470 * 512)
+  R_STRIP_HALO = H_8K * W_STRIP_HALO
 
   scene_defs = [
       ("panda_pick_cube", get_scene_xml("panda_pick_cube")),
@@ -461,18 +463,25 @@ def run_8k_spatial_4c(neural_ckpt: str, out_json: str, export_dir: str, scene_fi
     ld_np, lo_np, nz_np = build_local_camera_rays(spec_8k)
     md_np = ((float(spec_8k.zfar) - float(spec_8k.znear)) / nz_np) if spec_8k.zfar > 0.0 else np.full((R_8K,), MJ_MAXVAL, dtype=np.float32)
 
-    def _split_w(arr):
-      a4 = arr.reshape(H_8K, 4, W_STRIP, *arr.shape[1:]).transpose(1, 0, 2, *range(3, arr.ndim + 2))
-      return a4.reshape(4, R_STRIP, *arr.shape[1:])
+    def _split_w_halo(arr):
+      img = arr.reshape(H_8K, W_8K, *arr.shape[1:])
+      pad_w = [(0, 0), (HALO, HALO)] + [(0, 0)] * (img.ndim - 2)
+      img_pad = np.pad(img, pad_w, mode="edge")
+      strips = [img_pad[:, c * W_STRIP : c * W_STRIP + W_STRIP_HALO, ...] for c in range(4)]
+      return np.stack(strips, axis=0).reshape(4, R_STRIP_HALO, *arr.shape[1:])
 
-    ld_s = jax.device_put(jnp.asarray(_split_w(ld_np), jnp.float32), sh_sp)
-    lo_s = jax.device_put(jnp.asarray(_split_w(lo_np), jnp.float32), sh_sp)
-    nz_s = jax.device_put(jnp.asarray(_split_w(nz_np), jnp.float32), sh_sp_r)
-    lray_np = np.zeros((4, 8, R_STRIP), dtype=np.float32)
-    lray_np[:, 0:3, :] = _split_w(ld_np).transpose(0, 2, 1)
-    lray_np[:, 3:6, :] = _split_w(lo_np).transpose(0, 2, 1)
-    lray_np[:, 6, :] = _split_w(nz_np)
-    lray_np[:, 7, :] = _split_w(md_np)
+    ld_h = _split_w_halo(ld_np)
+    lo_h = _split_w_halo(lo_np)
+    nz_h = _split_w_halo(nz_np)
+    md_h = _split_w_halo(md_np)
+    ld_s = jax.device_put(jnp.asarray(ld_h, jnp.float32), sh_sp)
+    lo_s = jax.device_put(jnp.asarray(lo_h, jnp.float32), sh_sp)
+    nz_s = jax.device_put(jnp.asarray(nz_h, jnp.float32), sh_sp_r)
+    lray_np = np.zeros((4, 8, R_STRIP_HALO), dtype=np.float32)
+    lray_np[:, 0:3, :] = ld_h.transpose(0, 2, 1)
+    lray_np[:, 3:6, :] = lo_h.transpose(0, 2, 1)
+    lray_np[:, 6, :] = nz_h
+    lray_np[:, 7, :] = md_h
     lray_s = jax.device_put(jnp.asarray(lray_np, jnp.float32), sh_sp)
 
     dx1, ctrl1 = _make_batch(m, 1)
@@ -488,10 +497,10 @@ def run_8k_spatial_4c(neural_ckpt: str, out_json: str, export_dir: str, scene_fi
       def _sp_fn(d_1, u_1, mx_l, prm, lr_s, lds, los, nzs):
         dn = jax.vmap(lambda x, c: mjx.step(mx_l, x.replace(ctrl=c)))(d_1, u_1)
         gb = _pallas_raycast_strip(
-            spec_8k, dn, lr_s[0], lds[0], los[0], nzs[0], H_8K, W_STRIP, interpret=pallas_interp,
+            spec_8k, dn, lr_s[0], lds[0], los[0], nzs[0], H_8K, W_STRIP_HALO, interpret=pallas_interp,
         )
-        rgb = apply_neural_shader(model_bf16, prm, gb, cal_scale=cal_scale) if with_m2 else gb.rgb
-        return rgb, gb.depth
+        rgb_full = apply_neural_shader(model_bf16, prm, gb, cal_scale=cal_scale) if with_m2 else gb.rgb
+        return rgb_full[:, :, HALO:-HALO, :], gb.depth[:, :, HALO:-HALO]
 
       _sp_sm = shard_map(
           _sp_fn,
@@ -500,18 +509,22 @@ def run_8k_spatial_4c(neural_ckpt: str, out_json: str, export_dir: str, scene_fi
           out_specs=(P(None, None, "sp", None), P(None, None, "sp")),
           **sm_kw,
       )
-      e2e_8k = jax.jit(lambda d, u: _sp_sm(d, u, mx_rep, params_rep, lray_s, ld_s, lo_s, nz_s))
-      hlo = _audit_hlo(e2e_8k.lower(dx1_rep, ctrl1_rep))
+      e2e_8k = jax.jit(lambda d, u, mx_l, prm, lr, ld, lo, nz: _sp_sm(d, u, mx_l, prm, lr, ld, lo, nz))
+      t_low0 = time.perf_counter()
+      lowered = e2e_8k.lower(dx1_rep, ctrl1_rep, mx_rep, params_rep, lray_s, ld_s, lo_s, nz_s)
+      hlo = _audit_hlo(lowered)
+      print(f"8K {scene_label} {'S1+M2' if with_m2 else 'S1'} lower+audit: {time.perf_counter()-t_low0:.1f}s", flush=True)
 
       tc0 = time.perf_counter()
+      e2e_exec = lowered.compile()
       for _ in range(2):
-        rgb8k, dep8k = e2e_8k(dx1_rep, ctrl1_rep)
+        rgb8k, dep8k = e2e_exec(dx1_rep, ctrl1_rep, mx_rep, params_rep, lray_s, ld_s, lo_s, nz_s)
       jax.block_until_ready((rgb8k, dep8k))
       warmup_s = time.perf_counter() - tc0
 
       t1 = time.perf_counter()
       for _ in range(4):
-        rgb8k, dep8k = e2e_8k(dx1_rep, ctrl1_rep)
+        rgb8k, dep8k = e2e_exec(dx1_rep, ctrl1_rep, mx_rep, params_rep, lray_s, ld_s, lo_s, nz_s)
       jax.block_until_ready((rgb8k, dep8k))
       dt_e2e = (time.perf_counter() - t1) / 4
       gpix_s = (R_8K / 1e9) / max(dt_e2e, 1e-9)
@@ -525,6 +538,17 @@ def run_8k_spatial_4c(neural_ckpt: str, out_json: str, export_dir: str, scene_fi
       depth_mae_vs_s1 = float(np.mean(np.abs(dep_np - s1_dep_ref))) if s1_dep_ref is not None else 0.0
       rgb_delta_mae = float(np.mean(np.abs(rgb_np - s1_rgb_ref))) if (with_m2 and s1_rgb_ref is not None) else None
 
+      if with_m2 and export_dir:
+        os.makedirs(export_dir, exist_ok=True)
+        if scene_label == "panda_pick_cube":
+          np.save(os.path.join(export_dir, "panda_8k_crop_1440x1080.npy"), rgb_np[1620:2700, 3120:4560])
+          np.save(os.path.join(export_dir, "panda_8k_down4.npy"), rgb_np[::4, ::4])
+        else:
+          np.save(os.path.join(export_dir, "cluttered_8k_down4.npy"), rgb_np[::4, ::4])
+          np.save(os.path.join(export_dir, "cluttered_8k_crop_1440x1080.npy"), rgb_np[380:1460, 2600:4040])
+          if s1_rgb_ref is not None:
+            np.save(os.path.join(export_dir, "cluttered_8k_s1_crop_1440x1080.npy"), s1_rgb_ref[380:1460, 2600:4040])
+
       rec = {
           "status": "ok",
           "scene": scene_label,
@@ -532,7 +556,8 @@ def run_8k_spatial_4c(neural_ckpt: str, out_json: str, export_dir: str, scene_fi
           "resolution": f"{W_8K}x{H_8K}",
           "pixels_per_frame": R_8K,
           "n_chips": 4,
-          "spatial_split": f"W=7680 -> 4x1920 ({R_STRIP//BLOCK_R} blocks/chip)",
+          "halo_px": HALO,
+          "spatial_split": f"W=7680 -> 4x(1920+2*{HALO})={W_STRIP_HALO} ({R_STRIP_HALO//BLOCK_R} blocks/chip, seamless)",
           "batch_size": 1,
           "dt_e2e_ms": dt_e2e * 1e3,
           "e2e_fps": 1.0 / max(dt_e2e, 1e-9),
@@ -551,22 +576,16 @@ def run_8k_spatial_4c(neural_ckpt: str, out_json: str, export_dir: str, scene_fi
         json.dump({"resolution": f"{W_8K}x{H_8K}", "runs": out_rows}, f, indent=2)
       print(f"8K {scene_label} {'S1+M2' if with_m2 else 'S1'}: e2e={dt_e2e*1e3:.2f}ms fps={rec['e2e_fps']:.2f} ({gpix_s:.3f} GPix/s, depth_mae={depth_mae_vs_s1:.2e})", flush=True)
 
-      if with_m2 and export_dir:
-        os.makedirs(export_dir, exist_ok=True)
-        # Save exact 1:1 1440x1080 pixel detail inset centered on workspace + 4x4 downscaled full-8K overview (1920x1080)
-        if scene_label == "panda_pick_cube":
-          np.save(os.path.join(export_dir, "panda_8k_crop_1440x1080.npy"), rgb_np[1620:2700, 3120:4560])
-          np.save(os.path.join(export_dir, "panda_8k_down4.npy"), rgb_np[::4, ::4])
-        else:
-          np.save(os.path.join(export_dir, "cluttered_8k_down4.npy"), rgb_np[::4, ::4])
-          np.save(os.path.join(export_dir, "cluttered_8k_crop_1440x1080.npy"), rgb_np[1620:2700, 3120:4560])
-          if s1_rgb_ref is not None:
-            np.save(os.path.join(export_dir, "cluttered_8k_s1_crop_1440x1080.npy"), s1_rgb_ref[1620:2700, 3120:4560])
-
   return {"resolution": f"{W_8K}x{H_8K}", "runs": out_rows}
 
 
-def run_ncam_suite(n_chips: int, res_filter: Optional[List[int]] = None, out_json: Optional[str] = None) -> List[Dict[str, Any]]:
+def run_ncam_suite(
+    n_chips: int,
+    res_filter: Optional[List[int]] = None,
+    out_json: Optional[str] = None,
+    ncams_filter: Optional[List[int]] = None,
+    batches_override: Optional[List[int]] = None,
+) -> List[Dict[str, Any]]:
   """Benchmark fused 4-cam and 8-cam vs sequential across 128, 256, 512, and 1080p."""
   pallas_interp = (jax.default_backend() == "cpu")
   devs = jax.devices()[:n_chips]
@@ -592,10 +611,11 @@ def run_ncam_suite(n_chips: int, res_filter: Optional[List[int]] = None, out_jso
     configs = [c for c in configs if c[0] in res_filter]
 
   rows: List[Dict[str, Any]] = []
+  ncam_list = tuple(ncams_filter) if ncams_filter else (4, 8)
   for H, W, b1c, b4c, ns in configs:
-    batches = b1c if n_chips == 1 else b4c
+    batches = batches_override if batches_override else (b1c if n_chips == 1 else b4c)
     specs_8 = [RenderSceneSpec.from_mjmodel(m, cam_id=cid, height=H, width=W, use_shadows=True) for cid in range(8)]
-    for n_cams in (4, 8):
+    for n_cams in ncam_list:
       specs = specs_8[:n_cams]
       for B in batches:
         dx_b, ctrl = _make_batch(m, B, vary_ctrl=True)
@@ -735,6 +755,8 @@ def main():
   ap.add_argument("--phase", required=True, choices=["8k", "ncam", "grid4k", "merge"])
   ap.add_argument("--n_chips", type=int, default=4)
   ap.add_argument("--res_list", type=int, nargs="*", default=None)
+  ap.add_argument("--ncams", type=int, nargs="*", default=None)
+  ap.add_argument("--batches", type=int, nargs="*", default=None)
   ap.add_argument("--scenes", nargs="*", default=None)
   ap.add_argument("--m2_filter", default="both", choices=["both", "s1", "m2"])
   ap.add_argument("--neural_ckpt", default="/dev/shm/zaychik-tpu-mjx/out/metrics/M2_spatial_128_params.pkl")
@@ -747,7 +769,7 @@ def main():
   if args.phase == "8k":
     res = run_8k_spatial_4c(args.neural_ckpt, args.out_json, args.export_dir, scene_filter=args.scenes, m2_filter=args.m2_filter)
   elif args.phase == "ncam":
-    res = {"n_chips": args.n_chips, "ncam_runs": run_ncam_suite(args.n_chips, res_filter=args.res_list, out_json=args.out_json)}
+    res = {"n_chips": args.n_chips, "ncam_runs": run_ncam_suite(args.n_chips, res_filter=args.res_list, out_json=args.out_json, ncams_filter=args.ncams, batches_override=args.batches)}
   elif args.phase == "grid4k":
     res = render_cluttered_4k_grid(args.export_dir)
   else:
