@@ -83,8 +83,8 @@ TEX_WOOD = 2
 TEX_GRID = 3
 TEX_SPECKLED = 4
 
-CLUSTER_K = 16
-MACRO_M = 8  # 128 primitives per macro-cluster
+CLUSTER_K = 32
+MACRO_M = 4  # 128 primitives per macro-cluster (2x denser micro-clusters -> half VMEM)
 
 
 def _shard_map_kwargs() -> Dict[str, Any]:
@@ -581,7 +581,7 @@ def _apply_replicator_local(
       rob_h = _u(304, (), 0.0, 1.0)[:, None]
       rob_s = _u(305, (), 0.04, 0.35)[:, None]
       rob_v = _u(306, (), 0.55, 0.96)[:, None]
-      rob_rgb = hsv_to_rgb_jax(rob_h, rob_s, rob_v)[:, None, :]  # (B, 1, 3)
+      rob_rgb = hsv_to_rgb_jax(rob_h, rob_s, rob_v)  # (B, 1, 3)
       rob_rgba = jnp.concatenate([jnp.broadcast_to(rob_rgb, (B, ngeom, 3)), geom_rgba[..., 3:4]], axis=-1)
       m_rob = jnp.asarray(category_masks["robot_body"], dtype=jnp.bool_)[None, :, None]
       geom_rgba = jnp.where(m_rob, rob_rgba, geom_rgba)
@@ -723,6 +723,7 @@ def _pack_camera_and_light_dr(
     block_b: int,
     B: int,
     B_pad: int,
+    cam_fovy_override: Optional[jax.Array] = None,
 ) -> Tuple[jax.Array, jax.Array]:
   if rep_batch is not None:
     cam_pos = rep_batch.cam_xpos[:, cam_slot, :]
@@ -741,7 +742,7 @@ def _pack_camera_and_light_dr(
   else:
     cam_pos = mjx_data_batch.cam_xpos[:, int(spec.cam_id), :]
     cam_mat = mjx_data_batch.cam_xmat[:, int(spec.cam_id), :, :]
-    fovy_deg = jnp.full((B,), float(spec.cam_fovy), dtype=jnp.float32)
+    fovy_deg = cam_fovy_override if cam_fovy_override is not None else jnp.full((B,), float(spec.cam_fovy), dtype=jnp.float32)
     if spec.nlight > 0:
       lp, ld = _extract_light_batch(spec, mjx_data_batch)
       lpos, ldir = lp[:, 0, :], ld[:, 0, :]
@@ -822,6 +823,7 @@ def _pallas_tiled_dr_unrolled(
     shadow_softness: float = 0.055,
     emit_aux: bool = True,
     interpret: bool = False,
+    cam_fovy_override: Optional[jax.Array] = None,
 ) -> Dict[str, jax.Array]:
   """Unrolled Mosaic Pallas DR kernel (G <= 128) with per-env FOV, lights, textures, PBR & AgX."""
   B = int(mjx_data_batch.cam_xpos.shape[0])
@@ -830,6 +832,12 @@ def _pallas_tiled_dr_unrolled(
   gids = np.asarray(spec.enabled_geom_ids, dtype=np.int32)
   G = len(gids)
 
+  use_pbr_ao = (shader == "pbr_ggx")
+  if use_pbr_ao and G > 64:
+    block_r = min(int(block_r), 128)
+  elif G > 40:
+    block_r = min(int(block_r), 256)
+
   B_pad = ((B + block_b - 1) // block_b) * block_b
   R_pad = ((R + block_r - 1) // block_r) * block_r
   G_pad = ((max(G, 1) + 127) // 128) * 128
@@ -837,7 +845,7 @@ def _pallas_tiled_dr_unrolled(
   n_r_blk = R_pad // block_r
 
   cam_128, light_128 = _pack_camera_and_light_dr(
-      spec, rep_batch, mjx_data_batch, cam_slot, block_b, B, B_pad
+      spec, rep_batch, mjx_data_batch, cam_slot, block_b, B, B_pad, cam_fovy_override=cam_fovy_override
   )
   lray_dev = _build_unit_tangent_rays(H, W, R_pad)
 
@@ -885,7 +893,6 @@ def _pallas_tiled_dr_unrolled(
   floor_k = tuple((k, int(g)) for k, g in enumerate(gids) if int(g) in floor_gids)
   table_k = tuple((k, int(g)) for k, g in enumerate(gids) if int(g) in table_gids)
 
-  use_pbr_ao = (shader == "pbr_ggx")
   eff_ao = n_ao_samples if use_pbr_ao else 0
   eff_sh = n_shadow_samples if use_pbr_ao else 1
 
@@ -1061,12 +1068,18 @@ def _pallas_tiled_dr_unrolled(
     sh_oy = hy + ny_out * 2.0e-4
     sh_oz = hz + nz_onb * 2.0e-4
 
-    # Hemisphere Ambient Occlusion (4-sample R2 rotated in VMEM)
+    # Hemisphere Ambient Occlusion (R2 rotated in VMEM via O(1)-VMEM fori_loop)
     if eff_ao > 0:
       (tx_b, ty_b, tz_b), (bx_b, by_b, bz_b) = _branchless_onb(nx_out, ny_out, nz_onb)
-      ao_occ_sum = jnp.zeros((block_b, block_r), dtype=jnp.float32)
       ao_max_d = jnp.where(hit, ao_radius, 0.0)
-      for ux0, uy0, uz0 in ao_samples:
+
+      def _ao_sample_body(s_idx, occ_sum_in):
+        sf = s_idx.astype(jnp.float32) + 0.5
+        r_s = jnp.sqrt(sf / float(eff_ao))
+        phi_s = (2.0 * math.pi * 0.61803398875) * sf
+        ux0 = r_s * jnp.cos(phi_s)
+        uy0 = r_s * jnp.sin(phi_s)
+        uz0 = jnp.sqrt(jnp.maximum(1.0 - r_s * r_s, 1e-4))
         ux = ux0 * cos_rot - uy0 * sin_rot
         uy = ux0 * sin_rot + uy0 * cos_rot
         aodx = ux * tx_b + uy * bx_b + uz0 * nx_out
@@ -1088,7 +1101,11 @@ def _pallas_tiled_dr_unrolled(
               plane_finite_x=pfx, plane_finite_y=pfy, compute_normal=False,
           )
           min_ao = jnp.minimum(min_ao, acd)
-        ao_occ_sum = ao_occ_sum + jnp.where(hit & (min_ao < ao_radius), 1.0 - 0.5 * (min_ao / ao_radius), 0.0)
+        return occ_sum_in + jnp.where(hit & (min_ao < ao_radius), 1.0 - 0.5 * (min_ao / ao_radius), 0.0)
+
+      ao_occ_sum = jax.lax.fori_loop(
+          0, eff_ao, _ao_sample_body, jnp.zeros((block_b, block_r), dtype=jnp.float32)
+      )
       ao_vis = jnp.clip(1.0 - ao_strength * (ao_occ_sum / float(eff_ao)), 0.16, 1.0)
     else:
       ao_vis = 1.0
@@ -1124,11 +1141,17 @@ def _pallas_tiled_dr_unrolled(
     if do_sh_0:
       sh_max = jnp.where(hit & (ndotl > 0.0), dist_lim, 0.0)
       (ltx, lty, ltz), (lbx, lby, lbz) = _branchless_onb(lx_v, ly_v, lz_v)
-      occ_sum = jnp.zeros((block_b, block_r), dtype=jnp.float32)
-      for dx_d, dy_d in sh_samples:
-        if dx_d == 0.0 and dy_d == 0.0:
+      n_sh = len(sh_samples)
+
+      def _sh_sample_body(s_idx, occ_sum_in):
+        if n_sh == 1 and sh_samples[0] == (0.0, 0.0):
           sdx, sdy, sdz = lx_v, ly_v, lz_v
         else:
+          sf = jnp.asarray(s_idx, jnp.float32) + 0.5
+          r_s = jnp.sqrt(sf / float(n_sh)) * float(shadow_softness)
+          phi_s = (2.0 * math.pi * 0.61803398875) * sf
+          dx_d = r_s * jnp.cos(phi_s)
+          dy_d = r_s * jnp.sin(phi_s)
           rx_d = dx_d * cos_rot - dy_d * sin_rot
           ry_d = dx_d * sin_rot + dy_d * cos_rot
           raw_x = lx_v + rx_d * ltx + ry_d * lbx
@@ -1152,8 +1175,13 @@ def _pallas_tiled_dr_unrolled(
               plane_finite_x=pfx, plane_finite_y=pfy, compute_normal=False,
           )
           occ_s = occ_s | (scd < sh_max)
-        occ_sum = occ_sum + (hit & (ndotl > 0.0) & occ_s).astype(jnp.float32)
-      vis = 1.0 - (1.0 - shadow_frac) * (occ_sum / float(len(sh_samples)))
+        return occ_sum_in + (hit & (ndotl > 0.0) & occ_s).astype(jnp.float32)
+
+      if n_sh == 1:
+        occ_sum = _sh_sample_body(0, jnp.zeros((block_b, block_r), dtype=jnp.float32))
+      else:
+        occ_sum = jax.lax.fori_loop(0, n_sh, _sh_sample_body, jnp.zeros((block_b, block_r), dtype=jnp.float32))
+      vis = 1.0 - (1.0 - shadow_frac) * (occ_sum / float(n_sh))
     else:
       vis = 1.0
 
@@ -1432,6 +1460,7 @@ def _pallas_tiled_dr_hierarchical(
     block_r: int = 512,
     emit_aux: bool = True,
     interpret: bool = False,
+    cam_fovy_override: Optional[jax.Array] = None,
 ) -> Dict[str, jax.Array]:
   """O(1)-compile Hierarchical Morton Cluster-BVH Mosaic DR kernel (supports G=1,004+ prims)."""
   B = int(mjx_data_batch.cam_xpos.shape[0])
@@ -1439,6 +1468,8 @@ def _pallas_tiled_dr_hierarchical(
   R = H * W
   gids = np.asarray(spec.enabled_geom_ids, dtype=np.int32)
   G = len(gids)
+  if G > 500:
+    block_r = min(int(block_r), 256)
 
   B_pad = ((B + block_b - 1) // block_b) * block_b
   R_pad = ((R + block_r - 1) // block_r) * block_r
@@ -1446,7 +1477,7 @@ def _pallas_tiled_dr_hierarchical(
   n_r_blk = R_pad // block_r
 
   cam_128, light_128 = _pack_camera_and_light_dr(
-      spec, rep_batch, mjx_data_batch, cam_slot, block_b, B, B_pad
+      spec, rep_batch, mjx_data_batch, cam_slot, block_b, B, B_pad, cam_fovy_override=cam_fovy_override
   )
   lray_dev = _build_unit_tangent_rays(H, W, R_pad)
 
@@ -2361,18 +2392,149 @@ class TiledCamera:
       rng_or_keys: Optional[jax.Array] = None,
       rep_cfg: Optional[ReplicatorCfg] = None,
   ) -> Dict[str, jax.Array]:
-    """Render local batch inside `jax.jit` or `shard_map`, optionally applying DR in the same graph."""
+    """Render local batch inside `jax.jit` or `shard_map`, fusing multi-cam into ONE Mosaic kernel."""
     if rep_batch is None and rng_or_keys is not None:
       rep_batch = self.randomize_local(rng_or_keys, mjx_data_batch, rep_cfg=rep_cfg)
 
     if not self.multi_cam:
       return self._render_single_cam_local(self.specs[0], 0, mjx_data_batch, rep_batch)
 
-    cam_outs = [
-        self._render_single_cam_local(sp, ci, mjx_data_batch, rep_batch)
-        for ci, sp in enumerate(self.specs)
-    ]
-    return {k: jnp.stack([co[k] for co in cam_outs], axis=1) for k in self.cfg.data_types}
+    # Fuse all N_cam cameras into a single (B * N_cam, ...) Mosaic Pallas call!
+    B = int(mjx_data_batch.cam_xpos.shape[0])
+    N_cam = len(self.cam_ids)
+    H, W = int(self.cfg.height), int(self.cfg.width)
+    interp = (jax.default_backend() == "cpu") if self.cfg.interpret is None else bool(self.cfg.interpret)
+    need_aux = any(
+        k in self.cfg.data_types
+        for k in ("normals", "semantic_segmentation", "instance_id", "motion_vectors")
+    )
+
+    def _tile_cam(x: jax.Array) -> jax.Array:
+      return jnp.broadcast_to(x[:, None, ...], (B, N_cam, *x.shape[1:])).reshape(B * N_cam, *x.shape[1:])
+
+    cpos_stack = jnp.stack([mjx_data_batch.cam_xpos[:, int(cid), :] for cid in self.cam_ids], axis=1)
+    cmat_stack = jnp.stack([mjx_data_batch.cam_xmat[:, int(cid), :, :] for cid in self.cam_ids], axis=1)
+
+    @dataclasses.dataclass
+    class _FlatDataProxy:
+      geom_xpos: jax.Array
+      geom_xmat: jax.Array
+      cam_xpos: jax.Array
+      cam_xmat: jax.Array
+      light_xpos: jax.Array
+      light_xmat: jax.Array
+      xpos: jax.Array
+      xmat: jax.Array
+
+    lpos_src = getattr(mjx_data_batch, "light_xpos", jnp.zeros((B, 0, 3), dtype=jnp.float32))
+    lmat_src = getattr(mjx_data_batch, "light_xmat", jnp.zeros((B, 0, 3, 3), dtype=jnp.float32))
+    flat_data = _FlatDataProxy(
+        geom_xpos=_tile_cam(mjx_data_batch.geom_xpos),
+        geom_xmat=_tile_cam(mjx_data_batch.geom_xmat),
+        cam_xpos=cpos_stack.reshape(B * N_cam, 1, 3),
+        cam_xmat=cmat_stack.reshape(B * N_cam, 1, 3, 3),
+        light_xpos=_tile_cam(lpos_src),
+        light_xmat=_tile_cam(lmat_src),
+        xpos=_tile_cam(mjx_data_batch.xpos),
+        xmat=_tile_cam(mjx_data_batch.xmat),
+    )
+
+    if rep_batch is not None:
+      flat_rep = ReplicatorBatch(
+          cam_xpos=rep_batch.cam_xpos.reshape(B * N_cam, 1, 3),
+          cam_xmat=rep_batch.cam_xmat.reshape(B * N_cam, 1, 3, 3),
+          cam_fovy_deg=rep_batch.cam_fovy_deg.reshape(B * N_cam, 1),
+          light_xpos=_tile_cam(rep_batch.light_xpos),
+          light_xdir=_tile_cam(rep_batch.light_xdir),
+          light_diffuse=_tile_cam(rep_batch.light_diffuse),
+          light_specular=_tile_cam(rep_batch.light_specular),
+          light_ambient=_tile_cam(rep_batch.light_ambient),
+          sky_rgb=_tile_cam(rep_batch.sky_rgb),
+          exposure=_tile_cam(rep_batch.exposure),
+          geom_rgba=_tile_cam(rep_batch.geom_rgba),
+          geom_roughness=_tile_cam(rep_batch.geom_roughness),
+          geom_specular=_tile_cam(rep_batch.geom_specular),
+          floor_tex=_tile_cam(rep_batch.floor_tex),
+          table_tex=_tile_cam(rep_batch.table_tex),
+      )
+      fovy_override = None
+    else:
+      flat_rep = None
+      fovy_override = jnp.broadcast_to(
+          jnp.asarray(self.base_fovys, dtype=jnp.float32)[None, :], (B, N_cam)
+      ).reshape(B * N_cam)
+
+    # Spec with cam_id=0 matching the single-slot flat_data proxy
+    sp0 = dataclasses.replace(self.specs[0], cam_id=0)
+    n_g = len(sp0.enabled_geom_ids)
+    if n_g <= 128:
+      raw_flat = _pallas_tiled_dr_unrolled(
+          spec=sp0,
+          mjx_data_batch=flat_data,
+          rep_batch=flat_rep,
+          cam_slot=0,
+          geom_sem_ids=self.geom_sem_ids,
+          geom_body_ids=self.geom_body_ids,
+          floor_gids=self.floor_gids,
+          table_gids=self.table_gids,
+          shader=self.cfg.shader,
+          tonemap=self.cfg.tonemap,
+          out_dtype=self.cfg.out_dtype,
+          block_b=self.cfg.block_b,
+          block_r=self.cfg.block_r,
+          n_ao_samples=self.cfg.n_ao_samples,
+          n_shadow_samples=self.cfg.n_shadow_samples,
+          ao_radius=self.cfg.ao_radius,
+          ao_strength=self.cfg.ao_strength,
+          shadow_softness=self.cfg.shadow_softness,
+          emit_aux=need_aux,
+          interpret=interp,
+          cam_fovy_override=fovy_override,
+      )
+    else:
+      raw_flat = _pallas_tiled_dr_hierarchical(
+          spec=sp0,
+          mjx_data_batch=flat_data,
+          rep_batch=flat_rep,
+          cam_slot=0,
+          geom_sem_ids=self.geom_sem_ids,
+          geom_body_ids=self.geom_body_ids,
+          floor_gids=self.floor_gids,
+          table_gids=self.table_gids,
+          cull_mode=self.cfg.cull_mode,
+          tonemap=self.cfg.tonemap,
+          out_dtype=self.cfg.out_dtype,
+          block_b=self.cfg.block_b,
+          block_r=self.cfg.block_r,
+          emit_aux=need_aux,
+          interpret=interp,
+          cam_fovy_override=fovy_override,
+      )
+
+    out: Dict[str, jax.Array] = {}
+    for k, v in raw_flat.items():
+      out[k] = v.reshape(B, N_cam, H, W, *v.shape[3:])
+
+    if "motion_vectors" in self.cfg.data_types:
+      flows = [
+          _compute_motion_vectors_zero_gather(
+              spec=self.specs[ci],
+              mjx_data_batch=mjx_data_batch,
+              rep_batch=rep_batch,
+              cam_slot=ci,
+              z_depth=out["distance_to_image_plane"][:, ci],
+              instance_id=out["instance_id"][:, ci],
+              body_id_map=out["_body_id"][:, ci],
+              active_moving_bids=self.active_moving_bids,
+              body_rootid=self.body_rootid,
+              dt=self.cfg.dt,
+              out_dtype=self.cfg.out_dtype,
+          )
+          for ci in range(N_cam)
+      ]
+      out["motion_vectors"] = jnp.stack(flows, axis=1)
+
+    return {k: out[k] for k in self.cfg.data_types}
 
   def shard_tree(self, tree: Any) -> Any:
     """Place a batched PyTree across `self.mesh` along `data_axis`."""
