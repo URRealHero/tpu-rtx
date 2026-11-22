@@ -1,0 +1,600 @@
+{
+  "wave": "wave5_menagerie_and_diffphys",
+  "worker": "w0",
+  "hardware": "tpu-v5p-4chips-w0",
+  "taskA_mujoco_menagerie": {
+    "task": "A_mujoco_menagerie_showcase",
+    "hardware": "tpu-v5p-4chips-w0",
+    "robots": [
+      "unitree_g1",
+      "unitree_go2",
+      "franka_emika_panda",
+      "tetheria_aero_hand"
+    ],
+    "benchmark_4chip": [
+      {
+        "robot": "unitree_g1",
+        "title": "Unitree G1 Humanoid (35-DOF)",
+        "res": "64x64",
+        "res_int": 64,
+        "batch_size": 128,
+        "n_chips": 4,
+        "nq": 36,
+        "nu": 29,
+        "n_mesh_geoms": 35,
+        "total_tris": 393270,
+        "render_only_ms": 50.282,
+        "render_only_fps": 2545.6,
+        "coupled_mjx_rtx_steps": 8,
+        "coupled_ms_per_rollout": 12023.923,
+        "coupled_fps": 85.2,
+        "hlo_audit": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 0,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 895,
+          "send_recv_ops": 0,
+          "zero_copy_verified": true
+        }
+      },
+      {
+        "robot": "unitree_g1",
+        "title": "Unitree G1 Humanoid (35-DOF)",
+        "res": "128x128",
+        "res_int": 128,
+        "batch_size": 128,
+        "n_chips": 4,
+        "nq": 36,
+        "nu": 29,
+        "n_mesh_geoms": 35,
+        "total_tris": 393270,
+        "render_only_ms": 170.017,
+        "render_only_fps": 752.9,
+        "coupled_mjx_rtx_steps": 8,
+        "coupled_ms_per_rollout": 7678.814,
+        "coupled_fps": 133.4,
+        "hlo_audit": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 0,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 895,
+          "send_recv_ops": 0,
+          "zero_copy_verified": true
+        }
+      },
+      {
+        "robot": "unitree_go2",
+        "title": "Unitree Go2 Quadruped (18-DOF)",
+        "res": "64x64",
+        "res_int": 64,
+        "batch_size": 128,
+        "n_chips": 4,
+        "nq": 19,
+        "nu": 12,
+        "n_mesh_geoms": 33,
+        "total_tris": 398432,
+        "render_only_ms": 68.708,
+        "render_only_fps": 1862.9,
+        "coupled_mjx_rtx_steps": 8,
+        "coupled_ms_per_rollout": 3893.583,
+        "coupled_fps": 263.0,
+        "hlo_audit": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 0,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 817,
+          "send_recv_ops": 0,
+          "zero_copy_verified": true
+        }
+      },
+      {
+        "robot": "unitree_go2",
+        "title": "Unitree Go2 Quadruped (18-DOF)",
+        "res": "128x128",
+        "res_int": 128,
+        "batch_size": 128,
+        "n_chips": 4,
+        "nq": 19,
+        "nu": 12,
+        "n_mesh_geoms": 33,
+        "total_tris": 398432,
+        "render_only_ms": 236.455,
+        "render_only_fps": 541.3,
+        "coupled_mjx_rtx_steps": 8,
+        "coupled_ms_per_rollout": 4081.129,
+        "coupled_fps": 250.9,
+        "hlo_audit": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 0,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 817,
+          "send_recv_ops": 0,
+          "zero_copy_verified": true
+        }
+      },
+      {
+        "robot": "franka_emika_panda",
+        "title": "Franka Emika Panda (9-DOF Arm)",
+        "res": "64x64",
+        "res_int": 64,
+        "batch_size": 128,
+        "n_chips": 4,
+        "nq": 9,
+        "nu": 8,
+        "n_mesh_geoms": 58,
+        "total_tris": 134888,
+        "render_only_ms": 40.879,
+        "render_only_fps": 3131.2,
+        "coupled_mjx_rtx_steps": 8,
+        "coupled_ms_per_rollout": 3774.829,
+        "coupled_fps": 271.3,
+        "hlo_audit": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 0,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 1052,
+          "send_recv_ops": 0,
+          "zero_copy_verified": true
+        }
+      },
+      {
+        "robot": "franka_emika_panda",
+        "title": "Franka Emika Panda (9-DOF Arm)",
+        "res": "128x128",
+        "res_int": 128,
+        "batch_size": 128,
+        "n_chips": 4,
+        "nq": 9,
+        "nu": 8,
+        "n_mesh_geoms": 58,
+        "total_tris": 134888,
+        "render_only_ms": 175.929,
+        "render_only_fps": 727.6,
+        "coupled_mjx_rtx_steps": 8,
+        "coupled_ms_per_rollout": 3892.201,
+        "coupled_fps": 263.1,
+        "hlo_audit": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 0,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 1052,
+          "send_recv_ops": 0,
+          "zero_copy_verified": true
+        }
+      },
+      {
+        "robot": "tetheria_aero_hand",
+        "title": "Tetheria Aero Hand Open (16-DOF)",
+        "res": "64x64",
+        "res_int": 64,
+        "batch_size": 128,
+        "n_chips": 4,
+        "nq": 16,
+        "nu": 7,
+        "n_mesh_geoms": 27,
+        "total_tris": 84674,
+        "render_only_ms": 29.879,
+        "render_only_fps": 4283.9,
+        "coupled_mjx_rtx_steps": 8,
+        "coupled_ms_per_rollout": 7403.577,
+        "coupled_fps": 138.3,
+        "hlo_audit": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 0,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 1196,
+          "send_recv_ops": 0,
+          "zero_copy_verified": true
+        }
+      },
+      {
+        "robot": "tetheria_aero_hand",
+        "title": "Tetheria Aero Hand Open (16-DOF)",
+        "res": "128x128",
+        "res_int": 128,
+        "batch_size": 128,
+        "n_chips": 4,
+        "nq": 16,
+        "nu": 7,
+        "n_mesh_geoms": 27,
+        "total_tris": 84674,
+        "render_only_ms": 107.03,
+        "render_only_fps": 1195.9,
+        "coupled_mjx_rtx_steps": 8,
+        "coupled_ms_per_rollout": 7624.745,
+        "coupled_fps": 134.3,
+        "hlo_audit": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 0,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 1196,
+          "send_recv_ops": 0,
+          "zero_copy_verified": true
+        }
+      }
+    ],
+    "gallery_pbr": {
+      "res": "1024x1024",
+      "n_ao_samples": 8,
+      "n_shadow_samples": 8,
+      "scenes": {
+        "unitree_g1": {
+          "title": "Unitree G1 Humanoid (35-DOF)",
+          "res": "1024x1024",
+          "n_mesh_geoms": 35,
+          "total_tris": 393270,
+          "n_ao_samples": 8,
+          "n_shadow_samples": 8,
+          "dt_render_ms": 1525.36,
+          "fg_pixel_fraction": 0.1229,
+          "hlo_audit": {
+            "host_callbacks": 0,
+            "dot_ops": 0,
+            "conv_ops": 0,
+            "while_ops": 0,
+            "gather_ops": 0,
+            "custom_calls": 0,
+            "hlo_lines": 2043,
+            "send_recv_ops": 0,
+            "zero_copy_verified": true
+          }
+        },
+        "unitree_go2": {
+          "title": "Unitree Go2 Quadruped (18-DOF)",
+          "res": "1024x1024",
+          "n_mesh_geoms": 33,
+          "total_tris": 398432,
+          "n_ao_samples": 8,
+          "n_shadow_samples": 8,
+          "dt_render_ms": 1847.12,
+          "fg_pixel_fraction": 0.2338,
+          "hlo_audit": {
+            "host_callbacks": 0,
+            "dot_ops": 0,
+            "conv_ops": 0,
+            "while_ops": 0,
+            "gather_ops": 0,
+            "custom_calls": 0,
+            "hlo_lines": 2035,
+            "send_recv_ops": 0,
+            "zero_copy_verified": true
+          }
+        },
+        "franka_emika_panda": {
+          "title": "Franka Emika Panda (9-DOF Arm)",
+          "res": "1024x1024",
+          "n_mesh_geoms": 58,
+          "total_tris": 134888,
+          "n_ao_samples": 8,
+          "n_shadow_samples": 8,
+          "dt_render_ms": 2005.14,
+          "fg_pixel_fraction": 0.1435,
+          "hlo_audit": {
+            "host_callbacks": 0,
+            "dot_ops": 0,
+            "conv_ops": 0,
+            "while_ops": 0,
+            "gather_ops": 0,
+            "custom_calls": 0,
+            "hlo_lines": 2131,
+            "send_recv_ops": 0,
+            "zero_copy_verified": true
+          }
+        },
+        "tetheria_aero_hand": {
+          "title": "Tetheria Aero Hand Open (16-DOF)",
+          "res": "1024x1024",
+          "n_mesh_geoms": 27,
+          "total_tris": 84674,
+          "n_ao_samples": 8,
+          "n_shadow_samples": 8,
+          "dt_render_ms": 1501.97,
+          "fg_pixel_fraction": 0.1826,
+          "hlo_audit": {
+            "host_callbacks": 0,
+            "dot_ops": 0,
+            "conv_ops": 0,
+            "while_ops": 2,
+            "gather_ops": 0,
+            "custom_calls": 0,
+            "hlo_lines": 3118,
+            "send_recv_ops": 0,
+            "zero_copy_verified": true
+          }
+        }
+      }
+    }
+  },
+  "taskB_diff_phys_render": {
+    "task": "B_diff_phys_render_visual_servoing",
+    "res": "64x64",
+    "horizon_steps": 12,
+    "n_iters": 240,
+    "n_dof": 7,
+    "init_ee_displacement_cm": 12.57,
+    "init_pixel_mse": 0.01779296062886715,
+    "init_psnr_db": 17.5,
+    "init_ee_err_cm": 16.812,
+    "mid_iter": 81,
+    "mid_psnr_db": 31.3,
+    "mid_ee_err_cm": 2.474,
+    "final_pixel_mse": 0.0002468859311193228,
+    "final_psnr_db": 36.08,
+    "final_ee_err_cm": 1.631,
+    "final_q_rmse_deg": 6.454,
+    "total_opt_sec": 8.611,
+    "grad_steps_per_sec": 27.87,
+    "coupled_phys_steps_per_sec": 334.5,
+    "hlo_audit": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 6,
+      "while_ops": 2,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 61035,
+      "send_recv_ops": 0,
+      "zero_copy_verified": true
+    },
+    "history": [
+      {
+        "iter": 1,
+        "loss": 0.01776277832686901,
+        "grad_norm": 0.004012723919004202,
+        "pixel_mse": 0.017582327127456665,
+        "psnr_db": 17.549236297607422,
+        "ee_err_cm": 16.027,
+        "q_rmse_deg": 23.273
+      },
+      {
+        "iter": 10,
+        "loss": 0.01098745595663786,
+        "grad_norm": 0.009440964087843895,
+        "pixel_mse": 0.016349004581570625,
+        "psnr_db": 17.865087509155273,
+        "ee_err_cm": 8.651,
+        "q_rmse_deg": 22.384
+      },
+      {
+        "iter": 20,
+        "loss": 0.004804321099072695,
+        "grad_norm": 0.0023705956991761923,
+        "pixel_mse": 0.007048961706459522,
+        "psnr_db": 21.518749237060547,
+        "ee_err_cm": 2.634,
+        "q_rmse_deg": 20.316
+      },
+      {
+        "iter": 30,
+        "loss": 0.0035756814759224653,
+        "grad_norm": 0.002666833810508251,
+        "pixel_mse": 0.007278895936906338,
+        "psnr_db": 21.37934684753418,
+        "ee_err_cm": 4.146,
+        "q_rmse_deg": 16.823
+      },
+      {
+        "iter": 40,
+        "loss": 0.0026086284779012203,
+        "grad_norm": 0.001201197854243219,
+        "pixel_mse": 0.007272852119058371,
+        "psnr_db": 21.382953643798828,
+        "ee_err_cm": 5.128,
+        "q_rmse_deg": 14.187
+      },
+      {
+        "iter": 50,
+        "loss": 0.0026224430184811354,
+        "grad_norm": 0.001009229221381247,
+        "pixel_mse": 0.005088666919618845,
+        "psnr_db": 22.933958053588867,
+        "ee_err_cm": 3.763,
+        "q_rmse_deg": 11.745
+      },
+      {
+        "iter": 60,
+        "loss": 0.0023829855490475893,
+        "grad_norm": 0.0014032312901690602,
+        "pixel_mse": 0.003217665245756507,
+        "psnr_db": 24.924589157104492,
+        "ee_err_cm": 3.203,
+        "q_rmse_deg": 8.384
+      },
+      {
+        "iter": 70,
+        "loss": 0.0020903507247567177,
+        "grad_norm": 0.0009072928805835545,
+        "pixel_mse": 0.001366669312119484,
+        "psnr_db": 28.64336585998535,
+        "ee_err_cm": 2.497,
+        "q_rmse_deg": 7.382
+      },
+      {
+        "iter": 80,
+        "loss": 0.0020076713990420103,
+        "grad_norm": 0.0005933138309046626,
+        "pixel_mse": 0.0007770310621708632,
+        "psnr_db": 31.095617294311523,
+        "ee_err_cm": 2.473,
+        "q_rmse_deg": 8.678
+      },
+      {
+        "iter": 81,
+        "loss": 0.001986890798434615,
+        "grad_norm": 0.000484495802083984,
+        "pixel_mse": 0.0007420008769258857,
+        "psnr_db": 31.29595947265625,
+        "ee_err_cm": 2.474,
+        "q_rmse_deg": 8.851
+      },
+      {
+        "iter": 90,
+        "loss": 0.00197699130512774,
+        "grad_norm": 0.0011689254315569997,
+        "pixel_mse": 0.0007740788860246539,
+        "psnr_db": 31.112146377563477,
+        "ee_err_cm": 2.721,
+        "q_rmse_deg": 10.379
+      },
+      {
+        "iter": 100,
+        "loss": 0.001998343039304018,
+        "grad_norm": 0.001394825056195259,
+        "pixel_mse": 0.0008729344117455184,
+        "psnr_db": 30.59018325805664,
+        "ee_err_cm": 2.882,
+        "q_rmse_deg": 11.087
+      },
+      {
+        "iter": 110,
+        "loss": 0.0020375503227114677,
+        "grad_norm": 0.00030235209851525724,
+        "pixel_mse": 0.0008186961058527231,
+        "psnr_db": 30.8687744140625,
+        "ee_err_cm": 2.697,
+        "q_rmse_deg": 11.146
+      },
+      {
+        "iter": 120,
+        "loss": 0.0020659335423260927,
+        "grad_norm": 0.0006993166753090918,
+        "pixel_mse": 0.0007673252839595079,
+        "psnr_db": 31.150203704833984,
+        "ee_err_cm": 2.711,
+        "q_rmse_deg": 11.031
+      },
+      {
+        "iter": 130,
+        "loss": 0.0018476140685379505,
+        "grad_norm": 0.0002837801002897322,
+        "pixel_mse": 0.0006817952962592244,
+        "psnr_db": 31.6634578704834,
+        "ee_err_cm": 2.734,
+        "q_rmse_deg": 10.98
+      },
+      {
+        "iter": 140,
+        "loss": 0.0016855772119015455,
+        "grad_norm": 0.0002168078935937956,
+        "pixel_mse": 0.0006542543414980173,
+        "psnr_db": 31.842533111572266,
+        "ee_err_cm": 2.562,
+        "q_rmse_deg": 10.729
+      },
+      {
+        "iter": 150,
+        "loss": 0.00151133444160223,
+        "grad_norm": 0.0002215377608081326,
+        "pixel_mse": 0.0005836542695760727,
+        "psnr_db": 32.338443756103516,
+        "ee_err_cm": 2.507,
+        "q_rmse_deg": 10.242
+      },
+      {
+        "iter": 160,
+        "loss": 0.0013284003362059593,
+        "grad_norm": 0.00022003626509103924,
+        "pixel_mse": 0.0005407958524301648,
+        "psnr_db": 32.6696662902832,
+        "ee_err_cm": 2.456,
+        "q_rmse_deg": 9.686
+      },
+      {
+        "iter": 170,
+        "loss": 0.0011311619309708476,
+        "grad_norm": 0.0003400164423510432,
+        "pixel_mse": 0.00046970107359811664,
+        "psnr_db": 33.28178787231445,
+        "ee_err_cm": 2.355,
+        "q_rmse_deg": 9.153
+      },
+      {
+        "iter": 180,
+        "loss": 0.0009809930343180895,
+        "grad_norm": 0.0004047728725709021,
+        "pixel_mse": 0.00042326710536144674,
+        "psnr_db": 33.733856201171875,
+        "ee_err_cm": 2.188,
+        "q_rmse_deg": 8.632
+      },
+      {
+        "iter": 190,
+        "loss": 0.0008062890265136957,
+        "grad_norm": 0.00044753897236660123,
+        "pixel_mse": 0.000386333791539073,
+        "psnr_db": 34.130374908447266,
+        "ee_err_cm": 2.005,
+        "q_rmse_deg": 8.151
+      },
+      {
+        "iter": 200,
+        "loss": 0.0006220153300091624,
+        "grad_norm": 0.001408022129908204,
+        "pixel_mse": 0.0003530766989570111,
+        "psnr_db": 34.52130889892578,
+        "ee_err_cm": 1.881,
+        "q_rmse_deg": 7.705
+      },
+      {
+        "iter": 210,
+        "loss": 0.0004964093095622957,
+        "grad_norm": 0.000603873108047992,
+        "pixel_mse": 0.00031768737244419754,
+        "psnr_db": 34.97999954223633,
+        "ee_err_cm": 1.789,
+        "q_rmse_deg": 7.326
+      },
+      {
+        "iter": 220,
+        "loss": 0.0003699549997691065,
+        "grad_norm": 0.0005047583836130798,
+        "pixel_mse": 0.0002906824229285121,
+        "psnr_db": 35.365814208984375,
+        "ee_err_cm": 1.711,
+        "q_rmse_deg": 6.994
+      },
+      {
+        "iter": 230,
+        "loss": 0.0002709995023906231,
+        "grad_norm": 0.0006121310289017856,
+        "pixel_mse": 0.0002713194699026644,
+        "psnr_db": 35.665191650390625,
+        "ee_err_cm": 1.658,
+        "q_rmse_deg": 6.704
+      },
+      {
+        "iter": 240,
+        "loss": 0.0002575843536760658,
+        "grad_norm": 0.0006414448725990951,
+        "pixel_mse": 0.0002468859311193228,
+        "psnr_db": 36.07503890991211,
+        "ee_err_cm": 1.631,
+        "q_rmse_deg": 6.454
+      }
+    ]
+  }
+}

@@ -39,13 +39,14 @@ import numpy as np
 from tpu_mjx_render.camera import PROJ_ORTHOGRAPHIC, PROJ_PERSPECTIVE
 from tpu_mjx_render.mesh_ray import MeshAssetSpec, build_mesh_scene_spec, render_mesh_batch
 from tpu_mjx_render.pallas_v2 import (
+    _compute_batch_camera_rays_soa,
     _compute_geom_bound_sq,
     _extract_light_batch,
     _ray_one_geom_v2,
     build_local_camera_rays,
     pallas_raycast_batch_v2,
 )
-from tpu_mjx_render.primitives import MJ_MAXVAL, RAY_FN_BY_TYPE
+from tpu_mjx_render.primitives import GEOM_PLANE, MJ_MAXVAL, RAY_FN_BY_TYPE
 from tpu_mjx_render.renderer import RenderSceneSpec
 from tpu_mjx_render.roofline import TPU_SPECS, TPUHardwareSpec, inspect_hlo_ops
 
@@ -1471,6 +1472,842 @@ def _compute_flow_zero_gather(
   return flow.astype(out_dtype)
 
 
+@dataclasses.dataclass(frozen=True)
+class MultiMeshBVHBank:
+  """Concatenated Wide-BVH-64 bank for multi-instance MuJoCo GEOM_MESH rendering."""
+
+  mesh_gids: Tuple[int, ...]
+  c_loc: np.ndarray        # (M, 3)
+  h_loc: np.ndarray        # (M, 3)
+  offs: np.ndarray         # (M, 4) -> l2r_off, l2_off, l0_off, leaf_off
+  inst_rgba: np.ndarray    # (M, 3)
+  inst_spec: np.ndarray    # (M,)
+  inst_shin: np.ndarray    # (M,)
+  inst_emit: np.ndarray    # (M,)
+  l2r_bank: np.ndarray     # (U, 8, 128)
+  l2_bank: np.ndarray      # (sum_l2, 8, 128)
+  l0_bank: np.ndarray      # (sum_l1, 8, 128)
+  leaf_bank: np.ndarray    # (sum_leaves, 24, 128)
+  total_tris: int
+
+
+def _build_multi_mesh_bvh_from_model(
+    src: Any,
+    spec_ref: RenderSceneSpec,
+    enabled_geom_groups: Tuple[int, ...] = (0, 1, 2, 3),
+) -> Optional[MultiMeshBVHBank]:
+  """Build deduplicated Wide-BVH-64 bank for all visible GEOM_MESH in MjModel / mjx.Model."""
+  nmesh = int(getattr(src, "nmesh", 0))
+  if nmesh <= 0 or not hasattr(src, "mesh_vert") or not hasattr(src, "mesh_face"):
+    return None
+
+  geom_type = np.asarray(src.geom_type, dtype=np.int32)
+  geom_group = np.asarray(src.geom_group, dtype=np.int32)
+  geom_dataid = np.asarray(src.geom_dataid, dtype=np.int32)
+  geom_rgba = spec_ref.geom_rgba
+
+  mesh_gids = [
+      g for g in range(int(src.ngeom))
+      if int(geom_type[g]) == GEOM_MESH_TYPE
+      and int(geom_group[g]) in enabled_geom_groups
+      and float(geom_rgba[g, 3]) > 0.0
+      and int(geom_dataid[g]) >= 0
+  ]
+  if not mesh_gids:
+    return None
+
+  from tpu_mjx_render.adapters.tpu_optix import (
+      BRANCH_FACTOR,
+      LEAF_SIZE,
+      _compute_smooth_vertex_normals,
+      _spatial_median_order,
+  )
+
+  mesh_vert = np.asarray(src.mesh_vert, dtype=np.float32)
+  mesh_vertadr = np.asarray(src.mesh_vertadr, dtype=np.int32)
+  mesh_vertnum = np.asarray(src.mesh_vertnum, dtype=np.int32)
+  mesh_face = np.asarray(src.mesh_face, dtype=np.int32)
+  mesh_faceadr = np.asarray(src.mesh_faceadr, dtype=np.int32)
+  mesh_facenum = np.asarray(src.mesh_facenum, dtype=np.int32)
+
+  proto_by_mid: Dict[int, Tuple[int, int, int, int, np.ndarray, np.ndarray, int]] = {}
+  l2r_list, l2_list, l0_list, leaf_list = [], [], [], []
+  l2r_off, l2_off, l0_off, leaf_off = 0, 0, 0, 0
+
+  for g in mesh_gids:
+    mid = int(geom_dataid[g])
+    if mid in proto_by_mid:
+      continue
+    va, vn = int(mesh_vertadr[mid]), int(mesh_vertnum[mid])
+    fa, fn = int(mesh_faceadr[mid]), int(mesh_facenum[mid])
+    verts = mesh_vert[va : va + vn]
+    faces = mesh_face[fa : fa + fn]
+    vnorm = _compute_smooth_vertex_normals(verts, faces)
+
+    centroids = (verts[faces[:, 0]] + verts[faces[:, 1]] + verts[faces[:, 2]]) * (1.0 / 3.0)
+    order = _spatial_median_order(centroids, LEAF_SIZE, BRANCH_FACTOR, stop_at_l1=True)
+    faces = faces[order]
+
+    F = int(faces.shape[0])
+    n_leaves = max(1, (F + LEAF_SIZE - 1) // LEAF_SIZE)
+    F_pad = n_leaves * LEAF_SIZE
+    leaf_bank = np.zeros((n_leaves, 24, LEAF_SIZE), dtype=np.float32)
+
+    def _pack_vec3(row_start: int, arr_f3: np.ndarray) -> None:
+      buf = np.empty((F_pad, 3), dtype=np.float32)
+      buf[:F] = arr_f3
+      if F_pad > F:
+        buf[F:] = arr_f3[-1]
+      leaf_bank[:, row_start : row_start + 3, :] = buf.reshape(n_leaves, LEAF_SIZE, 3).transpose(0, 2, 1)
+
+    tv0 = verts[faces[:, 0]]
+    _pack_vec3(0, tv0)
+    _pack_vec3(3, verts[faces[:, 1]] - tv0)
+    _pack_vec3(6, verts[faces[:, 2]] - tv0)
+    tv_buf = np.zeros((F_pad,), dtype=np.float32)
+    tv_buf[:F] = 1.0
+    leaf_bank[:, 9, :] = tv_buf.reshape(n_leaves, LEAF_SIZE)
+    _pack_vec3(10, vnorm[faces[:, 0]])
+    _pack_vec3(13, vnorm[faces[:, 1]])
+    _pack_vec3(16, vnorm[faces[:, 2]])
+
+    v0_l = leaf_bank[:, 0:3, :]
+    v1_l = v0_l + leaf_bank[:, 3:6, :]
+    v2_l = v0_l + leaf_bank[:, 6:9, :]
+    pts_min = np.minimum(v0_l, np.minimum(v1_l, v2_l))
+    pts_max = np.maximum(v0_l, np.maximum(v1_l, v2_l))
+    tv_mask = leaf_bank[:, 9:10, :] > 0.5
+    leaf_min = np.min(np.where(tv_mask, pts_min, 1e20), axis=2) - 1e-4
+    leaf_max = np.max(np.where(tv_mask, pts_max, -1e20), axis=2) + 1e-4
+
+    n_l1 = max(1, (n_leaves + BRANCH_FACTOR - 1) // BRANCH_FACTOR)
+    n_leaves_p = n_l1 * BRANCH_FACTOR
+    l0_aabbs = np.zeros((n_l1, 8, 128), dtype=np.float32)
+    l0_aabbs[:, 0:3, :] = 1e20
+    l0_aabbs[:, 3:6, :] = -1e20
+    lmin_p = np.full((n_leaves_p, 3), 1e20, dtype=np.float32)
+    lmax_p = np.full((n_leaves_p, 3), -1e20, dtype=np.float32)
+    lval_p = np.zeros((n_leaves_p,), dtype=np.float32)
+    lmin_p[:n_leaves] = leaf_min
+    lmax_p[:n_leaves] = leaf_max
+    lval_p[:n_leaves] = 1.0
+    lmin_g = lmin_p.reshape(n_l1, BRANCH_FACTOR, 3).transpose(0, 2, 1)
+    lmax_g = lmax_p.reshape(n_l1, BRANCH_FACTOR, 3).transpose(0, 2, 1)
+    l0_aabbs[:, 0:3, :BRANCH_FACTOR] = lmin_g
+    l0_aabbs[:, 3:6, :BRANCH_FACTOR] = lmax_g
+    l0_aabbs[:, 6, :BRANCH_FACTOR] = lval_p.reshape(n_l1, BRANCH_FACTOR)
+    l1_min = np.min(lmin_g, axis=2)
+    l1_max = np.max(lmax_g, axis=2)
+
+    n_l2 = max(1, (n_l1 + BRANCH_FACTOR - 1) // BRANCH_FACTOR)
+    if n_l2 > BRANCH_FACTOR:
+      raise ValueError(f"Mesh {mid} has {F} tris (n_l2={n_l2} > {BRANCH_FACTOR}).")
+    n_l1_p = n_l2 * BRANCH_FACTOR
+    l2_aabbs = np.zeros((n_l2, 8, 128), dtype=np.float32)
+    l2_aabbs[:, 0:3, :] = 1e20
+    l2_aabbs[:, 3:6, :] = -1e20
+    m1min_p = np.full((n_l1_p, 3), 1e20, dtype=np.float32)
+    m1max_p = np.full((n_l1_p, 3), -1e20, dtype=np.float32)
+    m1val_p = np.zeros((n_l1_p,), dtype=np.float32)
+    m1min_p[:n_l1] = l1_min
+    m1max_p[:n_l1] = l1_max
+    m1val_p[:n_l1] = 1.0
+    m1min_g = m1min_p.reshape(n_l2, BRANCH_FACTOR, 3).transpose(0, 2, 1)
+    m1max_g = m1max_p.reshape(n_l2, BRANCH_FACTOR, 3).transpose(0, 2, 1)
+    l2_aabbs[:, 0:3, :BRANCH_FACTOR] = m1min_g
+    l2_aabbs[:, 3:6, :BRANCH_FACTOR] = m1max_g
+    l2_aabbs[:, 6, :BRANCH_FACTOR] = m1val_p.reshape(n_l2, BRANCH_FACTOR)
+
+    l2_min = np.min(m1min_g, axis=2)
+    l2_max = np.max(m1max_g, axis=2)
+    l2_roots_aabb = np.zeros((1, 8, 128), dtype=np.float32)
+    l2_roots_aabb[0, 0:3, :] = 1e20
+    l2_roots_aabb[0, 3:6, :] = -1e20
+    l2_roots_aabb[0, 0:3, :n_l2] = l2_min.T
+    l2_roots_aabb[0, 3:6, :n_l2] = l2_max.T
+    l2_roots_aabb[0, 6, :n_l2] = 1.0
+
+    obj_min = np.min(l2_min, axis=0).astype(np.float32)
+    obj_max = np.max(l2_max, axis=0).astype(np.float32)
+
+    proto_by_mid[mid] = (l2r_off, l2_off, l0_off, leaf_off, obj_min, obj_max, F)
+    l2r_list.append(l2_roots_aabb)
+    l2_list.append(l2_aabbs)
+    l0_list.append(l0_aabbs)
+    leaf_list.append(leaf_bank)
+    l2r_off += 1
+    l2_off += n_l2
+    l0_off += n_l1
+    leaf_off += n_leaves
+
+  c_loc_arr, h_loc_arr, offs_arr = [], [], []
+  inst_rgba, inst_spec, inst_shin, inst_emit = [], [], [], []
+  total_tris = 0
+  for g in mesh_gids:
+    mid = int(geom_dataid[g])
+    l2ro, l2o, l0o, lfo, omin, omax, F_m = proto_by_mid[mid]
+    c_loc_arr.append(0.5 * (omin + omax))
+    h_loc_arr.append(0.5 * (omax - omin))
+    offs_arr.append([float(l2ro), float(l2o), float(l0o), float(lfo)])
+    inst_rgba.append(geom_rgba[g, :3])
+    inst_spec.append(float(spec_ref.geom_spec[g]))
+    inst_shin.append(float(spec_ref.geom_shin[g]))
+    inst_emit.append(float(spec_ref.geom_emit[g]))
+    total_tris += F_m
+
+  return MultiMeshBVHBank(
+      mesh_gids=tuple(int(g) for g in mesh_gids),
+      c_loc=np.stack(c_loc_arr, axis=0).astype(np.float32),
+      h_loc=np.stack(h_loc_arr, axis=0).astype(np.float32),
+      offs=np.array(offs_arr, dtype=np.float32),
+      inst_rgba=np.stack(inst_rgba, axis=0).astype(np.float32),
+      inst_spec=np.array(inst_spec, dtype=np.float32),
+      inst_shin=np.array(inst_shin, dtype=np.float32),
+      inst_emit=np.array(inst_emit, dtype=np.float32),
+      l2r_bank=np.concatenate(l2r_list, axis=0).astype(np.float32),
+      l2_bank=np.concatenate(l2_list, axis=0).astype(np.float32),
+      l0_bank=np.concatenate(l0_list, axis=0).astype(np.float32),
+      leaf_bank=np.concatenate(leaf_list, axis=0).astype(np.float32),
+      total_tris=total_tris,
+  )
+
+
+def _trace_multi_mesh_bvh(
+    bank: MultiMeshBVHBank,
+    obj_xpos: jax.Array,   # (B, M, 3)
+    obj_xmat: jax.Array,   # (B, M, 3, 3)
+    ro: jax.Array,         # (B, R, 3)
+    rd: jax.Array,         # (B, R, 3)
+    t_limit: jax.Array,    # (B, R)
+    any_hit: bool = False,
+    interpret: bool = False,
+):
+  """Single-kernel Mosaic Wide-BVH-64 raycaster across M rigid mesh instances."""
+  from tpu_mjx_render.adapters.tpu_optix import BRANCH_FACTOR
+
+  BLOCK_R = 128
+  B, R, _ = ro.shape
+  M = len(bank.mesh_gids)
+  R_pad = ((R + BLOCK_R - 1) // BLOCK_R) * BLOCK_R
+  n_tiles = R_pad // BLOCK_R
+
+  ro_p = jnp.pad(ro, ((0, 0), (0, R_pad - R), (0, 0))).reshape(B * n_tiles, BLOCK_R, 3)
+  rd_p = jnp.pad(rd, ((0, 0), (0, R_pad - R), (0, 0)), constant_values=1.0 / np.sqrt(3.0)).reshape(B * n_tiles, BLOCK_R, 3)
+  tl_p = jnp.pad(t_limit, ((0, 0), (0, R_pad - R)), constant_values=0.0).reshape(B * n_tiles, BLOCK_R, 1)
+  rays_2d = jnp.concatenate([ro_p, rd_p, tl_p, jnp.zeros_like(tl_p)], axis=-1).transpose(0, 2, 1).reshape(B * n_tiles * 8, BLOCK_R)
+
+  c_loc = jnp.asarray(bank.c_loc, jnp.float32)
+  h_loc = jnp.asarray(bank.h_loc, jnp.float32)
+  c_w = obj_xpos + jnp.einsum("bmij,mj->bmi", obj_xmat, c_loc, precision=jax.lax.Precision.HIGHEST)
+  h_w = jnp.einsum("bmij,mj->bmi", jnp.abs(obj_xmat), h_loc, precision=jax.lax.Precision.HIGHEST)
+  w_min = c_w - h_w
+  w_max = c_w + h_w
+
+  row2_static = np.concatenate([
+      bank.offs,
+      bank.inst_rgba,
+      np.array(bank.mesh_gids, dtype=np.float32)[:, None],
+  ], axis=-1)  # (M, 8)
+  row2_b = jnp.broadcast_to(jnp.asarray(row2_static, jnp.float32)[None, :, :], (B, M, 8))
+
+  r0 = jnp.pad(jnp.concatenate([obj_xpos, w_min, w_max], axis=-1), ((0, 0), (0, 0), (0, 128 - 9)))
+  r1 = jnp.pad(obj_xmat.reshape(B, M, 9), ((0, 0), (0, 0), (0, 128 - 9)))
+  r2 = jnp.pad(row2_b, ((0, 0), (0, 0), (0, 128 - 8)))
+  zeros_r = jnp.zeros((B, M, 5, 128), dtype=jnp.float32)
+  inst_flat = jnp.concatenate([r0[:, :, None, :], r1[:, :, None, :], r2[:, :, None, :], zeros_r], axis=2).reshape(B * M, 8, 128)
+
+  l2r_dev = jnp.asarray(bank.l2r_bank, dtype=jnp.float32)
+  l2_dev = jnp.asarray(bank.l2_bank, dtype=jnp.float32)
+  l0_dev = jnp.asarray(bank.l0_bank, dtype=jnp.float32)
+  leaf_dev = jnp.asarray(bank.leaf_bank, dtype=jnp.float32)
+  leaf_rows = 16 if any_hit else 24
+
+  def _kernel(
+      ray_ref, inst_hbm_ref, l2r_hbm_ref, l2_hbm_ref, l0_hbm_ref, leaf_hbm_ref, out_ref,
+      inst_vmem, l2r_vmem, l2_vmem, l0_vmem, leaf_vmem,
+      sem_i, sem_r, sem_2, sem_0, sem_l,
+  ):
+    cols_iota_64 = jax.lax.broadcasted_iota(jnp.int32, (1, BRANCH_FACTOR), 1)
+    tile_idx = pl.program_id(0)
+    b_idx = tile_idx // n_tiles
+    rt = ray_ref[...]
+
+    rox_w = jnp.transpose(rt[0:1, :], (1, 0))
+    roy_w = jnp.transpose(rt[1:2, :], (1, 0))
+    roz_w = jnp.transpose(rt[2:3, :], (1, 0))
+    rdx_w = jnp.transpose(rt[3:4, :], (1, 0))
+    rdy_w = jnp.transpose(rt[4:5, :], (1, 0))
+    rdz_w = jnp.transpose(rt[5:6, :], (1, 0))
+    bd_init = jnp.transpose(rt[6:7, :], (1, 0))
+
+    irx_w = jnp.where(jnp.abs(rdx_w) > 1e-12, 1.0 / jnp.where(jnp.abs(rdx_w) > 1e-12, rdx_w, 1.0), 1e12)
+    iry_w = jnp.where(jnp.abs(rdy_w) > 1e-12, 1.0 / jnp.where(jnp.abs(rdy_w) > 1e-12, rdy_w, 1.0), 1e12)
+    irz_w = jnp.where(jnp.abs(rdz_w) > 1e-12, 1.0 / jnp.where(jnp.abs(rdz_w) > 1e-12, rdz_w, 1.0), 1e12)
+
+    z1 = jnp.zeros((BLOCK_R, 1), jnp.float32)
+    gid_init = jnp.full((BLOCK_R, 1), -1.0, jnp.float32)
+
+    def _inst_body(m_i, state):
+      cbd, cnx, cny, cnz, cgid, car, cag, cab = state
+      cpi = pltpu.make_async_copy(inst_hbm_ref.at[b_idx * M + m_i, :, :], inst_vmem, sem_i)
+      cpi.start(); cpi.wait()
+      iv = inst_vmem[...]
+
+      px, py, pz = iv[0, 0], iv[0, 1], iv[0, 2]
+      wmnx, wmny, wmnz = iv[0, 3], iv[0, 4], iv[0, 5]
+      wmxx, wmxy, wmxz = iv[0, 6], iv[0, 7], iv[0, 8]
+
+      tx0 = (wmnx - rox_w) * irx_w; tx1 = (wmxx - rox_w) * irx_w
+      ty0 = (wmny - roy_w) * iry_w; ty1 = (wmxy - roy_w) * iry_w
+      tz0 = (wmnz - roz_w) * irz_w; tz1 = (wmxz - roz_w) * irz_w
+      tmin_w = jnp.maximum(0.0, jnp.maximum(jnp.minimum(tx0, tx1), jnp.maximum(jnp.minimum(ty0, ty1), jnp.minimum(tz0, tz1))))
+      tmax_w = jnp.minimum(jnp.maximum(tx0, tx1), jnp.minimum(jnp.maximum(ty0, ty1), jnp.maximum(tz0, tz1)))
+      hit_w = jnp.any((tmax_w >= tmin_w) & (tmin_w < cbd))
+
+      def _run_inst(_):
+        m00, m01, m02 = iv[1, 0], iv[1, 1], iv[1, 2]
+        m10, m11, m12 = iv[1, 3], iv[1, 4], iv[1, 5]
+        m20, m21, m22 = iv[1, 6], iv[1, 7], iv[1, 8]
+        l2r_o = iv[2, 0].astype(jnp.int32)
+        l2_o = iv[2, 1].astype(jnp.int32)
+        l0_o = iv[2, 2].astype(jnp.int32)
+        lf_o = iv[2, 3].astype(jnp.int32)
+
+        dx, dy, dz = rox_w - px, roy_w - py, roz_w - pz
+        rox = m00 * dx + m10 * dy + m20 * dz
+        roy = m01 * dx + m11 * dy + m21 * dz
+        roz = m02 * dx + m12 * dy + m22 * dz
+        rdx = m00 * rdx_w + m10 * rdy_w + m20 * rdz_w
+        rdy = m01 * rdx_w + m11 * rdy_w + m21 * rdz_w
+        rdz = m02 * rdx_w + m12 * rdy_w + m22 * rdz_w
+
+        irx = jnp.where(jnp.abs(rdx) > 1e-12, 1.0 / jnp.where(jnp.abs(rdx) > 1e-12, rdx, 1.0), 1e12)
+        iry = jnp.where(jnp.abs(rdy) > 1e-12, 1.0 / jnp.where(jnp.abs(rdy) > 1e-12, rdy, 1.0), 1e12)
+        irz = jnp.where(jnp.abs(rdz) > 1e-12, 1.0 / jnp.where(jnp.abs(rdz) > 1e-12, rdz, 1.0), 1e12)
+
+        cpr = pltpu.make_async_copy(l2r_hbm_ref.at[l2r_o, :, :], l2r_vmem, sem_r)
+        cpr.start(); cpr.wait()
+        l2_roots_blk = l2r_vmem[...]
+
+        l2_bx0, l2_by0, l2_bz0 = l2_roots_blk[0:1, :BRANCH_FACTOR], l2_roots_blk[1:2, :BRANCH_FACTOR], l2_roots_blk[2:3, :BRANCH_FACTOR]
+        l2_bx1, l2_by1, l2_bz1 = l2_roots_blk[3:4, :BRANCH_FACTOR], l2_roots_blk[4:5, :BRANCH_FACTOR], l2_roots_blk[5:6, :BRANCH_FACTOR]
+        l2_valid = l2_roots_blk[6:7, :BRANCH_FACTOR] > 0.5
+        tx0_2, tx1_2 = (l2_bx0 - rox) * irx, (l2_bx1 - rox) * irx
+        ty0_2, ty1_2 = (l2_by0 - roy) * iry, (l2_by1 - roy) * iry
+        tz0_2, tz1_2 = (l2_bz0 - roz) * irz, (l2_bz1 - roz) * irz
+        tmin2_pos = jnp.maximum(0.0, jnp.maximum(jnp.minimum(tx0_2, tx1_2), jnp.maximum(jnp.minimum(ty0_2, ty1_2), jnp.minimum(tz0_2, tz1_2))))
+        tmax2 = jnp.minimum(jnp.maximum(tx0_2, tx1_2), jnp.minimum(jnp.maximum(ty0_2, ty1_2), jnp.maximum(tz0_2, tz1_2)))
+        tmin2_eff = jnp.where((tmax2 >= tmin2_pos) & l2_valid, tmin2_pos, 1e20)
+        l2_unvis_f = jnp.where(l2_valid, 1.0, 0.0)
+        l2_tmin = jnp.min(jnp.where(tmin2_eff < cbd, tmin2_eff, 1e20), axis=0, keepdims=True)
+
+        def _l2_cond(c2):
+          return jnp.min(c2[0]) < jnp.max(c2[2])
+
+        def _l2_body(c2):
+          t2, unvis2_f, bd2, nx2, ny2, nz2 = c2
+          best_r = jnp.argmin(t2, axis=1)[0]
+          unvis2_next_f = jnp.where(cols_iota_64 == best_r, 0.0, unvis2_f)
+
+          cp2 = pltpu.make_async_copy(l2_hbm_ref.at[l2_o + best_r, :, :], l2_vmem, sem_2)
+          cp2.start(); cp2.wait()
+          l2_blk = l2_vmem[...]
+          l1_bx0, l1_by0, l1_bz0 = l2_blk[0:1, :BRANCH_FACTOR], l2_blk[1:2, :BRANCH_FACTOR], l2_blk[2:3, :BRANCH_FACTOR]
+          l1_bx1, l1_by1, l1_bz1 = l2_blk[3:4, :BRANCH_FACTOR], l2_blk[4:5, :BRANCH_FACTOR], l2_blk[5:6, :BRANCH_FACTOR]
+          l1_valid = l2_blk[6:7, :BRANCH_FACTOR] > 0.5
+          tx0_1, tx1_1 = (l1_bx0 - rox) * irx, (l1_bx1 - rox) * irx
+          ty0_1, ty1_1 = (l1_by0 - roy) * iry, (l1_by1 - roy) * iry
+          tz0_1, tz1_1 = (l1_bz0 - roz) * irz, (l1_bz1 - roz) * irz
+          tmin1_pos = jnp.maximum(0.0, jnp.maximum(jnp.minimum(tx0_1, tx1_1), jnp.maximum(jnp.minimum(ty0_1, ty1_1), jnp.minimum(tz0_1, tz1_1))))
+          tmax1 = jnp.minimum(jnp.maximum(tx0_1, tx1_1), jnp.minimum(jnp.maximum(ty0_1, ty1_1), jnp.maximum(tz0_1, tz1_1)))
+          tmin1_eff = jnp.where((tmax1 >= tmin1_pos) & l1_valid, tmin1_pos, 1e20)
+          l1_unvis_f = jnp.where(l1_valid, 1.0, 0.0)
+          l1_tmin = jnp.min(jnp.where(tmin1_eff < bd2, tmin1_eff, 1e20), axis=0, keepdims=True)
+
+          def _l1_cond(c1):
+            return jnp.min(c1[0]) < jnp.max(c1[2])
+
+          def _l1_body(c1):
+            t1, unvis1_f, bd1, nx1, ny1, nz1 = c1
+            best_c1 = jnp.argmin(t1, axis=1)[0]
+            unvis1_next_f = jnp.where(cols_iota_64 == best_c1, 0.0, unvis1_f)
+            l1_idx = best_r * BRANCH_FACTOR + best_c1
+
+            cp0 = pltpu.make_async_copy(l0_hbm_ref.at[l0_o + l1_idx, :, :], l0_vmem, sem_0)
+            cp0.start(); cp0.wait()
+            l0_blk = l0_vmem[...]
+            l0_bx0, l0_by0, l0_bz0 = l0_blk[0:1, :BRANCH_FACTOR], l0_blk[1:2, :BRANCH_FACTOR], l0_blk[2:3, :BRANCH_FACTOR]
+            l0_bx1, l0_by1, l0_bz1 = l0_blk[3:4, :BRANCH_FACTOR], l0_blk[4:5, :BRANCH_FACTOR], l0_blk[5:6, :BRANCH_FACTOR]
+            l0_valid = l0_blk[6:7, :BRANCH_FACTOR] > 0.5
+            tx0_0, tx1_0 = (l0_bx0 - rox) * irx, (l0_bx1 - rox) * irx
+            ty0_0, ty1_0 = (l0_by0 - roy) * iry, (l0_by1 - roy) * iry
+            tz0_0, tz1_0 = (l0_bz0 - roz) * irz, (l0_bz1 - roz) * irz
+            tmin0_pos = jnp.maximum(0.0, jnp.maximum(jnp.minimum(tx0_0, tx1_0), jnp.maximum(jnp.minimum(ty0_0, ty1_0), jnp.minimum(tz0_0, tz1_0))))
+            tmax0 = jnp.minimum(jnp.maximum(tx0_0, tx1_0), jnp.minimum(jnp.maximum(ty0_0, ty1_0), jnp.maximum(tz0_0, tz1_0)))
+            tmin0_eff = jnp.where((tmax0 >= tmin0_pos) & l0_valid, tmin0_pos, 1e20)
+            l0_unvis_f = jnp.where(l0_valid, 1.0, 0.0)
+            l0_tmin = jnp.min(jnp.where(tmin0_eff < bd1, tmin0_eff, 1e20), axis=0, keepdims=True)
+
+            def _l0_cond(c0):
+              return jnp.min(c0[0]) < jnp.max(c0[2])
+
+            def _l0_body(c0):
+              t0, unvis0_f, bd0, nx0, ny0, nz0 = c0
+              best_c0 = jnp.argmin(t0, axis=1)[0]
+              unvis0_next_f = jnp.where(cols_iota_64 == best_c0, 0.0, unvis0_f)
+              leaf_idx = l1_idx * BRANCH_FACTOR + best_c0
+
+              cp1 = pltpu.make_async_copy(leaf_hbm_ref.at[lf_o + leaf_idx, :leaf_rows, :], leaf_vmem, sem_l)
+              cp1.start(); cp1.wait()
+              pk = leaf_vmem[...]
+
+              v0x, v0y, v0z = pk[0:1, :], pk[1:2, :], pk[2:3, :]
+              e1x, e1y, e1z = pk[3:4, :], pk[4:5, :], pk[5:6, :]
+              e2x, e2y, e2z = pk[6:7, :], pk[7:8, :], pk[8:9, :]
+              tv = pk[9:10, :] > 0.5
+
+              hx = rdy * e2z - rdz * e2y
+              hy = rdz * e2x - rdx * e2z
+              hz = rdx * e2y - rdy * e2x
+              a = e1x * hx + e1y * hy + e1z * hz
+              ok_a = tv & (jnp.abs(a) > 1e-8)
+              f = jnp.where(ok_a, 1.0 / jnp.where(ok_a, a, 1.0), 0.0)
+              sx, sy, sz = rox - v0x, roy - v0y, roz - v0z
+              u = f * (sx * hx + sy * hy + sz * hz)
+              qx, qy, qz = sy * e1z - sz * e1y, sz * e1x - sx * e1z, sx * e1y - sy * e1x
+              v = f * (rdx * qx + rdy * qy + rdz * qz)
+              t = f * (e2x * qx + e2y * qy + e2z * qz)
+              hit_t = ok_a & (u >= 0.0) & (v >= 0.0) & ((u + v) <= 1.0) & (t >= 0.0) & (t < bd0)
+
+              if any_hit:
+                any_rh = jnp.any(hit_t, axis=1, keepdims=True)
+                new_bd = jnp.where(any_rh, 0.0, bd0)
+                t0_next = jnp.min(jnp.where((tmin0_eff < new_bd) & (unvis0_next_f > 0.5), tmin0_eff, 1e20), axis=0, keepdims=True)
+                return (t0_next, unvis0_next_f, new_bd, nx0, ny0, nz0)
+
+              t_cand = jnp.where(hit_t, t, MJ_MAXVAL)
+              min_t = jnp.min(t_cand, axis=1, keepdims=True)
+              imp = min_t < bd0
+
+              def _on_hit(_):
+                n0x, n0y, n0z = pk[10:11, :], pk[11:12, :], pk[12:13, :]
+                n1x, n1y, n1z = pk[13:14, :], pk[14:15, :], pk[15:16, :]
+                n2x, n2y, n2z = pk[16:17, :], pk[17:18, :], pk[18:19, :]
+                win = hit_t & (t_cand == min_t)
+                bw = 1.0 - u - v
+                lnx = jnp.sum(jnp.where(win, bw * n0x + u * n1x + v * n2x, 0.0), axis=1, keepdims=True)
+                lny = jnp.sum(jnp.where(win, bw * n0y + u * n1y + v * n2y, 0.0), axis=1, keepdims=True)
+                lnz = jnp.sum(jnp.where(win, bw * n0z + u * n1z + v * n2z, 0.0), axis=1, keepdims=True)
+                inv_l = 1.0 / jnp.maximum(jnp.sqrt(lnx * lnx + lny * lny + lnz * lnz), 1e-12)
+                lnx, lny, lnz = lnx * inv_l, lny * inv_l, lnz * inv_l
+                new_bd = jnp.where(imp, min_t, bd0)
+                t0_n = jnp.min(jnp.where((tmin0_eff < new_bd) & (unvis0_next_f > 0.5), tmin0_eff, 1e20), axis=0, keepdims=True)
+                return (t0_n, new_bd, jnp.where(imp, lnx, nx0), jnp.where(imp, lny, ny0), jnp.where(imp, lnz, nz0))
+
+              def _on_miss(_):
+                return (jnp.where(unvis0_next_f > 0.5, t0, 1e20), bd0, nx0, ny0, nz0)
+
+              t0_n, nbd, nnx, nny, nnz = jax.lax.cond(jnp.any(imp), _on_hit, _on_miss, None)
+              return (t0_n, unvis0_next_f, nbd, nnx, nny, nnz)
+
+            _, _, n_bd1, n_nx1, n_ny1, n_nz1 = jax.lax.while_loop(_l0_cond, _l0_body, (l0_tmin, l0_unvis_f, bd1, nx1, ny1, nz1))
+            t1_next = jnp.min(jnp.where((tmin1_eff < n_bd1) & (unvis1_next_f > 0.5), tmin1_eff, 1e20), axis=0, keepdims=True)
+            return (t1_next, unvis1_next_f, n_bd1, n_nx1, n_ny1, n_nz1)
+
+          _, _, n_bd2, n_nx2, n_ny2, n_nz2 = jax.lax.while_loop(_l1_cond, _l1_body, (l1_tmin, l1_unvis_f, bd2, nx2, ny2, nz2))
+          t2_next = jnp.min(jnp.where((tmin2_eff < n_bd2) & (unvis2_next_f > 0.5), tmin2_eff, 1e20), axis=0, keepdims=True)
+          return (t2_next, unvis2_next_f, n_bd2, n_nx2, n_ny2, n_nz2)
+
+        _, _, n_bd, lnx, lny, lnz = jax.lax.while_loop(_l2_cond, _l2_body, (l2_tmin, l2_unvis_f, cbd, z1, z1, z1))
+        imp_m = n_bd < cbd
+        if any_hit:
+          return (jnp.where(imp_m, n_bd, cbd), cnx, cny, cnz, cgid, car, cag, cab)
+
+        wnx = m00 * lnx + m01 * lny + m02 * lnz
+        wny = m10 * lnx + m11 * lny + m12 * lnz
+        wnz = m20 * lnx + m21 * lny + m22 * lnz
+        ar_m, ag_m, ab_m, mgid_m = iv[2, 4], iv[2, 5], iv[2, 6], iv[2, 7]
+        return (
+            jnp.where(imp_m, n_bd, cbd),
+            jnp.where(imp_m, wnx, cnx),
+            jnp.where(imp_m, wny, cny),
+            jnp.where(imp_m, wnz, cnz),
+            jnp.where(imp_m, mgid_m, cgid),
+            jnp.where(imp_m, ar_m, car),
+            jnp.where(imp_m, ag_m, cag),
+            jnp.where(imp_m, ab_m, cab),
+        )
+
+      return jax.lax.cond(hit_w, _run_inst, lambda _: state, None)
+
+    out_bd, out_nx, out_ny, out_nz, out_gid, out_ar, out_ag, out_ab = jax.lax.fori_loop(
+        0, M, _inst_body, (bd_init, z1, z1, z1, gid_init, z1, z1, z1)
+    )
+    out_ref[...] = jnp.concatenate(
+        [
+            jnp.transpose(out_bd, (1, 0)),
+            jnp.transpose(out_nx, (1, 0)),
+            jnp.transpose(out_ny, (1, 0)),
+            jnp.transpose(out_nz, (1, 0)),
+            jnp.transpose(out_gid, (1, 0)),
+            jnp.transpose(out_ar, (1, 0)),
+            jnp.transpose(out_ag, (1, 0)),
+            jnp.transpose(out_ab, (1, 0)),
+        ],
+        axis=0,
+    )
+
+  out_2d = pl.pallas_call(
+      _kernel,
+      out_shape=jax.ShapeDtypeStruct((B * n_tiles * 8, BLOCK_R), jnp.float32),
+      grid_spec=pltpu.PrefetchScalarGridSpec(
+          num_scalar_prefetch=0,
+          grid=(B * n_tiles,),
+          in_specs=[
+              pl.BlockSpec((8, BLOCK_R), lambda i: (i, 0)),
+              pl.BlockSpec(memory_space=pltpu.HBM),
+              pl.BlockSpec(memory_space=pltpu.HBM),
+              pl.BlockSpec(memory_space=pltpu.HBM),
+              pl.BlockSpec(memory_space=pltpu.HBM),
+              pl.BlockSpec(memory_space=pltpu.HBM),
+          ],
+          out_specs=pl.BlockSpec((8, BLOCK_R), lambda i: (i, 0)),
+          scratch_shapes=[
+              pltpu.VMEM((8, 128), jnp.float32),
+              pltpu.VMEM((8, 128), jnp.float32),
+              pltpu.VMEM((8, 128), jnp.float32),
+              pltpu.VMEM((8, 128), jnp.float32),
+              pltpu.VMEM((leaf_rows, 128), jnp.float32),
+              pltpu.SemaphoreType.DMA,
+              pltpu.SemaphoreType.DMA,
+              pltpu.SemaphoreType.DMA,
+              pltpu.SemaphoreType.DMA,
+              pltpu.SemaphoreType.DMA,
+          ],
+      ),
+      compiler_params=None if interpret else pltpu.CompilerParams(dimension_semantics=("parallel",)),
+      interpret=interpret,
+  )(rays_2d, inst_flat, l2r_dev, l2_dev, l0_dev, leaf_dev)
+
+  out_t = out_2d.reshape(B, n_tiles, 8, BLOCK_R).transpose(0, 1, 3, 2).reshape(B, R_pad, 8)[:, :R, :]
+  if any_hit:
+    return (t_limit > 0.0) & (out_t[..., 0] < (t_limit - 1e-5))
+  return (
+      out_t[..., 0],
+      out_t[..., 1:4],
+      jnp.round(out_t[..., 4]).astype(jnp.int32),
+      out_t[..., 5:8],
+  )
+
+
+def _cast_analytic_anyhit_tiled(
+    spec: RenderSceneSpec,
+    geom_xpos: jax.Array,   # (B, G_all, 3)
+    geom_xmat: jax.Array,   # (B, G_all, 3, 3)
+    geom_size: jax.Array,   # (G_all, 3)
+    ro: jax.Array,          # (B, N, 3)
+    rd: jax.Array,          # (B, N, 3)
+    t_max: jax.Array,       # (B, N)
+    tile_size: int = 4096,
+) -> jax.Array:
+  """Zero-gather tiled analytic occlusion test for secondary AO/shadow rays."""
+  B, N, _ = ro.shape
+  if not spec.enabled_geom_ids:
+    return jnp.zeros((B, N), dtype=jnp.bool_)
+
+  pad = (tile_size - (N % tile_size)) % tile_size
+  if pad > 0:
+    ro = jnp.pad(ro, ((0, 0), (0, pad), (0, 0)))
+    rd = jnp.pad(rd, ((0, 0), (0, pad), (0, 0)), constant_values=1.0 / np.sqrt(3.0))
+    t_max = jnp.pad(t_max, ((0, 0), (0, pad)), constant_values=0.0)
+
+  n_tiles = ro.shape[1] // tile_size
+  ro_t = ro.reshape(B, n_tiles, tile_size, 3).swapaxes(0, 1)    # (T, B, ts, 3)
+  rd_t = rd.reshape(B, n_tiles, tile_size, 3).swapaxes(0, 1)
+  tm_t = t_max.reshape(B, n_tiles, tile_size).swapaxes(0, 1)
+
+  def _scan_tile(_, xs):
+    ro_b, rd_b, tm_b = xs  # (B, ts, 3)
+    occ = jnp.zeros((B, tile_size), dtype=jnp.bool_)
+    for gt, gid_tuple in spec.type_groups:
+      idx = np.asarray(gid_tuple, dtype=np.int32)
+      g_pos = geom_xpos[:, idx, :][:, :, None, :]      # (B, G, 1, 3)
+      g_mat = geom_xmat[:, idx, :, :][:, :, None, :, :]
+      g_sz = geom_size[idx][None, :, None, :]          # (1, G, 1, 3)
+      fn = RAY_FN_BY_TYPE[gt]
+      d_grp, _ = fn(g_pos, g_mat, g_sz, ro_b[:, None, :, :], rd_b[:, None, :, :])  # (B, G, ts)
+      hit_g = (d_grp >= 0.0) & (d_grp < tm_b[:, None, :])
+      occ = occ | jnp.any(hit_g, axis=1)
+    return None, occ
+
+  _, occ_t = jax.lax.scan(_scan_tile, None, (ro_t, rd_t, tm_t))
+  return occ_t.swapaxes(0, 1).reshape(B, -1)[:, :N]
+
+
+def _render_unified_analytic_plus_bvh(
+    scene: "CompiledScene",
+    spec: RenderSceneSpec,
+    mjx_data_batch: Any,
+    geom_rgba_batch: Optional[jax.Array],
+    interp: bool,
+    need_aux: bool,
+) -> Dict[str, jax.Array]:
+  """Unified Analytic + Multi-Instance Wide-BVH-64 raytracer with GGX PBR, SoftShadow, and AO."""
+  bank: MultiMeshBVHBank = scene.mesh_bvh
+  H, W = int(spec.height), int(spec.width)
+  R = H * W
+  cam_pos = mjx_data_batch.cam_xpos[:, int(spec.cam_id), :]
+  cam_mat = mjx_data_batch.cam_xmat[:, int(spec.cam_id), :, :]
+  B = int(cam_pos.shape[0])
+
+  ray_orig, ray_dir, neg_z = _compute_batch_camera_rays_soa(spec, cam_pos, cam_mat)
+  max_dist = jnp.broadcast_to(((spec.zfar - spec.znear) / neg_z)[None, :], (B, R))
+  inv_cos = (float(spec.znear) / neg_z)[None, :]
+
+  # 1. Analytic primitives primary hit (e.g. studio floor plane / plinth)
+  if len(spec.enabled_geom_ids) > 0:
+    spec_no_sh = dataclasses.replace(spec, use_shadows=False)
+    gb_a = pallas_raycast_batch_v2(spec_no_sh, mjx_data_batch, geom_rgba_batch=geom_rgba_batch, interpret=interp)
+    a_euclid = gb_a.depth.reshape(B, R)
+    a_hit = a_euclid >= 0.0
+    a_dist = jnp.where(a_hit, jnp.maximum(a_euclid - inv_cos, 0.0), max_dist)
+    a_nrm = gb_a.normal.reshape(B, R, 3)
+    a_alb = gb_a.albedo.reshape(B, R, 3)
+    a_gid = gb_a.geom_id.reshape(B, R)
+  else:
+    a_hit = jnp.zeros((B, R), dtype=jnp.bool_)
+    a_dist = max_dist
+    a_nrm = jnp.zeros((B, R, 3), dtype=jnp.float32)
+    a_alb = jnp.zeros((B, R, 3), dtype=jnp.float32)
+    a_gid = jnp.full((B, R), -1, dtype=jnp.int32)
+
+  # 2. Multi-instance Wide-BVH-64 mesh primary hit (culled against a_dist!)
+  mgids = np.asarray(bank.mesh_gids, dtype=np.int32)
+  obj_xpos = mjx_data_batch.geom_xpos[:, mgids, :]
+  obj_xmat = mjx_data_batch.geom_xmat[:, mgids, :, :]
+  m_dist, m_nrm, m_gid, m_alb = _trace_multi_mesh_bvh(
+      bank, obj_xpos, obj_xmat, ray_orig, ray_dir, a_dist, any_hit=False, interpret=interp,
+  )
+  m_hit = m_gid >= 0
+  vdir = -ray_dir
+  flip_m = jnp.sum(m_nrm * vdir, axis=-1, keepdims=True) < 0.0
+  m_nrm = jnp.where(flip_m, -m_nrm, m_nrm)
+
+  hit = m_hit | a_hit
+  best_d = jnp.where(m_hit, m_dist, a_dist)
+  best_nrm = jnp.where(m_hit[..., None], m_nrm, a_nrm)
+  best_alb = jnp.where(m_hit[..., None], m_alb, a_alb)
+  best_gid = jnp.where(m_hit, m_gid, a_gid)
+  euclid_d = jnp.where(hit, best_d + inv_cos, -1.0)
+  hit_pos = ray_orig + jnp.where(hit, best_d, 0.0)[..., None] * ray_dir
+
+  # Zero-gather material parameters via static unique (spec, shin, emit) groups
+  spec_coef = jnp.full((B, R), 0.45, dtype=jnp.float32)
+  shin_coef = jnp.full((B, R), 0.40, dtype=jnp.float32)
+  emit_coef = jnp.zeros((B, R), dtype=jnp.float32)
+  for g in spec.enabled_geom_ids:
+    gm = best_gid == int(g)
+    spec_coef = jnp.where(gm, float(spec.geom_spec[g]), spec_coef)
+    shin_coef = jnp.where(gm, float(spec.geom_shin[g]), shin_coef)
+    emit_coef = jnp.where(gm, float(spec.geom_emit[g]), emit_coef)
+  # Group mesh gids by rounded (spec, shin, emit) so static dispatch stays tiny
+  mat_groups: Dict[Tuple[float, float, float], list[int]] = {}
+  for mi, mg in enumerate(bank.mesh_gids):
+    key = (round(float(bank.inst_spec[mi]), 3), round(float(bank.inst_shin[mi]), 3), round(float(bank.inst_emit[mi]), 3))
+    mat_groups.setdefault(key, []).append(int(mg))
+  for (sc_v, sh_v, em_v), g_list in mat_groups.items():
+    gm = jnp.zeros((B, R), dtype=jnp.bool_)
+    for mg in g_list:
+      gm = gm | (best_gid == mg)
+    spec_coef = jnp.where(gm, sc_v, spec_coef)
+    shin_coef = jnp.where(gm, sh_v, shin_coef)
+    emit_coef = jnp.where(gm, em_v, emit_coef)
+
+  if scene.shader == "exact_gbuffer":
+    sky_t = jnp.clip(0.5 * (ray_dir[..., 2] + 1.0), 0.0, 1.0)[..., None]
+    sky_rgb = sky_t * jnp.asarray(spec.sky_rgb1, jnp.float32) + (1.0 - sky_t) * jnp.asarray(spec.sky_rgb2, jnp.float32)
+    rgb = jnp.where(hit[..., None], best_alb, sky_rgb)
+    out = {
+        "rgb": rgb.reshape(B, H, W, 3).astype(scene.out_dtype),
+        "depth": euclid_d.reshape(B, H, W).astype(scene.out_dtype),
+    }
+    if need_aux:
+      out["normal"] = jnp.where(hit[..., None], best_nrm, 0.0).reshape(B, H, W, 3).astype(scene.out_dtype)
+      out["seg_id"] = best_gid.reshape(B, H, W)
+    return out
+
+  # Prepare lights & geometry for secondary AO/shadow queries
+  light_xpos, light_xdir = _extract_light_batch(spec, mjx_data_batch)
+  geom_size_j = jnp.asarray(spec.geom_size, dtype=jnp.float32)
+  has_non_plane_analytic = any(int(gt) != GEOM_PLANE for gt, _ in spec.type_groups)
+
+  def _anyhit_both(ro_q, rd_q, tl_q):
+    occ = _trace_multi_mesh_bvh(bank, obj_xpos, obj_xmat, ro_q, rd_q, tl_q, any_hit=True, interpret=interp)
+    if has_non_plane_analytic:
+      occ = occ | _cast_analytic_anyhit_tiled(spec, mjx_data_batch.geom_xpos, mjx_data_batch.geom_xmat, geom_size_j, ro_q, rd_q, tl_q)
+    return occ
+
+  # Hemisphere AO (for fused_ao_ggx)
+  ao_vis = jnp.ones((B, R), dtype=jnp.float32)
+  cos_r_np, sin_r_np = _r2_pixel_rotation(H, W, R)
+  cos_r = jnp.asarray(cos_r_np, dtype=jnp.float32)[None, :]
+  sin_r = jnp.asarray(sin_r_np, dtype=jnp.float32)[None, :]
+  if scene.shader == "fused_ao_ggx" and int(scene.n_ao_samples) > 0:
+    S_ao = int(scene.n_ao_samples)
+    (tx_n, ty_n, tz_n), (bx_n, by_n, bz_n) = _branchless_onb(best_nrm[..., 0], best_nrm[..., 1], best_nrm[..., 2])
+    t_vec = jnp.stack([tx_n, ty_n, tz_n], axis=-1)
+    b_vec = jnp.stack([bx_n, by_n, bz_n], axis=-1)
+    ao_ro = jnp.broadcast_to((hit_pos + best_nrm * 2.5e-3)[:, None, :, :], (B, S_ao, R, 3)).reshape(B, S_ao * R, 3)
+    ao_tl = jnp.broadcast_to(jnp.where(hit, float(scene.ao_radius), 0.0)[:, None, :], (B, S_ao, R)).reshape(B, S_ao * R)
+    ao_dirs = []
+    for k in range(S_ao):
+      u1 = (k + 0.5) / float(S_ao)
+      u2 = 2.0 * math.pi * ((k * 0.61803398875) % 1.0)
+      r_xy = math.sqrt(u1)
+      lx0, ly0, lz0 = r_xy * math.cos(u2), r_xy * math.sin(u2), math.sqrt(max(1.0 - u1, 0.0))
+      lx = lx0 * cos_r - ly0 * sin_r
+      ly = lx0 * sin_r + ly0 * cos_r
+      d_k = lx[..., None] * t_vec + ly[..., None] * b_vec + lz0 * best_nrm
+      d_k = d_k / jnp.maximum(jnp.linalg.norm(d_k, axis=-1, keepdims=True), 1e-12)
+      ao_dirs.append(d_k)
+    ao_rd = jnp.stack(ao_dirs, axis=1).reshape(B, S_ao * R, 3)
+    occ_ao = _anyhit_both(ao_ro, ao_rd, ao_tl).reshape(B, S_ao, R).astype(jnp.float32)
+    ao_vis = 1.0 - float(scene.ao_strength) * jnp.mean(occ_ao, axis=1)
+
+  # Lighting accumulation (GGX PBR for fused_ao_ggx, Blinn-Phong for fast_fused)
+  is_ggx = scene.shader == "fused_ao_ggx"
+  roughness = jnp.clip(1.0 - 0.72 * shin_coef, 0.14, 0.88)
+  alpha_ggx = roughness * roughness
+  a2 = alpha_ggx * alpha_ggx
+  k_g = ((roughness + 1.0) ** 2) / 8.0
+  f0 = 0.04 + 0.24 * spec_coef
+  ndotv = jnp.maximum(1e-4, jnp.sum(best_nrm * vdir, axis=-1))
+  g1_v = ndotv / (ndotv * (1.0 - k_g) + k_g + 1e-12)
+  shin_exp = shin_coef * 128.0
+
+  amb_acc = jnp.zeros((B, R, 3), dtype=jnp.float32)
+  diff_acc = jnp.zeros((B, R, 3), dtype=jnp.float32)
+  spec_acc = jnp.zeros((B, R, 3), dtype=jnp.float32)
+
+  n_sh = int(scene.n_shadow_samples) if is_ggx else 1
+  sh_soft = float(scene.shadow_softness) if is_ggx else 0.0
+  sh_frac = float(spec.shadow_light_fraction)
+
+  for li in range(int(spec.nlight)):
+    if not bool(spec.light_active[li]):
+      continue
+    lt = int(spec.light_type[li])
+    lp = light_xpos[:, li, :]
+    ld_v = light_xdir[:, li, :]
+    ld_v = ld_v / jnp.maximum(jnp.linalg.norm(ld_v, axis=-1, keepdims=True), 1e-12)
+    l_amb = jnp.asarray(spec.light_ambient[li], jnp.float32)[None, None, :]
+    l_diff = jnp.asarray(spec.light_diffuse[li], jnp.float32)[None, None, :]
+    l_spec = jnp.asarray(spec.light_specular[li], jnp.float32)[None, None, :]
+    l_att = spec.light_attenuation[li]
+
+    amb_acc = amb_acc + l_amb
+    if lt == 1:  # directional
+      L = jnp.broadcast_to(-ld_v[:, None, :], (B, R, 3))
+      dist_l = jnp.full((B, R), 1.0e5, dtype=jnp.float32)
+      att = jnp.ones((B, R), dtype=jnp.float32)
+    else:
+      delta = lp[:, None, :] - hit_pos
+      dist_l = jnp.linalg.norm(delta, axis=-1)
+      L = delta / jnp.maximum(dist_l[..., None], 1e-12)
+      att_den = float(l_att[0]) + float(l_att[1]) * dist_l + float(l_att[2]) * dist_l * dist_l
+      att = jnp.where(att_den > 1e-12, 1.0 / jnp.maximum(att_den, 1e-12), 1.0)
+      if lt == 0:  # spot
+        cos_th = jnp.sum(-L * ld_v[:, None, :], axis=-1)
+        cos_cut = float(np.cos(spec.light_cutoff_rad[li]))
+        att = jnp.where(cos_th >= cos_cut, att * (jnp.maximum(cos_th, 0.0) ** float(spec.light_exponent[li])), 0.0)
+
+    ndotl = jnp.maximum(0.0, jnp.sum(best_nrm * L, axis=-1))
+
+    vis = jnp.ones((B, R), dtype=jnp.float32)
+    if spec.use_shadows and bool(spec.light_castshadow[li]) and n_sh > 0:
+      sh_base_ro = hit_pos + best_nrm * 2.5e-3
+      sh_base_tl = jnp.where(hit & (ndotl > 0.0), jnp.maximum(dist_l - 2.0e-3, 0.0), 0.0)
+      if n_sh == 1 or sh_soft <= 0.0:
+        occ_s = _anyhit_both(sh_base_ro, L, sh_base_tl).astype(jnp.float32)
+        vis = 1.0 - (1.0 - sh_frac) * occ_s
+      else:
+        (tl_v, bl_v) = _branchless_onb(L[..., 0], L[..., 1], L[..., 2])
+        t_sh = jnp.stack(tl_v, axis=-1)
+        b_sh = jnp.stack(bl_v, axis=-1)
+        sh_ro = jnp.broadcast_to(sh_base_ro[:, None, :, :], (B, n_sh, R, 3)).reshape(B, n_sh * R, 3)
+        sh_tl = jnp.broadcast_to(sh_base_tl[:, None, :], (B, n_sh, R)).reshape(B, n_sh * R)
+        sh_dirs = []
+        for k in range(n_sh):
+          r_d = math.sqrt((k + 0.5) / float(n_sh)) * sh_soft
+          th_d = k * 2.39996323
+          ox0, oy0 = r_d * math.cos(th_d), r_d * math.sin(th_d)
+          ox = ox0 * cos_r - oy0 * sin_r
+          oy = ox0 * sin_r + oy0 * cos_r
+          d_s = L + ox[..., None] * t_sh + oy[..., None] * b_sh
+          d_s = d_s / jnp.maximum(jnp.linalg.norm(d_s, axis=-1, keepdims=True), 1e-12)
+          sh_dirs.append(d_s)
+        sh_rd = jnp.stack(sh_dirs, axis=1).reshape(B, n_sh * R, 3)
+        occ_sh = _anyhit_both(sh_ro, sh_rd, sh_tl).reshape(B, n_sh, R).astype(jnp.float32)
+        vis = 1.0 - (1.0 - sh_frac) * jnp.mean(occ_sh, axis=1)
+
+    weight = att * vis * ndotl
+    H_v = L + vdir
+    H_v = H_v / jnp.maximum(jnp.linalg.norm(H_v, axis=-1, keepdims=True), 1e-12)
+    ndoth = jnp.maximum(0.0, jnp.sum(best_nrm * H_v, axis=-1))
+
+    if is_ggx:
+      vdoth = jnp.maximum(0.0, jnp.sum(vdir * H_v, axis=-1))
+      denom_d = ndoth * ndoth * (a2 - 1.0) + 1.0
+      d_ggx = a2 / (math.pi * denom_d * denom_d + 1e-12)
+      omv = 1.0 - vdoth
+      f_schlick = f0 + (1.0 - f0) * (omv ** 5)
+      g1_l = ndotl / (ndotl * (1.0 - k_g) + k_g + 1e-12)
+      spec_brdf = (d_ggx * f_schlick * g1_l * g1_v) / (4.0 * ndotl * ndotv + 1e-4)
+      kd = 1.0 - f_schlick
+      diff_acc = diff_acc + l_diff * (weight * kd)[..., None]
+      spec_fac = jnp.where((spec_coef > 0.0) & (ndotl > 0.0), spec_brdf * weight * math.pi, 0.0)
+      spec_acc = spec_acc + l_spec * spec_fac[..., None]
+    else:
+      diff_acc = diff_acc + l_diff * weight[..., None]
+      if spec.enable_specular:
+        spec_w = jnp.where((spec_coef > 0.0) & (shin_exp > 0.0), spec_coef * (ndoth ** shin_exp) * att * vis, 0.0)
+        spec_acc = spec_acc + l_spec * spec_w[..., None]
+
+  if spec.headlight_active:
+    hl_amb = jnp.asarray(spec.headlight_ambient, jnp.float32)[None, None, :]
+    hl_diff = jnp.asarray(spec.headlight_diffuse, jnp.float32)[None, None, :]
+    hl_spec = jnp.asarray(spec.headlight_specular, jnp.float32)[None, None, :]
+    amb_acc = amb_acc + hl_amb
+    diff_acc = diff_acc + hl_diff * ndotv[..., None]
+    if is_ggx:
+      denom_hl = ndotv * ndotv * (a2 - 1.0) + 1.0
+      d_hl = a2 / (math.pi * denom_hl * denom_hl + 1e-12)
+      spec_hl = jnp.where(spec_coef > 0.0, d_hl * f0 * g1_v * g1_v / (4.0 * ndotv + 1e-4) * math.pi, 0.0)
+      spec_acc = spec_acc + hl_spec * spec_hl[..., None]
+    elif spec.enable_specular:
+      spec_hl = jnp.where((spec_coef > 0.0) & (shin_exp > 0.0), spec_coef * (ndotv ** shin_exp), 0.0)
+      spec_acc = spec_acc + hl_spec * spec_hl[..., None]
+
+  direct_rgb = jnp.clip(
+      best_alb * (amb_acc * ao_vis[..., None] + diff_acc + emit_coef[..., None])
+      + spec_acc * (0.5 + 0.5 * ao_vis[..., None]),
+      0.0,
+      1.0,
+  )
+  sky_t = jnp.clip(0.5 * (ray_dir[..., 2] + 1.0), 0.0, 1.0)[..., None]
+  sky_rgb = sky_t * jnp.asarray(spec.sky_rgb1, jnp.float32)[None, None, :] + (1.0 - sky_t) * jnp.asarray(spec.sky_rgb2, jnp.float32)[None, None, :]
+  rgb = jnp.where(hit[..., None], direct_rgb, sky_rgb)
+
+  out = {
+      "rgb": rgb.reshape(B, H, W, 3).astype(scene.out_dtype),
+      "depth": euclid_d.reshape(B, H, W).astype(scene.out_dtype),
+  }
+  if need_aux:
+    out["normal"] = jnp.where(hit[..., None], best_nrm, 0.0).reshape(B, H, W, 3).astype(scene.out_dtype)
+    out["seg_id"] = best_gid.reshape(B, H, W)
+  return out
+
+
 @dataclasses.dataclass
 class CompiledScene:
   """Compiled TPU-RTX scene descriptor ready for zero-copy rendering."""
@@ -1498,6 +2335,7 @@ class CompiledScene:
   body_rootid: Tuple[int, ...]
   dt: float
   interpret: Optional[bool]
+  mesh_bvh: Optional[MultiMeshBVHBank] = None
   _compiled_cache: Dict[Tuple[bool, bool], Callable[..., Any]] = dataclasses.field(default_factory=dict, repr=False)
 
   @property
@@ -1591,6 +2429,8 @@ def compile_scene(
     ao_strength: float = 0.75,
     shadow_softness: float = 0.06,
     dedup_materials: bool = True,
+    enabled_geom_groups: Tuple[int, ...] = (0, 1, 2, 3),
+    mesh_backend: str = "auto",
     data_axis: str = "data",
     interpret: Optional[bool] = None,
 ) -> CompiledScene:
@@ -1614,6 +2454,7 @@ def compile_scene(
     else:
       src_obj = mujoco.MjModel.from_xml_path(s_str)
 
+  mesh_bvh: Optional[MultiMeshBVHBank] = None
   if isinstance(src_obj, RenderSceneSpec):
     specs = (
         dataclasses.replace(
@@ -1672,20 +2513,41 @@ def compile_scene(
         sp = RenderSceneSpec.from_mjmodel(
             src_obj, cam_id=cid, height=H, width=W,
             use_shadows=use_shadows, shadow_light_fraction=shadow_light_fraction,
-            enable_specular=enable_specular,
+            enable_specular=enable_specular, enabled_geom_groups=enabled_geom_groups,
         )
       else:
         sp = _spec_from_mjx_model(
             src_obj, cam_id=cid, height=H, width=W,
             use_shadows=use_shadows, shadow_light_fraction=shadow_light_fraction,
-            enable_specular=enable_specular,
+            enable_specular=enable_specular, enabled_geom_groups=enabled_geom_groups,
         )
       specs_list.append(sp)
     specs = tuple(specs_list)
+    mesh_spec, mesh_gids = None, ()
     if include_meshes:
-      mesh_spec, mesh_gids = _extract_mesh_spec_from_model(src_obj, specs[0])
-    else:
-      mesh_spec, mesh_gids = None, ()
+      g_type = np.asarray(src_obj.geom_type, dtype=np.int32)
+      g_grp = np.asarray(src_obj.geom_group, dtype=np.int32)
+      g_did = np.asarray(src_obj.geom_dataid, dtype=np.int32)
+      vis_mesh_gids = [
+          g for g in range(int(src_obj.ngeom))
+          if int(g_type[g]) == GEOM_MESH_TYPE
+          and int(g_grp[g]) in enabled_geom_groups
+          and float(specs[0].geom_rgba[g, 3]) > 0.0
+          and int(g_did[g]) >= 0
+      ]
+      if vis_mesh_gids and hasattr(src_obj, "mesh_facenum"):
+        m_facenum = np.asarray(src_obj.mesh_facenum, dtype=np.int32)
+        total_tris = sum(int(m_facenum[int(g_did[g])]) for g in vis_mesh_gids)
+        use_bvh = (mesh_backend == "bvh") or (
+            mesh_backend == "auto" and (len(vis_mesh_gids) > 4 or total_tris > 8192)
+        )
+        if use_bvh:
+          mesh_bvh = _build_multi_mesh_bvh_from_model(src_obj, specs[0], enabled_geom_groups=enabled_geom_groups)
+          mesh_gids = mesh_bvh.mesh_gids if mesh_bvh is not None else ()
+        else:
+          mesh_spec, mesh_gids = _extract_mesh_spec_from_model(
+              src_obj, specs[0], enabled_geom_groups=enabled_geom_groups
+          )
     geom_bodyid = tuple(int(x) for x in np.asarray(src_obj.geom_bodyid, dtype=np.int32))
     body_rootid = tuple(int(x) for x in np.asarray(getattr(src_obj, "body_rootid", np.arange(int(src_obj.nbody))), dtype=np.int32))
     dt = float(getattr(getattr(src_obj, "opt", None), "timestep", 0.005))
@@ -1714,6 +2576,7 @@ def compile_scene(
       body_rootid=body_rootid,
       dt=dt,
       interpret=interpret,
+      mesh_bvh=mesh_bvh,
   )
 
 
@@ -1726,6 +2589,18 @@ def _render_single_cam_local(
 ) -> Dict[str, jax.Array]:
   interp = (jax.default_backend() == "cpu") if scene.interpret is None else bool(scene.interpret)
   need_aux = any(k in scene.outputs for k in ("normal", "seg_id", "flow"))
+
+  if scene.mesh_bvh is not None:
+    out = _render_unified_analytic_plus_bvh(
+        scene, spec, mjx_data_batch, geom_rgba_batch, interp=interp, need_aux=need_aux,
+    )
+    if "flow" in scene.outputs:
+      out["flow"] = _compute_flow_zero_gather(
+          spec, mjx_data_batch, prev_data_batch,
+          out["depth"], out["seg_id"],
+          scene.geom_bodyid, scene.body_rootid, scene.dt, scene.out_dtype,
+      )
+    return {k: out[k] for k in scene.outputs}
 
   if scene.shader == "exact_gbuffer":
     gb = pallas_raycast_batch_v2(spec, mjx_data_batch, geom_rgba_batch=geom_rgba_batch, interpret=interp)
@@ -1965,6 +2840,10 @@ def rollout_scan(
 
   P = jax.sharding.PartitionSpec
   ax = scene.data_axis
+  rep_sharding = jax.sharding.NamedSharding(scene.mesh, P())
+  mjx_model_rep = jax.device_put(mjx_model, rep_sharding)
+  mjx_data_sh = _ensure_sharded_for_scene(mjx_data, scene)
+  ctrl_btu_sh = _ensure_sharded_for_scene(ctrl_btu, scene)
   sm_kw = _shard_map_kwargs()
   _sm = shard_map(
       _local_scan,
@@ -1973,7 +2852,7 @@ def rollout_scan(
       out_specs=(P(ax), P(ax)),
       **sm_kw,
   )
-  return jax.jit(_sm)(mjx_model, mjx_data, ctrl_btu)
+  return jax.jit(_sm)(mjx_model_rep, mjx_data_sh, ctrl_btu_sh)
 
 
 def audit_hlo(lowered: Any) -> Dict[str, Any]:
