@@ -175,10 +175,10 @@ def compose_8k_hero(vis_dir: str, out_dir: str):
 
   canvas = Image.new("RGB", (1920 + 1440 + 8, 1080 + 70), (14, 18, 26))
   im_ov = Image.fromarray(ov)
-  # Draw crisp ROI box on 4x4 downscaled overview matching [1620:2700, 3120:4560]
+  # Draw crisp ROI box on 4x4 downscaled overview matching [380:1460, 2600:4040]
   if is_exact:
     ov_draw = ImageDraw.Draw(im_ov)
-    ov_draw.rectangle([3120 // 4, 1620 // 4, 4560 // 4, 2700 // 4], outline=(0, 229, 255), width=4)
+    ov_draw.rectangle([2600 // 4, 380 // 4, 4040 // 4, 1460 // 4], outline=(0, 229, 255), width=4)
   _draw_label(im_ov, "Full Native 8K UHD (7680x4320 = 33.18M px, 4x4 downscaled to 1920x1080)", (18, 16))
   im_cr = Image.fromarray(crop_rs)
   _draw_label(im_cr, "1:1 Native 8K Pixel Detail Inset (1440x1080 ROI, Zero Upscaling)", (18, 16))

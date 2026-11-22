@@ -1,0 +1,81 @@
+{
+  "experiment": "v3_w5_wave3_1b_8k_temporal",
+  "device_kind": "TPU v5",
+  "n_devices": 4,
+  "blas_unique_tris": 10644480,
+  "k_instances": 96,
+  "effective_tris": 1021870080,
+  "bvh_hbm_mb": 654.86,
+  "bvh_build_s": 17.32,
+  "bench_4k": {
+    "res": "3840x2160",
+    "n_chips": 4,
+    "sharding": "spatial_4band",
+    "compile_s": 121.44,
+    "ms": 1668.28,
+    "fps": 0.599,
+    "mrays_per_s": 9.94,
+    "hlo": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 0,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 2377,
+      "send_recv_ops": 0
+    }
+  },
+  "bench_8k": {
+    "res": "7680x4320",
+    "n_chips": 4,
+    "sharding": "spatial_4band",
+    "compile_s": 126.05,
+    "ms": 3420.96,
+    "fps": 0.292,
+    "mrays_per_s": 19.4,
+    "hlo": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 0,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 2376,
+      "send_recv_ops": 0
+    }
+  },
+  "bench_1080p": {
+    "res": "1920x1080",
+    "n_chips": 4,
+    "sharding": "spatial_4band",
+    "compile_s": 126.16,
+    "ms": 921.54,
+    "fps": 1.085,
+    "mrays_per_s": 4.5,
+    "hlo": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 0,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 2377,
+      "send_recv_ops": 0
+    }
+  },
+  "temporal_60f": {
+    "n_frames": 60,
+    "res": "1920x1080",
+    "total_render_s": 56.94,
+    "effective_fps": 1.054,
+    "static_8k_determinism_l1": 0.0,
+    "adj_l1_mean": 0.019265,
+    "adj_l1_max": 0.02583,
+    "adj_psnr_mean_db": 22.858,
+    "adj_ssim_mean": 0.89046,
+    "adj_ssim_min": 0.86916,
+    "temporal_accel_l1_mean": 0.031353,
+    "temporal_accel_l1_max": 0.041613
+  }
+}
