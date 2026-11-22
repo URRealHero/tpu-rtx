@@ -49,11 +49,56 @@ def _blender_export_main():
   ap.add_argument("--gt_h", type=int, default=540)
   ap.add_argument("--gt_spp", type=int, default=96)
   ap.add_argument("--tex_res", type=int, default=512)
+  ap.add_argument("--skip_gt", action="store_true")
   args = ap.parse_args(argv)
 
   scene = bpy.context.scene
   depsgraph = bpy.context.evaluated_depsgraph_get()
-  walker = _ShaderGraphWalker(tex_res=args.tex_res)
+
+  class CinemaShaderWalker(_ShaderGraphWalker):
+    def _resolve_socket_link(self, sock, group_stack):
+      cur_sock = sock
+      cur_stack = list(group_stack)
+      for _ in range(24):
+        res, cur_stack = super()._resolve_socket_link(cur_sock, cur_stack)
+        if res is None or not isinstance(res, tuple):
+          return res, cur_stack
+        fn, fs = res
+        if fn.type == "REROUTE" and len(fn.inputs) > 0 and fn.inputs[0].is_linked:
+          cur_sock = fn.inputs[0]
+          continue
+        return (fn, fs), cur_stack
+      return None, cur_stack
+
+    def _trace_uv_transform(self, vec_sock, depth=0):
+      cur = vec_sock
+      for _ in range(16):
+        if cur is None or not cur.is_linked:
+          return (1.0, 1.0, 0.0, 0.0), None
+        fn = cur.links[0].from_node
+        if fn.type == "REROUTE" and len(fn.inputs) > 0 and fn.inputs[0].is_linked:
+          cur = fn.inputs[0]
+          continue
+        return super()._trace_uv_transform(cur, depth)
+      return (1.0, 1.0, 0.0, 0.0), None
+
+    def _find_first_tex_uv_meta(self, sock, depth=0):
+      if sock is None or not sock.is_linked or depth > 14:
+        return (1.0, 1.0, 0.0, 0.0), None
+      fn = sock.links[0].from_node
+      if fn.type == "REROUTE" and len(fn.inputs) > 0:
+        return self._find_first_tex_uv_meta(fn.inputs[0], depth + 1)
+      return super()._find_first_tex_uv_meta(sock, depth)
+
+    def compile_material(self, mat, mat_id):
+      cm, ta, tr = super().compile_material(mat, mat_id)
+      if mat is not None and "glass" in mat.name.lower():
+        cm.mat_code = 2.0
+        cm.base_color = (0.94, 0.98, 1.0)
+        cm.roughness = 0.03
+      return cm, ta, tr
+
+  walker = CinemaShaderWalker(tex_res=args.tex_res)
 
   mat_map: Dict[int, Any] = {}
   mat_list: List[Any] = []
@@ -245,7 +290,7 @@ def _blender_export_main():
         rot = float(getattr(nd, "sun_rotation", 0.0))
         s_dir = np.array([
             math.sin(rot) * math.cos(elev),
-            -math.cos(rot) * math.cos(elev),
+            math.cos(rot) * math.cos(elev),
             math.sin(elev),
         ], dtype=np.float32)
         s_dir = s_dir / max(float(np.linalg.norm(s_dir)), 1e-12)
@@ -254,13 +299,13 @@ def _blender_export_main():
             "type": "SUN",
             "pos": [0.0, 0.0, 10.0],
             "dir": (-s_dir).tolist(),
-            "color": [1.0, 0.93, 0.82],
-            "energy": 9.0 * float(getattr(nd, "sun_intensity", 1.0)),
+            "color": [1.0, 0.92, 0.80],
+            "energy": 10.5 * float(getattr(nd, "sun_intensity", 1.0)),
             "size": 0.5,
         })
-        sky_z = (0.38, 0.62, 1.05)
-        sky_h = (0.72, 0.84, 1.02)
-        sky_g = (0.18, 0.16, 0.14)
+        sky_z = (0.42, 0.68, 1.12)
+        sky_h = (0.76, 0.86, 1.04)
+        sky_g = (0.16, 0.14, 0.12)
         break
       if nd.type == "TEX_ENVIRONMENT" and nd.image is not None:
         try:
@@ -317,24 +362,25 @@ def _blender_export_main():
       flush=True,
   )
 
-  # Render clean denoised Cycles 5.3.0 GT reference (CPU-safe, disable GPU Vulkan compositor on headless)
-  scene.render.use_compositing = False
-  if hasattr(scene.render, "compositor_device"):
-    scene.render.compositor_device = "CPU"
-  scene.render.engine = "CYCLES"
-  scene.cycles.device = "CPU"
-  scene.cycles.samples = args.gt_spp
-  scene.cycles.use_denoising = True
-  scene.cycles.use_adaptive_sampling = True
-  scene.cycles.adaptive_threshold = 0.015
-  scene.render.resolution_x = args.gt_w
-  scene.render.resolution_y = args.gt_h
-  scene.render.resolution_percentage = 100
-  scene.render.image_settings.file_format = "PNG"
-  scene.render.filepath = args.gt_png
-  t0 = time.perf_counter()
-  bpy.ops.render.render(write_still=True)
-  print(f"CYCLES GT {args.gt_png} ({args.gt_w}x{args.gt_h} @ {args.gt_spp} spp) in {time.perf_counter()-t0:.2f}s", flush=True)
+  # Render clean denoised Cycles 5.3.0 GT reference (skip if --skip_gt and file exists)
+  if not (args.skip_gt and os.path.exists(args.gt_png)):
+    scene.render.use_compositing = False
+    if hasattr(scene.render, "compositor_device"):
+      scene.render.compositor_device = "CPU"
+    scene.render.engine = "CYCLES"
+    scene.cycles.device = "CPU"
+    scene.cycles.samples = args.gt_spp
+    scene.cycles.use_denoising = True
+    scene.cycles.use_adaptive_sampling = True
+    scene.cycles.adaptive_threshold = 0.015
+    scene.render.resolution_x = args.gt_w
+    scene.render.resolution_y = args.gt_h
+    scene.render.resolution_percentage = 100
+    scene.render.image_settings.file_format = "PNG"
+    scene.render.filepath = args.gt_png
+    t0 = time.perf_counter()
+    bpy.ops.render.render(write_still=True)
+    print(f"CYCLES GT {args.gt_png} ({args.gt_w}x{args.gt_h} @ {args.gt_spp} spp) in {time.perf_counter()-t0:.2f}s", flush=True)
 
 
 # ==============================================================================
@@ -378,6 +424,7 @@ def _tpu_main():
   ap.add_argument("--spp", type=int, default=256)
   ap.add_argument("--max_bounces", type=int, default=4)
   ap.add_argument("--exposure", type=float, default=None)
+  ap.add_argument("--bvh_cache", default=None)
   ap.add_argument("--out_json", default="out/metrics/v3_w7_cinema_pt.json")
   ap.add_argument("--out_png", default="out/figures/v3_w7_cinema_pt_showcase.png")
   args = ap.parse_args()
@@ -406,107 +453,124 @@ def _tpu_main():
   sky_g = np.asarray(ds["sky_ground"], dtype=np.float32)
   bl_exp = float(ds["blender_exposure"])
 
-  # Build BVH ordering & pack tri_idx into leaf_bank row 22
-  centroids = (verts[faces[:, 0]] + verts[faces[:, 1]] + verts[faces[:, 2]]) * (1.0 / 3.0)
-  order = _spatial_median_order(centroids, LEAF_SIZE, BRANCH_FACTOR, stop_at_l1=True)
-  del centroids
+  # Build or load cached BVH ordering & leaf_bank
+  if args.bvh_cache and os.path.exists(args.bvh_cache):
+    bc = np.load(args.bvh_cache, allow_pickle=False)
+    order = bc["order"]
+    faces = faces[order]
+    tri_uvs = tri_uvs[order]
+    tri_tex_id = tri_tex_id[order]
+    tri_alb = tri_alb[order]
+    tri_rgh = tri_rgh[order]
+    tri_mc = tri_mc[order]
+    F = int(faces.shape[0])
+    l2_roots_aabb = bc["l2_roots_aabb"]
+    l2_aabbs = bc["l2_aabbs"]
+    l0_aabbs = bc["l0_aabbs"]
+    leaf_bank = bc["leaf_bank"]
+  else:
+    centroids = (verts[faces[:, 0]] + verts[faces[:, 1]] + verts[faces[:, 2]]) * (1.0 / 3.0)
+    order = _spatial_median_order(centroids, LEAF_SIZE, BRANCH_FACTOR, stop_at_l1=True)
+    del centroids
 
-  faces = faces[order]
-  tri_uvs = tri_uvs[order]
-  tri_tex_id = tri_tex_id[order]
-  tri_alb = tri_alb[order]
-  tri_rgh = tri_rgh[order]
-  tri_mc = tri_mc[order]
+    faces = faces[order]
+    tri_uvs = tri_uvs[order]
+    tri_tex_id = tri_tex_id[order]
+    tri_alb = tri_alb[order]
+    tri_rgh = tri_rgh[order]
+    tri_mc = tri_mc[order]
 
-  F = int(faces.shape[0])
-  n_leaves = max(1, (F + LEAF_SIZE - 1) // LEAF_SIZE)
-  F_pad = n_leaves * LEAF_SIZE
-  leaf_bank = np.zeros((n_leaves, 24, LEAF_SIZE), dtype=np.float32)
+    F = int(faces.shape[0])
+    n_leaves = max(1, (F + LEAF_SIZE - 1) // LEAF_SIZE)
+    F_pad = n_leaves * LEAF_SIZE
+    leaf_bank = np.zeros((n_leaves, 24, LEAF_SIZE), dtype=np.float32)
 
-  def _pack_vec3(row_start: int, arr_f3: np.ndarray) -> None:
-    buf = np.empty((F_pad, 3), dtype=np.float32)
-    buf[:F] = arr_f3
-    if F_pad > F:
-      buf[F:] = arr_f3[-1]
-    leaf_bank[:, row_start : row_start + 3, :] = buf.reshape(n_leaves, LEAF_SIZE, 3).transpose(0, 2, 1)
+    def _pack_vec3(row_start: int, arr_f3: np.ndarray) -> None:
+      buf = np.empty((F_pad, 3), dtype=np.float32)
+      buf[:F] = arr_f3
+      if F_pad > F:
+        buf[F:] = arr_f3[-1]
+      leaf_bank[:, row_start : row_start + 3, :] = buf.reshape(n_leaves, LEAF_SIZE, 3).transpose(0, 2, 1)
 
-  def _pack_scalar(row_idx: int, arr_f: np.ndarray) -> None:
-    buf = np.empty((F_pad,), dtype=np.float32)
-    buf[:F] = arr_f
-    if F_pad > F:
-      buf[F:] = arr_f[-1]
-    leaf_bank[:, row_idx, :] = buf.reshape(n_leaves, LEAF_SIZE)
+    def _pack_scalar(row_idx: int, arr_f: np.ndarray) -> None:
+      buf = np.empty((F_pad,), dtype=np.float32)
+      buf[:F] = arr_f
+      if F_pad > F:
+        buf[F:] = arr_f[-1]
+      leaf_bank[:, row_idx, :] = buf.reshape(n_leaves, LEAF_SIZE)
 
-  tv0 = verts[faces[:, 0]]
-  _pack_vec3(0, tv0)
-  _pack_vec3(3, verts[faces[:, 1]] - tv0)
-  _pack_vec3(6, verts[faces[:, 2]] - tv0)
-  del tv0
+    tv0 = verts[faces[:, 0]]
+    _pack_vec3(0, tv0)
+    _pack_vec3(3, verts[faces[:, 1]] - tv0)
+    _pack_vec3(6, verts[faces[:, 2]] - tv0)
+    del tv0
 
-  tv_buf = np.zeros((F_pad,), dtype=np.float32)
-  tv_buf[:F] = 1.0
-  leaf_bank[:, 9, :] = tv_buf.reshape(n_leaves, LEAF_SIZE)
-  _pack_vec3(10, vnorm[faces[:, 0]])
-  _pack_vec3(13, vnorm[faces[:, 1]])
-  _pack_vec3(16, vnorm[faces[:, 2]])
-  _pack_vec3(19, tri_alb)
-  _pack_scalar(22, np.arange(F, dtype=np.float32))
-  _pack_scalar(23, tri_mc)
+    tv_buf = np.zeros((F_pad,), dtype=np.float32)
+    tv_buf[:F] = 1.0
+    leaf_bank[:, 9, :] = tv_buf.reshape(n_leaves, LEAF_SIZE)
+    _pack_vec3(10, vnorm[faces[:, 0]])
+    _pack_vec3(13, vnorm[faces[:, 1]])
+    _pack_vec3(16, vnorm[faces[:, 2]])
+    _pack_vec3(19, tri_alb)
+    _pack_scalar(22, np.arange(F, dtype=np.float32))
+    _pack_scalar(23, tri_mc)
 
-  v0_l = leaf_bank[:, 0:3, :]
-  v1_l = v0_l + leaf_bank[:, 3:6, :]
-  v2_l = v0_l + leaf_bank[:, 6:9, :]
-  pts_min = np.minimum(v0_l, np.minimum(v1_l, v2_l))
-  pts_max = np.maximum(v0_l, np.maximum(v1_l, v2_l))
-  tv_mask = leaf_bank[:, 9:10, :] > 0.5
-  leaf_min = np.min(np.where(tv_mask, pts_min, 1e20), axis=2) - 1e-4
-  leaf_max = np.max(np.where(tv_mask, pts_max, -1e20), axis=2) + 1e-4
+    v0_l = leaf_bank[:, 0:3, :]
+    v1_l = v0_l + leaf_bank[:, 3:6, :]
+    v2_l = v0_l + leaf_bank[:, 6:9, :]
+    pts_min = np.minimum(v0_l, np.minimum(v1_l, v2_l))
+    pts_max = np.maximum(v0_l, np.maximum(v1_l, v2_l))
+    tv_mask = leaf_bank[:, 9:10, :] > 0.5
+    leaf_min = np.min(np.where(tv_mask, pts_min, 1e20), axis=2) - 1e-4
+    leaf_max = np.max(np.where(tv_mask, pts_max, -1e20), axis=2) + 1e-4
 
-  n_l1 = max(1, (n_leaves + BRANCH_FACTOR - 1) // BRANCH_FACTOR)
-  n_leaves_p = n_l1 * BRANCH_FACTOR
-  l0_aabbs = np.zeros((n_l1, 8, 128), dtype=np.float32)
-  l0_aabbs[:, 0:3, :] = 1e20
-  l0_aabbs[:, 3:6, :] = -1e20
-  lmin_p = np.full((n_leaves_p, 3), 1e20, dtype=np.float32)
-  lmax_p = np.full((n_leaves_p, 3), -1e20, dtype=np.float32)
-  lval_p = np.zeros((n_leaves_p,), dtype=np.float32)
-  lmin_p[:n_leaves] = leaf_min
-  lmax_p[:n_leaves] = leaf_max
-  lval_p[:n_leaves] = 1.0
-  lmin_g = lmin_p.reshape(n_l1, BRANCH_FACTOR, 3).transpose(0, 2, 1)
-  lmax_g = lmax_p.reshape(n_l1, BRANCH_FACTOR, 3).transpose(0, 2, 1)
-  l0_aabbs[:, 0:3, :BRANCH_FACTOR] = lmin_g
-  l0_aabbs[:, 3:6, :BRANCH_FACTOR] = lmax_g
-  l0_aabbs[:, 6, :BRANCH_FACTOR] = lval_p.reshape(n_l1, BRANCH_FACTOR)
-  l1_min = np.min(lmin_g, axis=2)
-  l1_max = np.max(lmax_g, axis=2)
+    n_l1 = max(1, (n_leaves + BRANCH_FACTOR - 1) // BRANCH_FACTOR)
+    n_leaves_p = n_l1 * BRANCH_FACTOR
+    l0_aabbs = np.zeros((n_l1, 8, 128), dtype=np.float32)
+    l0_aabbs[:, 0:3, :] = 1e20
+    l0_aabbs[:, 3:6, :] = -1e20
+    lmin_p = np.full((n_leaves_p, 3), 1e20, dtype=np.float32)
+    lmax_p = np.full((n_leaves_p, 3), -1e20, dtype=np.float32)
+    lval_p = np.zeros((n_leaves_p,), dtype=np.float32)
+    lmin_p[:n_leaves] = leaf_min
+    lmax_p[:n_leaves] = leaf_max
+    lval_p[:n_leaves] = 1.0
+    lmin_g = lmin_p.reshape(n_l1, BRANCH_FACTOR, 3).transpose(0, 2, 1)
+    lmax_g = lmax_p.reshape(n_l1, BRANCH_FACTOR, 3).transpose(0, 2, 1)
+    l0_aabbs[:, 0:3, :BRANCH_FACTOR] = lmin_g
+    l0_aabbs[:, 3:6, :BRANCH_FACTOR] = lmax_g
+    l0_aabbs[:, 6, :BRANCH_FACTOR] = lval_p.reshape(n_l1, BRANCH_FACTOR)
+    l1_min = np.min(lmin_g, axis=2)
+    l1_max = np.max(lmax_g, axis=2)
 
-  n_l2 = max(1, (n_l1 + BRANCH_FACTOR - 1) // BRANCH_FACTOR)
-  assert n_l2 <= BRANCH_FACTOR, f"n_l2={n_l2} > 64"
-  n_l1_p = n_l2 * BRANCH_FACTOR
-  l2_aabbs = np.zeros((n_l2, 8, 128), dtype=np.float32)
-  l2_aabbs[:, 0:3, :] = 1e20
-  l2_aabbs[:, 3:6, :] = -1e20
-  m1min_p = np.full((n_l1_p, 3), 1e20, dtype=np.float32)
-  m1max_p = np.full((n_l1_p, 3), -1e20, dtype=np.float32)
-  m1val_p = np.zeros((n_l1_p,), dtype=np.float32)
-  m1min_p[:n_l1] = l1_min
-  m1max_p[:n_l1] = l1_max
-  m1val_p[:n_l1] = 1.0
-  m1min_g = m1min_p.reshape(n_l2, BRANCH_FACTOR, 3).transpose(0, 2, 1)
-  m1max_g = m1max_p.reshape(n_l2, BRANCH_FACTOR, 3).transpose(0, 2, 1)
-  l2_aabbs[:, 0:3, :BRANCH_FACTOR] = m1min_g
-  l2_aabbs[:, 3:6, :BRANCH_FACTOR] = m1max_g
-  l2_aabbs[:, 6, :BRANCH_FACTOR] = m1val_p.reshape(n_l2, BRANCH_FACTOR)
+    n_l2 = max(1, (n_l1 + BRANCH_FACTOR - 1) // BRANCH_FACTOR)
+    assert n_l2 <= BRANCH_FACTOR, f"n_l2={n_l2} > 64"
+    n_l1_p = n_l2 * BRANCH_FACTOR
+    l2_aabbs = np.zeros((n_l2, 8, 128), dtype=np.float32)
+    l2_aabbs[:, 0:3, :] = 1e20
+    l2_aabbs[:, 3:6, :] = -1e20
+    m1min_p = np.full((n_l1_p, 3), 1e20, dtype=np.float32)
+    m1max_p = np.full((n_l1_p, 3), -1e20, dtype=np.float32)
+    m1val_p = np.zeros((n_l1_p,), dtype=np.float32)
+    m1min_p[:n_l1] = l1_min
+    m1max_p[:n_l1] = l1_max
+    m1val_p[:n_l1] = 1.0
+    m1min_g = m1min_p.reshape(n_l2, BRANCH_FACTOR, 3).transpose(0, 2, 1)
+    m1max_g = m1max_p.reshape(n_l2, BRANCH_FACTOR, 3).transpose(0, 2, 1)
+    l2_aabbs[:, 0:3, :BRANCH_FACTOR] = m1min_g
+    l2_aabbs[:, 3:6, :BRANCH_FACTOR] = m1max_g
+    l2_aabbs[:, 6, :BRANCH_FACTOR] = m1val_p.reshape(n_l2, BRANCH_FACTOR)
 
-  l2_min = np.min(m1min_g, axis=2)
-  l2_max = np.max(m1max_g, axis=2)
-  l2_roots_aabb = np.zeros((8, 128), dtype=np.float32)
-  l2_roots_aabb[0:3, :] = 1e20
-  l2_roots_aabb[3:6, :] = -1e20
-  l2_roots_aabb[0:3, :n_l2] = l2_min.T
-  l2_roots_aabb[3:6, :n_l2] = l2_max.T
-  l2_roots_aabb[6, :n_l2] = 1.0
+    l2_min = np.min(m1min_g, axis=2)
+    l2_max = np.max(m1max_g, axis=2)
+    l2_roots_aabb = np.zeros((8, 128), dtype=np.float32)
+    l2_roots_aabb[0:3, :] = 1e20
+    l2_roots_aabb[3:6, :] = -1e20
+    l2_roots_aabb[0:3, :n_l2] = l2_min.T
+    l2_roots_aabb[3:6, :n_l2] = l2_max.T
+    l2_roots_aabb[6, :n_l2] = 1.0
+    if args.bvh_cache:
+      np.savez(args.bvh_cache, order=order, l2_roots_aabb=l2_roots_aabb, l2_aabbs=l2_aabbs, l0_aabbs=l0_aabbs, leaf_bank=leaf_bank)
 
   # Build multi-light array (up to 4 local area/point/spot lights + optional sun)
   bmin, bmax = verts.min(0), verts.max(0)
@@ -584,7 +648,7 @@ def _tpu_main():
   H = ((gt_h + 7) // 8) * 8
   W_local = W // n_chips
 
-  exposure = args.exposure if args.exposure is not None else (0.72 * (2.0 ** max(bl_exp, -0.6)) if "classroom" not in args.scene_label else 0.72)
+  exposure = args.exposure if args.exposure is not None else (1.15 * (2.0 ** bl_exp) if "classroom" not in args.scene_label else 0.72)
 
   mesh = Mesh(np.array(devs), ("dp",))
   rep = NamedSharding(mesh, P())
@@ -1061,7 +1125,6 @@ def _tpu_main():
   y = compiled(cxp_d, cxm_d, jax.device_put(jax.random.PRNGKey(21), rep))
   jax.block_until_ready(y)
   dt_s = time.perf_counter() - t0
-
   img_np = np.asarray(jax.device_get(y), dtype=np.float32)
   if (W, H) != (gt_w, gt_h):
     img_cmp = np.asarray(
@@ -1076,27 +1139,6 @@ def _tpu_main():
   ms = dt_s * 1e3
   fps = 1.0 / dt_s
   spm = fps * args.spp * 60.0
-
-  # Save side-by-side cinema comparison PNG
-  pad, hdr = 14, 42
-  canvas = Image.new("RGB", (2 * gt_w + 3 * pad, gt_h + hdr + 2 * pad), (15, 17, 21))
-  draw = ImageDraw.Draw(canvas)
-  tpu_pil = Image.fromarray(np.clip(img_cmp * 255.0 + 0.5, 0, 255).astype(np.uint8))
-  canvas.paste(tpu_pil, (pad, pad + hdr))
-  canvas.paste(gt_im, (2 * pad + gt_w, pad + hdr))
-  draw.text(
-      (pad, pad + 12),
-      f"TPU v5p 4c UV-Textured + Denoised ({args.scene_label}, {F:,} tris, {args.spp} spp) | {spm:,.0f} spm | {ms:.0f}ms",
-      fill=(238, 244, 250),
-  )
-  draw.text(
-      (2 * pad + gt_w, pad + 12),
-      f"Blender 5.3.0 Cycles Reference GT | PSNR {psnr_gt:.2f} dB | SSIM {ssim_gt:.4f}",
-      fill=(255, 220, 80),
-  )
-  os.makedirs(os.path.dirname(args.out_png) or ".", exist_ok=True)
-  canvas.save(args.out_png)
-  print("Saved Cinema PT PNG ->", args.out_png, canvas.size, flush=True)
 
   rec = {
       "experiment": "v3_w7_cinema_pt_showcase",
@@ -1124,6 +1166,27 @@ def _tpu_main():
   with open(args.out_json, "w") as f:
     json.dump(rec, f, indent=2)
   print("CINEMA PT:", rec, flush=True)
+
+  # Save side-by-side cinema comparison PNG
+  pad, hdr = 14, 42
+  canvas = Image.new("RGB", (2 * gt_w + 3 * pad, gt_h + hdr + 2 * pad), (15, 17, 21))
+  draw = ImageDraw.Draw(canvas)
+  tpu_pil = Image.fromarray(np.clip(img_cmp * 255.0 + 0.5, 0, 255).astype(np.uint8))
+  canvas.paste(tpu_pil, (pad, pad + hdr))
+  canvas.paste(gt_im, (2 * pad + gt_w, pad + hdr))
+  draw.text(
+      (pad, pad + 12),
+      f"TPU v5p 4c UV-Textured + Denoised ({args.scene_label}, {F:,} tris, {args.spp} spp) | {spm:,.0f} spm | {ms:.0f}ms",
+      fill=(238, 244, 250),
+  )
+  draw.text(
+      (2 * pad + gt_w, pad + 12),
+      f"Blender 5.3.0 Cycles Reference GT | PSNR {psnr_gt:.2f} dB | SSIM {ssim_gt:.4f}",
+      fill=(255, 220, 80),
+  )
+  os.makedirs(os.path.dirname(args.out_png) or ".", exist_ok=True)
+  canvas.save(args.out_png)
+  print("Saved Cinema PT PNG ->", args.out_png, canvas.size, flush=True)
 
 
 if __name__ == "__main__":
