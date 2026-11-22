@@ -1,0 +1,26 @@
+[
+  {
+    "scene": "all_primitives",
+    "n_poses": 4,
+    "depth_mae_m": 7.529109780080034e-07,
+    "normal_deg": 0.0013755577383562922,
+    "geom_match": 1.0,
+    "gate_passed": true
+  },
+  {
+    "scene": "cartpole",
+    "n_poses": 64,
+    "depth_mae_m": 7.404931920973468e-07,
+    "normal_deg": 0.00037883082404732704,
+    "geom_match": 0.9999961853027344,
+    "gate_passed": true
+  },
+  {
+    "scene": "panda_pick_cube",
+    "n_poses": 64,
+    "depth_mae_m": 0.00019636715296655893,
+    "normal_deg": 0.03819890320301056,
+    "geom_match": 0.9995231628417969,
+    "gate_passed": true
+  }
+]

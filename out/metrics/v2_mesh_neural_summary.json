@@ -1,0 +1,15 @@
+{
+  "scene": "blender_suzanne_torus_pedestal",
+  "base_width": 32,
+  "n_train": 36,
+  "n_calib": 4,
+  "n_test": 8,
+  "train_time_s": 27.58,
+  "cal_scale": 1.0526337623596191,
+  "stage1_mesh_psnr_db": 14.305476302709572,
+  "neural_mesh_psnr_db": 27.952151565028103,
+  "psnr_gain_db": 13.646675262318531,
+  "neural_mesh_ssim": 0.920540684216617,
+  "neural_mesh_msssim": 0.9433359939556218,
+  "lum_rel": 0.0015444755554199219
+}

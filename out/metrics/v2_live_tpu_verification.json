@@ -1,0 +1,102 @@
+{
+  "backend": "tpu",
+  "interpret": false,
+  "test1_v2_pallas_parity": {
+    "B": 16,
+    "res": "64x64",
+    "v2_soa_vs_tiled_depth_mae_m": 2.772248990368098e-07,
+    "v2_soa_vs_tiled_max_depth_diff_m": 0.0002193450927734375,
+    "v2_soa_vs_tiled_max_rgb_diff": 0.0007736086845397949,
+    "v2_soa_vs_tiled_geom_match": 1.0,
+    "pallas_v2_vs_v2_soa_depth_mae_m": 2.2213316697161645e-07,
+    "pallas_v2_vs_v2_soa_max_depth_diff_m": 0.0001035928726196289,
+    "pallas_v2_vs_v2_soa_max_rgb_diff": 0.00023537874221801758,
+    "pallas_v2_vs_v2_soa_geom_match": 1.0,
+    "passed": true
+  },
+  "test2_blender_mesh_ray_parity": {
+    "n_meshes": 3,
+    "total_tris": 4620,
+    "total_clusters_k16": 289,
+    "frame0_vs_cycles_z_depth_mae_m": 8.712580893188715e-06,
+    "frame0_vs_cycles_fg_mask_match": 1.0,
+    "pallas_vs_jax_cluster_max_depth_diff_m": 0.0,
+    "pallas_vs_jax_cluster_geom_match": 1.0,
+    "passed": true
+  },
+  "test3_rigid_3dgs_parity": {
+    "n_gaussians": 2048,
+    "pallas_vs_jax_tile_max_rgb_diff": 1.4901161193847656e-06,
+    "pallas_vs_jax_tile_max_depth_diff_m": 2.2649765014648438e-06,
+    "frame0_vs_cycles_fg_match": 0.90673828125,
+    "passed": true
+  },
+  "test4_v2_zero_copy_hlo": {
+    "v2_soa": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 0,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 3243,
+      "send_recv_ops": 0,
+      "zero_copy_verified": true
+    },
+    "pallas_v2": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 0,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 522,
+      "send_recv_ops": 0,
+      "zero_copy_verified": true
+    },
+    "mesh_ray_jax_cluster": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 12,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 3685,
+      "send_recv_ops": 0,
+      "zero_copy_verified": true
+    },
+    "mesh_ray_pallas": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 0,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 522,
+      "send_recv_ops": 0,
+      "zero_copy_verified": true
+    },
+    "gs3d_jax_tile": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 0,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 859,
+      "send_recv_ops": 0,
+      "zero_copy_verified": true
+    },
+    "gs3d_pallas": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 0,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 790,
+      "send_recv_ops": 0,
+      "zero_copy_verified": true
+    }
+  }
+}

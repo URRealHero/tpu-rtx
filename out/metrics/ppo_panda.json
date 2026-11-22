@@ -1,0 +1,253 @@
+{
+  "env": "panda_pick_cube",
+  "backend": "tpu",
+  "num_envs": 512,
+  "rollout_len": 8,
+  "num_iters": 30,
+  "neural_arch": "M2_spatial_128",
+  "hlo_zero_copy": true,
+  "steady_env_steps_per_sec": 377.3258542803956,
+  "total_wall_s": 428.94135999679565,
+  "history": [
+    {
+      "iter": 1,
+      "d_grip_box": 0.14884433150291443,
+      "last_done_frac": 0.0,
+      "mean_loss": 21.47983741760254,
+      "mean_reward": 2.237346649169922,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 2,
+      "d_grip_box": 0.1683019995689392,
+      "last_done_frac": 0.125,
+      "mean_loss": 17.339820861816406,
+      "mean_reward": 2.3305983543395996,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 3,
+      "d_grip_box": 0.13924908638000488,
+      "last_done_frac": 0.0,
+      "mean_loss": 16.691728591918945,
+      "mean_reward": 2.2667911052703857,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 4,
+      "d_grip_box": 0.16870737075805664,
+      "last_done_frac": 0.125,
+      "mean_loss": 10.228919982910156,
+      "mean_reward": 2.4277753829956055,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 5,
+      "d_grip_box": 0.13796238601207733,
+      "last_done_frac": 0.0,
+      "mean_loss": 15.006135940551758,
+      "mean_reward": 2.2654430866241455,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 6,
+      "d_grip_box": 0.1682659387588501,
+      "last_done_frac": 0.125,
+      "mean_loss": 43.612266540527344,
+      "mean_reward": 2.4247987270355225,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 7,
+      "d_grip_box": 0.13652150332927704,
+      "last_done_frac": 0.0,
+      "mean_loss": 16.48605728149414,
+      "mean_reward": 2.257910966873169,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 8,
+      "d_grip_box": 0.167546346783638,
+      "last_done_frac": 0.125,
+      "mean_loss": 74.54134368896484,
+      "mean_reward": 2.4542438983917236,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 9,
+      "d_grip_box": 0.13100777566432953,
+      "last_done_frac": 0.0,
+      "mean_loss": 18.148059844970703,
+      "mean_reward": 2.278881549835205,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 10,
+      "d_grip_box": 0.16727137565612793,
+      "last_done_frac": 0.125,
+      "mean_loss": 91.5277099609375,
+      "mean_reward": 2.4888393878936768,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 11,
+      "d_grip_box": 0.1345132440328598,
+      "last_done_frac": 0.0,
+      "mean_loss": 18.788057327270508,
+      "mean_reward": 2.282050609588623,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 12,
+      "d_grip_box": 0.16980181634426117,
+      "last_done_frac": 0.125,
+      "mean_loss": 102.95523834228516,
+      "mean_reward": 2.4391252994537354,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 13,
+      "d_grip_box": 0.13409575819969177,
+      "last_done_frac": 0.0,
+      "mean_loss": 19.005260467529297,
+      "mean_reward": 2.271165370941162,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 14,
+      "d_grip_box": 0.1702890843153,
+      "last_done_frac": 0.125,
+      "mean_loss": 106.21979522705078,
+      "mean_reward": 2.436148166656494,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 15,
+      "d_grip_box": 0.13471347093582153,
+      "last_done_frac": 0.0,
+      "mean_loss": 19.097740173339844,
+      "mean_reward": 2.2626137733459473,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 16,
+      "d_grip_box": 0.16947545111179352,
+      "last_done_frac": 0.125,
+      "mean_loss": 106.19256591796875,
+      "mean_reward": 2.4115149974823,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 17,
+      "d_grip_box": 0.1357457935810089,
+      "last_done_frac": 0.0,
+      "mean_loss": 18.79989242553711,
+      "mean_reward": 2.2518463134765625,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 18,
+      "d_grip_box": 0.17059223353862762,
+      "last_done_frac": 0.125,
+      "mean_loss": 111.13664245605469,
+      "mean_reward": 2.3827805519104004,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 19,
+      "d_grip_box": 0.13596299290657043,
+      "last_done_frac": 0.0,
+      "mean_loss": 18.931289672851562,
+      "mean_reward": 2.2591664791107178,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 20,
+      "d_grip_box": 0.1677434891462326,
+      "last_done_frac": 0.125,
+      "mean_loss": 110.06375122070312,
+      "mean_reward": 2.390918254852295,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 21,
+      "d_grip_box": 0.1359536051750183,
+      "last_done_frac": 0.0,
+      "mean_loss": 19.079143524169922,
+      "mean_reward": 2.2637557983398438,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 22,
+      "d_grip_box": 0.16964223980903625,
+      "last_done_frac": 0.125,
+      "mean_loss": 107.68268585205078,
+      "mean_reward": 2.3910422325134277,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 23,
+      "d_grip_box": 0.1351107954978943,
+      "last_done_frac": 0.0,
+      "mean_loss": 19.10260581970215,
+      "mean_reward": 2.2661681175231934,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 24,
+      "d_grip_box": 0.16751007735729218,
+      "last_done_frac": 0.125,
+      "mean_loss": 106.02796936035156,
+      "mean_reward": 2.409710645675659,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 25,
+      "d_grip_box": 0.13693593442440033,
+      "last_done_frac": 0.0,
+      "mean_loss": 19.055465698242188,
+      "mean_reward": 2.2723231315612793,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 26,
+      "d_grip_box": 0.1676454395055771,
+      "last_done_frac": 0.125,
+      "mean_loss": 107.04662322998047,
+      "mean_reward": 2.4138104915618896,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 27,
+      "d_grip_box": 0.13375918567180634,
+      "last_done_frac": 0.0,
+      "mean_loss": 19.026453018188477,
+      "mean_reward": 2.2701785564422607,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 28,
+      "d_grip_box": 0.167751282453537,
+      "last_done_frac": 0.125,
+      "mean_loss": 108.79396057128906,
+      "mean_reward": 2.4079296588897705,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 29,
+      "d_grip_box": 0.13553135097026825,
+      "last_done_frac": 0.0,
+      "mean_loss": 18.99022102355957,
+      "mean_reward": 2.2685279846191406,
+      "success_rate": 0.0
+    },
+    {
+      "iter": 30,
+      "d_grip_box": 0.166889026761055,
+      "last_done_frac": 0.125,
+      "mean_loss": 110.13304138183594,
+      "mean_reward": 2.393402099609375,
+      "success_rate": 0.0
+    }
+  ]
+}

@@ -1,0 +1,149 @@
+{
+  "M1_pixel_128": {
+    "train_time_s": 59.57410430908203,
+    "cal_scale": 0.997898519039154,
+    "gate_uncal": {
+      "psnr_db": 27.794821774166728,
+      "stage1_psnr_db": 13.834067918406001,
+      "psnr_gain_db": 13.960753855760727,
+      "ssim": 0.9328388604385682,
+      "msssim": 0.9365535157323001,
+      "lum_rel": 0.0010072159105209977,
+      "roi_psnr_db": 23.51455758497982,
+      "roi_edge_px": 0.3740802777465433,
+      "roi_occ_mismatch": 0.05,
+      "passed": false,
+      "thresholds": {
+        "psnr_min": 30.0,
+        "psnr_gain_min": 4.0,
+        "ssim_min": 0.94,
+        "msssim_min": 0.96,
+        "lum_rel_max": 0.005,
+        "roi_psnr_min": 28.0,
+        "roi_edge_px_max": 1.0,
+        "roi_occ_mismatch_max": 0.01
+      }
+    },
+    "gate_cal": {
+      "psnr_db": 27.804710971518084,
+      "stage1_psnr_db": 13.834067918406001,
+      "psnr_gain_db": 13.970643053112083,
+      "ssim": 0.9328577278416706,
+      "msssim": 0.936553921889261,
+      "lum_rel": -0.0010964051644173356,
+      "roi_psnr_db": 23.520207994174513,
+      "roi_edge_px": 0.3740802777465433,
+      "roi_occ_mismatch": 0.05,
+      "passed": false,
+      "thresholds": {
+        "psnr_min": 30.0,
+        "psnr_gain_min": 4.0,
+        "ssim_min": 0.94,
+        "msssim_min": 0.96,
+        "lum_rel_max": 0.005,
+        "roi_psnr_min": 28.0,
+        "roi_edge_px_max": 1.0,
+        "roi_occ_mismatch_max": 0.01
+      }
+    },
+    "ckpt_path": "out/metrics/M1_pixel_128_params.pkl"
+  },
+  "M2_spatial_32": {
+    "train_time_s": 60.27897882461548,
+    "cal_scale": 0.9984628558158875,
+    "gate_uncal": {
+      "psnr_db": 35.580157059817125,
+      "stage1_psnr_db": 13.834067918406001,
+      "psnr_gain_db": 21.746089141411126,
+      "ssim": 0.9784076281673048,
+      "msssim": 0.9839176001372989,
+      "lum_rel": 0.0010499250222688605,
+      "roi_psnr_db": 27.790695331802972,
+      "roi_edge_px": 0.2521792522748001,
+      "roi_occ_mismatch": 0.1,
+      "passed": false,
+      "thresholds": {
+        "psnr_min": 30.0,
+        "psnr_gain_min": 4.0,
+        "ssim_min": 0.94,
+        "msssim_min": 0.96,
+        "lum_rel_max": 0.005,
+        "roi_psnr_min": 28.0,
+        "roi_edge_px_max": 1.0,
+        "roi_occ_mismatch_max": 0.01
+      }
+    },
+    "gate_cal": {
+      "psnr_db": 35.57721267614002,
+      "stage1_psnr_db": 13.834067918406001,
+      "psnr_gain_db": 21.743144757734022,
+      "ssim": 0.9784126812628231,
+      "msssim": 0.9839188820160728,
+      "lum_rel": -0.0004889184763738896,
+      "roi_psnr_db": 27.7949412831981,
+      "roi_edge_px": 0.2521792522748001,
+      "roi_occ_mismatch": 0.1,
+      "passed": false,
+      "thresholds": {
+        "psnr_min": 30.0,
+        "psnr_gain_min": 4.0,
+        "ssim_min": 0.94,
+        "msssim_min": 0.96,
+        "lum_rel_max": 0.005,
+        "roi_psnr_min": 28.0,
+        "roi_edge_px_max": 1.0,
+        "roi_occ_mismatch_max": 0.01
+      }
+    },
+    "ckpt_path": "out/metrics/M2_spatial_32_params.pkl"
+  },
+  "M2_spatial_128": {
+    "train_time_s": 69.11814713478088,
+    "cal_scale": 0.9998908042907715,
+    "gate_uncal": {
+      "psnr_db": 38.352196918892176,
+      "stage1_psnr_db": 13.834067918406001,
+      "psnr_gain_db": 24.518129000486176,
+      "ssim": 0.9889276668743857,
+      "msssim": 0.9915585175616888,
+      "lum_rel": 0.00043156373493014044,
+      "roi_psnr_db": 30.3079808964314,
+      "roi_edge_px": 0.1572078849421814,
+      "roi_occ_mismatch": 0.007142857142857143,
+      "passed": true,
+      "thresholds": {
+        "psnr_min": 30.0,
+        "psnr_gain_min": 4.0,
+        "ssim_min": 0.94,
+        "msssim_min": 0.96,
+        "lum_rel_max": 0.005,
+        "roi_psnr_min": 28.0,
+        "roi_edge_px_max": 1.0,
+        "roi_occ_mismatch_max": 0.01
+      }
+    },
+    "gate_cal": {
+      "psnr_db": 38.35318249851903,
+      "stage1_psnr_db": 13.834067918406001,
+      "psnr_gain_db": 24.519114580113033,
+      "ssim": 0.9889277995092524,
+      "msssim": 0.9915584872699682,
+      "lum_rel": 0.00032220385330905543,
+      "roi_psnr_db": 30.30811784035627,
+      "roi_edge_px": 0.1572078849421814,
+      "roi_occ_mismatch": 0.007142857142857143,
+      "passed": true,
+      "thresholds": {
+        "psnr_min": 30.0,
+        "psnr_gain_min": 4.0,
+        "ssim_min": 0.94,
+        "msssim_min": 0.96,
+        "lum_rel_max": 0.005,
+        "roi_psnr_min": 28.0,
+        "roi_edge_px_max": 1.0,
+        "roi_occ_mismatch_max": 0.01
+      }
+    },
+    "ckpt_path": "out/metrics/M2_spatial_128_params.pkl"
+  }
+}

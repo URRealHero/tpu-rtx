@@ -1,0 +1,36 @@
+{
+  "backend": "tpu",
+  "B": 1024,
+  "res": "64x64",
+  "runs": [
+    {
+      "pipeline": "gs3d_jax_tile",
+      "compile_s": 1.14,
+      "ms": 858.18,
+      "fps": 1193.2,
+      "n_steps": 5
+    },
+    {
+      "pipeline": "gs3d_pallas",
+      "compile_s": 7.16,
+      "ms": 1554.7,
+      "fps": 658.6,
+      "n_steps": 5
+    },
+    {
+      "pipeline": "mesh_pallas",
+      "compile_s": 10.98,
+      "ms": 568.0,
+      "fps": 1802.8,
+      "n_steps": 5
+    },
+    {
+      "pipeline": "mesh_jax_cluster",
+      "B": 128,
+      "compile_s": 18.92,
+      "ms": 12096.41,
+      "fps": 10.6,
+      "n_steps": 2
+    }
+  ]
+}

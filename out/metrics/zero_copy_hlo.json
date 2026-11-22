@@ -1,0 +1,18 @@
+{
+  "cartpole": {
+    "hlo_bytes": 721655,
+    "hlo_lines": 8021,
+    "host_callback_count": 0,
+    "send_recv_count": 0,
+    "zero_copy_verified": true,
+    "hlo_path": "out/hlo/cartpole_fused_step_render_B1024.hlo.txt"
+  },
+  "panda_pick_cube": {
+    "hlo_bytes": 1966372,
+    "hlo_lines": 21404,
+    "host_callback_count": 0,
+    "send_recv_count": 0,
+    "zero_copy_verified": true,
+    "hlo_path": "out/hlo/panda_pick_cube_fused_step_render_B1024.hlo.txt"
+  }
+}

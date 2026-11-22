@@ -1,0 +1,350 @@
+{
+  "scene_meta": {
+    "total_tris": 1242112,
+    "n_meshes": 6,
+    "mesh_tris": {
+      "suzanne_hero": 251904,
+      "torus_knot": 196608,
+      "wave_sculpture": 261120,
+      "gallery_colonnade": 278528,
+      "gallery_floor": 204800,
+      "pedestal": 49152
+    },
+    "mesh_leaves_128": {
+      "suzanne_hero": 1968,
+      "torus_knot": 1536,
+      "wave_sculpture": 2040,
+      "gallery_colonnade": 2176,
+      "gallery_floor": 1600,
+      "pedestal": 384
+    },
+    "mesh_top_nodes_128": {
+      "suzanne_hero": 16,
+      "torus_knot": 12,
+      "wave_sculpture": 16,
+      "gallery_colonnade": 17,
+      "gallery_floor": 13,
+      "pedestal": 3
+    },
+    "device_kind": "TPU v5",
+    "n_visible_devices": 4
+  },
+  "parity": {
+    "pallas_vs_jax_256_max_depth_diff_m": 0.0,
+    "pallas_vs_jax_256_max_rgb_diff": 2.384185791015625e-07,
+    "pallas_vs_jax_256_geom_match": 1.0,
+    "pallas_vs_cycles_256_z_mae_m": 4.835277650272474e-05,
+    "pallas_vs_cycles_256_fg_match": 1.0,
+    "pallas_vs_cycles_512_z_mae_m": 1.7040709280990995e-05,
+    "pallas_vs_cycles_512_fg_match": 0.9999961853027344
+  },
+  "neural_relighting": {
+    "runs": [
+      {
+        "arch": "SpatialRelighter_W64",
+        "n_params": 922051,
+        "epochs": 180,
+        "train_time_s": 17.91,
+        "cal_scale": 1.000234,
+        "test_256": {
+          "stage1_psnr_db": 18.4072,
+          "neural_psnr_db": 33.573,
+          "psnr_gain_db": 15.1658,
+          "neural_ssim": 0.97205,
+          "neural_msssim": 0.97866,
+          "lum_rel": -0.001469
+        },
+        "hero_512": {
+          "stage1_psnr_db": 18.4234,
+          "neural_psnr_db": 29.8269,
+          "psnr_gain_db": 11.4035,
+          "neural_ssim": 0.95101,
+          "neural_msssim": 0.95382,
+          "lum_rel": -0.003535
+        }
+      },
+      {
+        "arch": "SpatialRelighter_W96",
+        "n_params": 2061987,
+        "epochs": 180,
+        "train_time_s": 26.04,
+        "cal_scale": 0.998895,
+        "test_256": {
+          "stage1_psnr_db": 18.4072,
+          "neural_psnr_db": 34.6517,
+          "psnr_gain_db": 16.2445,
+          "neural_ssim": 0.97742,
+          "neural_msssim": 0.98314,
+          "lum_rel": -0.002157
+        },
+        "hero_512": {
+          "stage1_psnr_db": 18.4234,
+          "neural_psnr_db": 30.0935,
+          "psnr_gain_db": 11.6702,
+          "neural_ssim": 0.95478,
+          "neural_msssim": 0.9571,
+          "lum_rel": -0.002926
+        }
+      },
+      {
+        "arch": "SpatialRelighter3S_W96",
+        "n_params": 4459683,
+        "epochs": 180,
+        "train_time_s": 33.62,
+        "cal_scale": 0.999696,
+        "test_256": {
+          "stage1_psnr_db": 18.4072,
+          "neural_psnr_db": 34.7829,
+          "psnr_gain_db": 16.3756,
+          "neural_ssim": 0.97754,
+          "neural_msssim": 0.98351,
+          "lum_rel": -0.002067
+        },
+        "hero_512": {
+          "stage1_psnr_db": 18.4234,
+          "neural_psnr_db": 30.2032,
+          "psnr_gain_db": 11.7798,
+          "neural_ssim": 0.95534,
+          "neural_msssim": 0.95693,
+          "lum_rel": -0.001641
+        }
+      }
+    ],
+    "best": {
+      "arch": "SpatialRelighter3S_W96",
+      "n_params": 4459683,
+      "epochs": 180,
+      "train_time_s": 33.62,
+      "cal_scale": 0.999696,
+      "test_256": {
+        "stage1_psnr_db": 18.4072,
+        "neural_psnr_db": 34.7829,
+        "psnr_gain_db": 16.3756,
+        "neural_ssim": 0.97754,
+        "neural_msssim": 0.98351,
+        "lum_rel": -0.002067
+      },
+      "hero_512": {
+        "stage1_psnr_db": 18.4234,
+        "neural_psnr_db": 30.2032,
+        "psnr_gain_db": 11.7798,
+        "neural_ssim": 0.95534,
+        "neural_msssim": 0.95693,
+        "lum_rel": -0.001641
+      }
+    }
+  },
+  "benchmarks_1chip": [
+    {
+      "resolution": "64x64",
+      "batch_size": 1,
+      "n_chips": 1,
+      "stage2": false,
+      "dt_ms": 11.712,
+      "fps": 85.38,
+      "mpix_per_sec": 0.35,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "64x64",
+      "batch_size": 64,
+      "n_chips": 1,
+      "stage2": false,
+      "dt_ms": 487.678,
+      "fps": 131.23,
+      "mpix_per_sec": 0.54,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "64x64",
+      "batch_size": 256,
+      "n_chips": 1,
+      "stage2": false,
+      "dt_ms": 1842.137,
+      "fps": 138.97,
+      "mpix_per_sec": 0.57,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "256x256",
+      "batch_size": 1,
+      "n_chips": 1,
+      "stage2": false,
+      "dt_ms": 43.276,
+      "fps": 23.11,
+      "mpix_per_sec": 1.51,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "256x256",
+      "batch_size": 16,
+      "n_chips": 1,
+      "stage2": false,
+      "dt_ms": 472.169,
+      "fps": 33.89,
+      "mpix_per_sec": 2.22,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "256x256",
+      "batch_size": 48,
+      "n_chips": 1,
+      "stage2": false,
+      "dt_ms": 1407.177,
+      "fps": 34.11,
+      "mpix_per_sec": 2.24,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "512x512",
+      "batch_size": 1,
+      "n_chips": 1,
+      "stage2": false,
+      "dt_ms": 100.842,
+      "fps": 9.92,
+      "mpix_per_sec": 2.6,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "512x512",
+      "batch_size": 4,
+      "n_chips": 1,
+      "stage2": false,
+      "dt_ms": 282.896,
+      "fps": 14.14,
+      "mpix_per_sec": 3.71,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "512x512",
+      "batch_size": 8,
+      "n_chips": 1,
+      "stage2": false,
+      "dt_ms": 571.453,
+      "fps": 14.0,
+      "mpix_per_sec": 3.67,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "256x256",
+      "batch_size": 16,
+      "n_chips": 1,
+      "stage2": true,
+      "dt_ms": 486.689,
+      "fps": 32.88,
+      "mpix_per_sec": 2.15,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "512x512",
+      "batch_size": 4,
+      "n_chips": 1,
+      "stage2": true,
+      "dt_ms": 321.773,
+      "fps": 12.43,
+      "mpix_per_sec": 3.26,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    }
+  ],
+  "benchmarks_4chip_shard_map": [
+    {
+      "resolution": "64x64",
+      "batch_size": 64,
+      "n_chips": 4,
+      "stage2": false,
+      "dt_ms": 130.587,
+      "fps": 490.09,
+      "mpix_per_sec": 2.01,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "64x64",
+      "batch_size": 256,
+      "n_chips": 4,
+      "stage2": false,
+      "dt_ms": 487.591,
+      "fps": 525.03,
+      "mpix_per_sec": 2.15,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "256x256",
+      "batch_size": 16,
+      "n_chips": 4,
+      "stage2": false,
+      "dt_ms": 124.963,
+      "fps": 128.04,
+      "mpix_per_sec": 8.39,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "256x256",
+      "batch_size": 48,
+      "n_chips": 4,
+      "stage2": false,
+      "dt_ms": 367.751,
+      "fps": 130.52,
+      "mpix_per_sec": 8.55,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "512x512",
+      "batch_size": 4,
+      "n_chips": 4,
+      "stage2": false,
+      "dt_ms": 105.235,
+      "fps": 38.01,
+      "mpix_per_sec": 9.96,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "512x512",
+      "batch_size": 8,
+      "n_chips": 4,
+      "stage2": false,
+      "dt_ms": 154.515,
+      "fps": 51.77,
+      "mpix_per_sec": 13.57,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "256x256",
+      "batch_size": 16,
+      "n_chips": 4,
+      "stage2": true,
+      "dt_ms": 129.561,
+      "fps": 123.49,
+      "mpix_per_sec": 8.09,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "512x512",
+      "batch_size": 4,
+      "n_chips": 4,
+      "stage2": true,
+      "dt_ms": 116.883,
+      "fps": 34.22,
+      "mpix_per_sec": 8.97,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "backend": "tpu",
+  "chip_count": 1,
+  "runs": [
+    {
+      "tile_size": 64,
+      "batch_size": 1024,
+      "res": "64x64",
+      "e2e_ms": 1198.6,
+      "e2e_fps": 854.3,
+      "compile_s": 70.24
+    },
+    {
+      "tile_size": 128,
+      "batch_size": 1024,
+      "res": "64x64",
+      "e2e_ms": 1262.62,
+      "e2e_fps": 811.0,
+      "compile_s": 39.33
+    },
+    {
+      "tile_size": 256,
+      "batch_size": 1024,
+      "res": "64x64",
+      "e2e_ms": 1281.16,
+      "e2e_fps": 799.3,
+      "compile_s": 37.49
+    },
+    {
+      "tile_size": 512,
+      "batch_size": 1024,
+      "res": "64x64",
+      "e2e_ms": 1660.41,
+      "e2e_fps": 616.7,
+      "compile_s": 39.95
+    }
+  ]
+}

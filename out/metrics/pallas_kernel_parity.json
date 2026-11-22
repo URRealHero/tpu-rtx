@@ -1,0 +1,15 @@
+{
+  "cartpole": {
+    "naive_vs_tiled_max_depth_diff": 0.0,
+    "pallas_vs_tiled_max_depth_diff": 0.0,
+    "pallas_vs_tiled_max_rgb_diff": 0.0,
+    "pallas_vs_tiled_geom_match": 1.0
+  },
+  "panda_pick_cube": {
+    "naive_vs_tiled_max_depth_diff": 0.0,
+    "pallas_vs_tiled_max_depth_diff": 1.7881393432617188e-06,
+    "pallas_vs_tiled_max_rgb_diff": 4.455447196960449e-06,
+    "pallas_vs_tiled_geom_match": 1.0
+  },
+  "pallas_mxu_pixel_mlp_max_diff": 0.0
+}

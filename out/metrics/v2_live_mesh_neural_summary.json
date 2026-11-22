@@ -1,0 +1,47 @@
+{
+  "best": {
+    "scene": "blender_suzanne_torus_pedestal",
+    "base_width": 64,
+    "n_train": 36,
+    "n_calib": 4,
+    "n_test": 8,
+    "train_time_s": 17.16,
+    "cal_scale": 0.9987807273864746,
+    "stage1_mesh_psnr_db": 14.305476623768502,
+    "neural_mesh_psnr_db": 34.917963202969,
+    "psnr_gain_db": 20.612486579200496,
+    "neural_mesh_ssim": 0.9744260642554945,
+    "neural_mesh_msssim": 0.9820900551484881,
+    "lum_rel": -0.0002740025520324707
+  },
+  "w32": {
+    "scene": "blender_suzanne_torus_pedestal",
+    "base_width": 32,
+    "n_train": 36,
+    "n_calib": 4,
+    "n_test": 8,
+    "train_time_s": 17.91,
+    "cal_scale": 1.0003446340560913,
+    "stage1_mesh_psnr_db": 14.305476623768502,
+    "neural_mesh_psnr_db": 33.50063739714619,
+    "psnr_gain_db": 19.19516077337769,
+    "neural_mesh_ssim": 0.9673143088274275,
+    "neural_mesh_msssim": 0.9771119031253945,
+    "lum_rel": 0.0005269050598144531
+  },
+  "w64": {
+    "scene": "blender_suzanne_torus_pedestal",
+    "base_width": 64,
+    "n_train": 36,
+    "n_calib": 4,
+    "n_test": 8,
+    "train_time_s": 17.16,
+    "cal_scale": 0.9987807273864746,
+    "stage1_mesh_psnr_db": 14.305476623768502,
+    "neural_mesh_psnr_db": 34.917963202969,
+    "psnr_gain_db": 20.612486579200496,
+    "neural_mesh_ssim": 0.9744260642554945,
+    "neural_mesh_msssim": 0.9820900551484881,
+    "lum_rel": -0.0002740025520324707
+  }
+}

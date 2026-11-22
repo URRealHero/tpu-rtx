@@ -1,0 +1,10 @@
+{
+  "host_callbacks": 0,
+  "dot_ops": 0,
+  "conv_ops": 16,
+  "while_ops": 4,
+  "gather_ops": 0,
+  "custom_calls": 0,
+  "hlo_lines": 22965,
+  "zero_copy_verified": true
+}
