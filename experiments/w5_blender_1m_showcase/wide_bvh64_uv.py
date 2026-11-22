@@ -154,9 +154,9 @@ def build_wide_bvh64_uv(
   _pack_vec3(6, verts[faces[:, 2]] - tv0)
   del tv0
 
-  # Row 9: 2.0 = opaque shadow-casting tri, 1.0 = glass/transparent (primary hit only, shadow pass-through), 0.0 = pad
+  # Row 9: 2.0 = opaque shadow-casting tri, 1.0 = glass/transparent/no-shadow (primary hit only, shadow pass-through), 0.0 = pad
   tv_buf = np.zeros((F_pad,), dtype=np.float32)
-  is_glass_tri = (tri_mc >= 1.8) & (tri_mc < 2.8)
+  is_glass_tri = ((tri_mc >= 1.8) & (tri_mc < 2.8)) | (tri_mc >= 9.5)
   tv_buf[:F] = np.where(is_glass_tri, 1.0, 2.0).astype(np.float32)
   leaf_bank[:, 9, :] = tv_buf.reshape(n_leaves, LEAF_SIZE)
   del tv_buf
@@ -922,7 +922,9 @@ def render_wide_bvh64_uv_stage1(
     cam_xpos: jax.Array,                # (B, 3)
     cam_xmat: jax.Array,                # (B, 3, 3)
     interpret: bool = False,
-) -> Tuple[GBuffer, jax.Array, jax.Array]:
+    shadow_top2: bool = False,
+    return_sh2: bool = False,
+):
   """Render exact Stage 1 UV-textured PBR G-Buffer + (roughness, mat_code) maps."""
   l2_roots_d, l2_d, l0_d, leaf_d, tex_d, mtid_d, mcode_d = dev_arrays
   H, W = int(spec.height), int(spec.width)
@@ -975,6 +977,26 @@ def render_wide_bvh64_uv_stage1(
     )
     vis0 = jnp.where(d_sh < sh_lim - 1e-4, 0.15, 1.0)
 
+  vis1 = jnp.ones((B, R), dtype=jnp.float32)
+  if spec.use_shadows and shadow_top2 and len(spec.light_type) >= 2:
+    l_pos1 = jnp.asarray(spec.light_pos[1], dtype=jnp.float32)
+    l_dir1 = jnp.asarray(spec.light_dir[1], dtype=jnp.float32)
+    l_type1 = int(spec.light_type[1])
+    if l_type1 == 0:
+      L1 = jnp.broadcast_to(-l_dir1[None, None, :], ro.shape)
+      dist1 = jnp.full((B, R), float(spec.zfar) * 0.9, dtype=jnp.float32)
+    else:
+      d_vec1 = l_pos1[None, None, :] - hit_pos
+      dist1 = jnp.linalg.norm(d_vec1, axis=-1)
+      L1 = d_vec1 / jnp.maximum(dist1[..., None], 1e-12)
+    ndotl1 = jnp.maximum(0.0, jnp.sum(nrm * L1, axis=-1))
+    sh_o1 = hit_pos + nrm * 2.0e-3
+    sh_lim1 = jnp.where(hit & (ndotl1 > 0.0), jnp.maximum(dist1 - 2.0e-3, 0.0), 0.0)
+    d_sh1 = pallas_wide_bvh64_uv_raycast(
+        l2_roots_d, l2_d, l0_d, leaf_d, sh_o1, L1, sh_lim1, H, W, any_hit=True, interpret=interpret
+    )
+    vis1 = jnp.where(d_sh1 < sh_lim1 - 1e-4, 0.15, 1.0)
+
   # Hemisphere ambient
   up_w = 0.5 * (nrm[..., 2] + 1.0)
   sky_z = jnp.asarray(spec.sky_zenith, dtype=jnp.float32)
@@ -1002,7 +1024,7 @@ def render_wide_bvh64_uv_stage1(
       Li = dv / dl[..., None]
       atten = 1.0 / (1.0 + 0.05 * d2)
     ndotl = jnp.maximum(0.0, jnp.sum(nrm * Li, axis=-1))
-    vis_i = vis0 if li == 0 else 1.0
+    vis_i = vis0 if li == 0 else (vis1 if (li == 1 and shadow_top2) else 1.0)
     H_v = (Li + vdir) / jnp.maximum(jnp.linalg.norm(Li + vdir, axis=-1, keepdims=True), 1e-12)
     ndoth = jnp.maximum(jnp.sum(nrm * H_v, axis=-1), 0.0)
     vdoth = jnp.maximum(jnp.sum(vdir * H_v, axis=-1), 0.0)
@@ -1044,6 +1066,8 @@ def render_wide_bvh64_uv_stage1(
       direct_shadow=jnp.where(hit, vis0, 1.0).reshape(B, H, W),
       direct_rgb=rgb.reshape(B, H, W, 3),
   )
+  if return_sh2:
+    return gb, rgh.reshape(B, H, W), mcode.reshape(B, H, W), jnp.where(hit, vis1, 1.0).reshape(B, H, W)
   return gb, rgh.reshape(B, H, W), mcode.reshape(B, H, W)
 
 
@@ -1054,8 +1078,9 @@ def build_scene_gbuffer_features(
     scene_center: Tuple[float, float, float],
     scene_scale: Tuple[float, float, float],
     z_scale: float,
+    extra_sh: Optional[jax.Array] = None,
 ) -> jax.Array:
-  """Scene-adaptive 26-ch G-Buffer features (normalized world_pos & z_depth + roughness/mcode)."""
+  """Scene-adaptive 26-ch (or 27-ch with extra_sh) G-Buffer features."""
   from tpu_mjx_render.neural_shader import _local_edges
   hit = (gb.geom_id >= 0).astype(jnp.float32)[..., None]
   ctr = jnp.asarray(scene_center, dtype=jnp.float32)
@@ -1067,25 +1092,25 @@ def build_scene_gbuffer_features(
   ndotv_raw = jnp.sum(gb.view_dir * gb.normal, axis=-1, keepdims=True)
   ndotv = jnp.clip(jnp.abs(ndotv_raw), 0.0, 1.0)
   refl = gb.view_dir - 2.0 * ndotv_raw * gb.normal
-  return jnp.concatenate(
-      [
-          gb.rgb,                     # 3
-          gb.albedo,                  # 3
-          gb.normal,                  # 3
-          gb.view_dir,                # 3
-          pos_norm,                   # 3
-          z_norm,                     # 1
-          sh,                         # 1
-          hit,                        # 1
-          g_edge,                     # 1
-          z_edge,                     # 1
-          refl,                       # 3
-          ndotv,                      # 1
-          rgh[..., None],             # 1
-          jnp.clip(mcode, 0.0, 4.0)[..., None] * 0.25,  # 1
-      ],
-      axis=-1,
-  )  # Total = 26 channels
+  chans = [
+      gb.rgb,                     # 3
+      gb.albedo,                  # 3
+      gb.normal,                  # 3
+      gb.view_dir,                # 3
+      pos_norm,                   # 3
+      z_norm,                     # 1
+      sh,                         # 1
+      hit,                        # 1
+      g_edge,                     # 1
+      z_edge,                     # 1
+      refl,                       # 3
+      ndotv,                      # 1
+      rgh[..., None],             # 1
+      jnp.clip(mcode, 0.0, 4.0)[..., None] * 0.25,  # 1
+  ]
+  if extra_sh is not None:
+    chans.append(extra_sh[..., None])
+  return jnp.concatenate(chans, axis=-1)
 
 
 def pack_dev_arrays(spec: WideBVH64UVSceneSpec, device_or_sharding: Any) -> Tuple[jax.Array, ...]:
