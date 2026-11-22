@@ -1,0 +1,109 @@
+{
+  "backend": "tpu",
+  "jax_version": "0.10.2",
+  "device_kind": "TPU v5",
+  "parity": {
+    "cloth_grid": "128x128",
+    "cloth_tris": 32768,
+    "frame": 40,
+    "max_depth_diff_vs_cpu_rebuild_m": 0.0,
+    "geom_match": 1.0,
+    "mean_rgb_diff": 0.0,
+    "hlo_full_step_refit_render": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 2,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 1592,
+      "send_recv_ops": 0
+    }
+  },
+  "benchmarks": [
+    {
+      "cloth_grid": "64x64",
+      "cloth_tris": 8192,
+      "res": "64x64",
+      "step_ms": 0.371,
+      "refit_ms": 0.214,
+      "render_ms": 0.619,
+      "total_step_refit_render_ms": 0.874,
+      "fps": 1144.38,
+      "compile_s": 4.16
+    },
+    {
+      "cloth_grid": "64x64",
+      "cloth_tris": 8192,
+      "res": "512x512",
+      "step_ms": 0.371,
+      "refit_ms": 0.214,
+      "render_ms": 11.572,
+      "total_step_refit_render_ms": 12.124,
+      "fps": 82.48,
+      "compile_s": 15.51
+    },
+    {
+      "cloth_grid": "64x64",
+      "cloth_tris": 8192,
+      "res": "1024x1024",
+      "step_ms": 0.371,
+      "refit_ms": 0.214,
+      "render_ms": 46.102,
+      "total_step_refit_render_ms": 47.347,
+      "fps": 21.12,
+      "compile_s": 14.05
+    },
+    {
+      "cloth_grid": "128x128",
+      "cloth_tris": 32768,
+      "res": "64x64",
+      "step_ms": 0.256,
+      "refit_ms": 0.286,
+      "render_ms": 0.703,
+      "total_step_refit_render_ms": 1.027,
+      "fps": 973.34,
+      "compile_s": 4.06
+    },
+    {
+      "cloth_grid": "128x128",
+      "cloth_tris": 32768,
+      "res": "512x512",
+      "step_ms": 0.256,
+      "refit_ms": 0.286,
+      "render_ms": 12.285,
+      "total_step_refit_render_ms": 13.173,
+      "fps": 75.91,
+      "compile_s": 15.28
+    },
+    {
+      "cloth_grid": "128x128",
+      "cloth_tris": 32768,
+      "res": "1024x1024",
+      "step_ms": 0.256,
+      "refit_ms": 0.286,
+      "render_ms": 47.305,
+      "total_step_refit_render_ms": 49.038,
+      "fps": 20.39,
+      "compile_s": 12.67
+    }
+  ],
+  "frames_rendered": [
+    0,
+    18,
+    36,
+    54,
+    72,
+    96
+  ],
+  "hlo_128x128_cloth_1024x1024": {
+    "host_callbacks": 0,
+    "dot_ops": 0,
+    "conv_ops": 0,
+    "while_ops": 2,
+    "gather_ops": 0,
+    "custom_calls": 0,
+    "hlo_lines": 1592,
+    "send_recv_ops": 0
+  }
+}

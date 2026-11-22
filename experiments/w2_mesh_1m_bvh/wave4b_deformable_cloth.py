@@ -409,6 +409,105 @@ def _camera_matrices() -> Tuple[jax.Array, jax.Array]:
   return jnp.asarray(cpos[None, :]), jnp.asarray(cmat[None, :, :])
 
 
+def _agx_tonemap(hdr_rgb: jax.Array, exposure: float = 1.15) -> jax.Array:
+  """AgX filmic tonemapping for rich studio cloth & metallic highlights."""
+  x = jnp.maximum(hdr_rgb * exposure, 0.0)
+  agx_in = jnp.array([
+      [0.84247906, 0.07843360, 0.07922375],
+      [0.04232824, 0.87846864, 0.07916613],
+      [0.04237565, 0.07843360, 0.87914297],
+  ], dtype=jnp.float32)
+  x = jnp.einsum("ij,...j->...i", agx_in, x)
+  x = jnp.clip(jnp.log2(jnp.maximum(x, 1e-6)), -12.47393, 4.026069)
+  x = (x + 12.47393) / (4.026069 + 12.47393)
+  x2 = x * x
+  x4 = x2 * x2
+  y = (
+      15.5 * x4 * x2
+      - 40.14 * x4 * x
+      + 31.96 * x4
+      - 6.868 * x2 * x
+      + 0.4298 * x2
+      + 0.1191 * x
+      - 0.00232
+  )
+  agx_out = jnp.array([
+      [1.19687900, -0.09802088, -0.09902974],
+      [-0.05289685, 1.15190313, -0.09896118],
+      [-0.05297163, -0.09804345, 1.15107367],
+  ], dtype=jnp.float32)
+  out = jnp.einsum("ij,...j->...i", agx_out, y)
+  out = jnp.clip(out, 0.0, 1.0)
+  return jnp.clip(out * out * (3.0 - 2.0 * out) * 0.18 + out * 0.82, 0.0, 1.0)
+
+
+def shade_cloth_pbr_agx(gb, spec: CompactWideBVHSceneSpec) -> jax.Array:
+  """Gather-free PBR fabric weave + brushed gold sphere + studio rim + AgX shading from GBuffer."""
+  hit = gb.geom_id >= 0
+  nrm = gb.normal
+  vdir = gb.view_dir
+  pos = gb.world_pos
+  vis = 0.24 + 0.76 * gb.direct_shadow
+
+  # Material classification: 0=crimson silk cloth, 1=brushed gold sphere, 2=charcoal slate table
+  is_cloth = gb.geom_id == 0
+  is_sphere = gb.geom_id == 1
+
+  # Subtle woven textile micro-pattern & velvet grazing sheen on cloth
+  weave = 0.92 + 0.08 * jnp.sin(pos[..., 0] * 140.0) * jnp.sin(pos[..., 1] * 140.0)
+  cloth_alb = jnp.array([0.52, 0.06, 0.10], dtype=jnp.float32)[None, None, None, :] * weave[..., None]
+  sphere_alb = jnp.array([0.84, 0.62, 0.24], dtype=jnp.float32)[None, None, None, :]
+  table_chk = 0.90 + 0.10 * jnp.sign(jnp.sin(pos[..., 0] * 12.0) * jnp.sin(pos[..., 1] * 12.0))
+  table_alb = jnp.array([0.16, 0.17, 0.20], dtype=jnp.float32)[None, None, None, :] * table_chk[..., None]
+
+  albedo = jnp.where(is_cloth[..., None], cloth_alb, jnp.where(is_sphere[..., None], sphere_alb, table_alb))
+  rough = jnp.where(is_cloth, 0.58, jnp.where(is_sphere, 0.24, 0.52))
+  metal = jnp.where(is_sphere, 0.85, 0.0)
+
+  l_pos = jnp.asarray(spec.light_pos, dtype=jnp.float32)[None, None, None, :]
+  delta_l = l_pos - pos
+  L = delta_l / jnp.maximum(jnp.linalg.norm(delta_l, axis=-1, keepdims=True), 1e-12)
+  ndotl = jnp.maximum(0.0, jnp.sum(nrm * L, axis=-1))
+  ndotv = jnp.maximum(1e-3, jnp.sum(nrm * vdir, axis=-1))
+
+  H_vec = (L + vdir) / jnp.maximum(jnp.linalg.norm(L + vdir, axis=-1, keepdims=True), 1e-12)
+  ndoth = jnp.maximum(0.0, jnp.sum(nrm * H_vec, axis=-1))
+  a2 = (rough * rough) ** 2
+  denom = ndoth * ndoth * (a2 - 1.0) + 1.0
+  D_ggx = a2 / (np.pi * denom * denom + 1e-6)
+  f0 = 0.04 * (1.0 - metal[..., None]) + albedo * metal[..., None]
+  F_s = f0 + (1.0 - f0) * ((1.0 - jnp.maximum(0.0, jnp.sum(H_vec * vdir, axis=-1)))[..., None] ** 5.0)
+  spec_rgb = (D_ggx[..., None] * F_s) / (4.0 * ndotv * jnp.maximum(ndotl, 0.05) + 0.12)[..., None]
+  spec_rgb = jnp.minimum(spec_rgb, 3.5) * (ndotl * vis)[..., None]
+
+  # Silk cloth grazing Charlie sheen
+  sheen_w = ((1.0 - ndotv) ** 3.2) * is_cloth.astype(jnp.float32) * (0.35 + 0.65 * vis)
+  sheen_rgb = jnp.array([0.85, 0.28, 0.34], dtype=jnp.float32)[None, None, None, :] * sheen_w[..., None] * 0.42
+
+  # Warm studio key + cool studio rim + hemisphere bounce
+  key_col = jnp.array([2.45, 2.32, 2.15], dtype=jnp.float32)[None, None, None, :]
+  rim_dir = jnp.array([-0.68, 0.60, 0.42], dtype=jnp.float32)
+  rim_dir = rim_dir / jnp.linalg.norm(rim_dir)
+  rim_ndotl = jnp.maximum(0.0, jnp.sum(nrm * rim_dir[None, None, None, :], axis=-1))
+  rim_col = jnp.array([0.55, 0.72, 0.98], dtype=jnp.float32)[None, None, None, :] * rim_ndotl[..., None]
+  sky_up = 0.5 + 0.5 * nrm[..., 2]
+  amb = (
+      sky_up[..., None] * jnp.array([0.34, 0.40, 0.52], dtype=jnp.float32)[None, None, None, :]
+      + (1.0 - sky_up[..., None]) * jnp.array([0.16, 0.14, 0.15], dtype=jnp.float32)[None, None, None, :]
+  )
+
+  diff_alb = albedo * (1.0 - metal[..., None])
+  hdr_surf = diff_alb * (key_col * (ndotl * vis)[..., None] + rim_col * 0.65 + amb * 0.85) + spec_rgb * key_col + sheen_rgb
+
+  # Soft studio backdrop gradient
+  sky_t = jnp.clip(0.5 * (-vdir[..., 2] + 1.0), 0.0, 1.0)[..., None]
+  bg_rgb = (
+      sky_t * jnp.array([0.18, 0.23, 0.32], dtype=jnp.float32)[None, None, None, :]
+      + (1.0 - sky_t) * jnp.array([0.07, 0.09, 0.13], dtype=jnp.float32)[None, None, None, :]
+  )
+  return _agx_tonemap(jnp.where(hit[..., None], hdr_surf, bg_rgb), exposure=1.18)
+
+
 def run_wave4b(out_json: str, out_png: str):
   sph = build_compact_bvh_mesh_item(1, _make_uv_sphere_mesh(), "spatial_l1_morton")
   tbl = build_compact_bvh_mesh_item(2, _make_table_mesh(), "spatial_l1_morton")
@@ -443,24 +542,25 @@ def run_wave4b(out_json: str, out_png: str):
   def _refit_and_render(p_cur):
     c_dev = refit_cloth_wide_bvh(p_cur)
     all_devs = (c_dev,) + static_devs
-    return render_compact_bvh_batch(spec_p, all_devs, oxp, oxm, cxp, cxm, interpret=False)
+    gb = render_compact_bvh_batch(spec_p, all_devs, oxp, oxm, cxp, cxm, interpret=False)
+    return gb, shade_cloth_pbr_agx(gb, spec_p)
 
   fn_rr = jax.jit(_refit_and_render)
-  gb_refit = fn_rr(pos)
-  jax.block_until_ready(gb_refit.rgb)
+  gb_refit, rgb_refit = fn_rr(pos)
+  jax.block_until_ready(rgb_refit)
 
   # Fresh CPU BVH rebuild on deformed vertex positions
   cpu_cloth_item = build_compact_bvh_mesh_item(0, _cloth_grid_to_cpu_mesh(np.asarray(pos)), "spatial_l1_morton")
   cpu_cloth_dev = (jnp.asarray(cpu_cloth_item.l2_roots_aabb), jnp.asarray(cpu_cloth_item.l2_aabbs), jnp.asarray(cpu_cloth_item.l0_aabbs), jnp.asarray(cpu_cloth_item.leaf_bank))
-  gb_cpu = jax.jit(lambda: render_compact_bvh_batch(spec_p, (cpu_cloth_dev,) + static_devs, oxp, oxm, cxp, cxm, interpret=False))()
-  jax.block_until_ready(gb_cpu.rgb)
+  gb_cpu, rgb_cpu = jax.jit(lambda: (lambda gb: (gb, shade_cloth_pbr_agx(gb, spec_p)))(render_compact_bvh_batch(spec_p, (cpu_cloth_dev,) + static_devs, oxp, oxm, cxp, cxm, interpret=False)))()
+  jax.block_until_ready(rgb_cpu)
 
   # HLO Check on full fused step + refit + render!
   def _full_step_refit_render(p, pp):
     pn, ppn = pbd_cloth_step(p, pp, dx, dy)
     c_dev = refit_cloth_wide_bvh(pn)
     gb = render_compact_bvh_batch(spec_p, (c_dev,) + static_devs, oxp, oxm, cxp, cxm, interpret=False)
-    return pn, ppn, gb.rgb
+    return pn, ppn, shade_cloth_pbr_agx(gb, spec_p)
 
   fn_full = jax.jit(_full_step_refit_render)
   htxt = fn_full.lower(pos, prev).as_text()
@@ -470,7 +570,7 @@ def run_wave4b(out_json: str, out_png: str):
 
   depth_diff = float(jnp.max(jnp.abs(gb_refit.depth - gb_cpu.depth)))
   geom_match = float(jnp.mean(gb_refit.geom_id == gb_cpu.geom_id))
-  rgb_mae = float(jnp.mean(jnp.abs(gb_refit.rgb - gb_cpu.rgb)))
+  rgb_mae = float(jnp.mean(jnp.abs(rgb_refit - rgb_cpu)))
   assert depth_diff < 1e-4 and geom_match == 1.0, (depth_diff, geom_match)
   results["parity"] = {
       "cloth_grid": f"{nx_p}x{ny_p}",
@@ -512,13 +612,23 @@ def run_wave4b(out_json: str, out_png: str):
         pn, ppn = pbd_cloth_step(p, pp, dx_i, dy_i)
         c_dev = refit_cloth_wide_bvh(pn)
         gb = render_compact_bvh_batch(sp_r, (c_dev,) + static_devs, oxp, oxm, cxp, cxm, interpret=False)
-        return pn, ppn, gb.rgb
+        return pn, ppn, shade_cloth_pbr_agx(gb, sp_r)
 
       fn_f = jax.jit(_fused)
+      fn_ren_only = jax.jit(lambda c_d: shade_cloth_pbr_agx(render_compact_bvh_batch(sp_r, (c_d,) + static_devs, oxp, oxm, cxp, cxm, interpret=False), sp_r))
       tc0 = time.perf_counter()
       _, _, r0 = fn_f(p0, pp0)
       jax.block_until_ready(r0)
       cs = time.perf_counter() - tc0
+
+      bv_warm = fn_refit(p0)
+      jax.block_until_ready(fn_ren_only(bv_warm))
+      n_it = 5 if H >= 1024 else 10
+      t_ren0 = time.perf_counter()
+      for _ in range(n_it):
+        r_only = fn_ren_only(bv_warm)
+      jax.block_until_ready(r_only)
+      render_ms = (time.perf_counter() - t_ren0) * 1e3 / n_it
 
       if nx == 128 and H == 1024:
         ht = fn_f.lower(p0, pp0).as_text()
@@ -527,7 +637,6 @@ def run_wave4b(out_json: str, out_png: str):
         assert hi["host_callbacks"] == 0 and hi["send_recv_ops"] == 0 and hi["gather_ops"] == 0, hi
         results["hlo_128x128_cloth_1024x1024"] = hi
 
-      n_it = 5 if H >= 1024 else 10
       t0 = time.perf_counter()
       pa, ppa = p0, pp0
       for _ in range(n_it):
@@ -540,6 +649,7 @@ def run_wave4b(out_json: str, out_png: str):
           "res": f"{H}x{W}",
           "step_ms": round(step_ms, 3),
           "refit_ms": round(refit_ms, 3),
+          "render_ms": round(render_ms, 3),
           "total_step_refit_render_ms": round(tot_ms, 3),
           "fps": round(1e3 / tot_ms, 2),
           "compile_s": round(cs, 2),
@@ -551,7 +661,7 @@ def run_wave4b(out_json: str, out_png: str):
   sp_film = _build_scene_spec_for_cloth(128, 128, 512, 512, static_items)
   p_f, pp_f, dx_f, dy_f = make_cloth_initial_state(128, 128)
   fn_step_f = jax.jit(lambda p, pp: pbd_cloth_step(p, pp, dx_f, dy_f))
-  fn_ren_f = jax.jit(lambda p: render_compact_bvh_batch(sp_film, (refit_cloth_wide_bvh(p),) + static_devs, oxp, oxm, cxp, cxm, interpret=False).rgb)
+  fn_ren_f = jax.jit(lambda p: shade_cloth_pbr_agx(render_compact_bvh_batch(sp_film, (refit_cloth_wide_bvh(p),) + static_devs, oxp, oxm, cxp, cxm, interpret=False), sp_film))
 
   capture_frames = [0, 18, 36, 54, 72, 96]
   tiles = []

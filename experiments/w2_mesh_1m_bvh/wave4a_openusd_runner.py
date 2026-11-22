@@ -245,23 +245,58 @@ def export_sponza_instanced_usdc(usdc_path: str) -> str:
   return usdc_path
 
 
+def _agx_tonemap(hdr_rgb: jax.Array, exposure: float = 1.12) -> jax.Array:
+  """AgX filmic tonemapping + sRGB curve for natural highlights."""
+  x = jnp.maximum(hdr_rgb * exposure, 0.0)
+  agx_in = jnp.array([
+      [0.84247906, 0.07843360, 0.07922375],
+      [0.04232824, 0.87846864, 0.07916613],
+      [0.04237565, 0.07843360, 0.87914297],
+  ], dtype=jnp.float32)
+  x = jnp.einsum("ij,...j->...i", agx_in, x)
+  x = jnp.clip(jnp.log2(jnp.maximum(x, 1e-6)), -12.47393, 4.026069)
+  x = (x + 12.47393) / (4.026069 + 12.47393)
+  x2 = x * x
+  x4 = x2 * x2
+  y = (
+      15.5 * x4 * x2
+      - 40.14 * x4 * x
+      + 31.96 * x4
+      - 6.868 * x2 * x
+      + 0.4298 * x2
+      + 0.1191 * x
+      - 0.00232
+  )
+  agx_out = jnp.array([
+      [1.19687900, -0.09802088, -0.09902974],
+      [-0.05289685, 1.15190313, -0.09896118],
+      [-0.05297163, -0.09804345, 1.15107367],
+  ], dtype=jnp.float32)
+  out = jnp.einsum("ij,...j->...i", agx_out, y)
+  out = jnp.clip(out, 0.0, 1.0)
+  return jnp.clip(out * out * (3.0 - 2.0 * out) * 0.20 + out * 0.80, 0.0, 1.0)
+
+
 def make_openusd_4chip_renderer(compiled: Dict[str, Any], devices: List[jax.Device], H: int, W: int):
-  """4-chip spatial-sharded OpenUSD renderer supporting BOTH unique meshes AND PointInstancer TLAS/BLAS!"""
+  """4-chip spatial-sharded OpenUSD PBR+GGX+AgX renderer supporting unique meshes AND PointInstancers."""
   n_chips = len(devices)
-  assert H % (n_chips * TILE_H) == 0
+  assert H % n_chips == 0
   band_h = H // n_chips
+  band_h_pad = ((band_h + TILE_H - 1) // TILE_H) * TILE_H
   mesh = Mesh(np.array(devices), ("spatial",))
 
   u_spec = compiled["unique_spec"]
   u_devs = compiled["unique_dev_arrays"]
+  u_pbr = compiled.get("unique_pbr", [(0.45, 0.0, "default")] * (len(u_spec.meshes) if u_spec else 0))
   i_spec = compiled["inst_spec"]
   i_devs = compiled["inst_dev_arrays"]
+  i_pbr = compiled.get("inst_pbr", [(0.45, 0.0, "default")] * (len(i_spec.meshes) if i_spec else 0))
   base_spec = u_spec if u_spec is not None else i_spec
-  spec_band = dataclasses.replace(base_spec, height=band_h, width=W)
+  spec_band = dataclasses.replace(base_spec, height=band_h_pad, width=W)
 
   def _shard_fn(u_da, u_oxp, u_oxm, i_da, i_xp, i_xm, cxp, cxm):
     bidx = jax.lax.axis_index("spatial")
-    ray_orig, ray_dir, neg_z = _compute_camera_rays_band(spec_band, cxp, cxm, H, W, bidx, band_h)
+    ray_orig, ray_dir, neg_z = _compute_camera_rays_band(spec_band, cxp, cxm, H, W, bidx, band_h_pad, band_stride_h=band_h)
     B, R, _ = ray_orig.shape
     max_dist = jnp.broadcast_to(((spec_band.zfar - spec_band.znear) / neg_z)[None, :], (B, R))
 
@@ -269,6 +304,8 @@ def make_openusd_4chip_renderer(compiled: Dict[str, Any], devices: List[jax.Devi
     best_hit = jnp.zeros((B, R), dtype=jnp.bool_)
     best_nrm = jnp.zeros((B, R, 3), dtype=jnp.float32)
     best_alb = jnp.zeros((B, R, 3), dtype=jnp.float32)
+    best_rough = jnp.full((B, R), 0.45, dtype=jnp.float32)
+    best_metal = jnp.zeros((B, R), dtype=jnp.float32)
 
     if u_spec is not None:
       for m_idx, it in enumerate(u_spec.meshes):
@@ -277,7 +314,7 @@ def make_openusd_4chip_renderer(compiled: Dict[str, Any], devices: List[jax.Devi
         rmat = u_oxm[:, m_idx, :, :]
         ro_loc = jnp.einsum("bji,brj->bri", rmat, ray_orig - p[:, None, :], precision=jax.lax.Precision.HIGHEST)
         rd_loc = jnp.einsum("bji,brj->bri", rmat, ray_dir, precision=jax.lax.Precision.HIGHEST)
-        d_m, n_loc_m, _ = _pallas_compact_bvh_raycast(l2_r, l2_a, l0_a, leaf_b, ro_loc, rd_loc, best_d, band_h, W, any_hit=False, interpret=False)
+        d_m, n_loc_m, _ = _pallas_compact_bvh_raycast(l2_r, l2_a, l0_a, leaf_b, ro_loc, rd_loc, best_d, band_h_pad, W, any_hit=False, interpret=False)
         imp = d_m < best_d
         n_w_m = jnp.einsum("bij,brj->bri", rmat, n_loc_m, precision=jax.lax.Precision.HIGHEST)
         best_d = jnp.where(imp, d_m, best_d)
@@ -285,6 +322,9 @@ def make_openusd_4chip_renderer(compiled: Dict[str, Any], devices: List[jax.Devi
         best_nrm = jnp.where(imp[..., None], n_w_m, best_nrm)
         alb_m = jnp.asarray(it.rgba[:3], dtype=jnp.float32)[None, None, :]
         best_alb = jnp.where(imp[..., None], alb_m, best_alb)
+        rm_v, mm_v, _ = u_pbr[m_idx]
+        best_rough = jnp.where(imp, float(rm_v), best_rough)
+        best_metal = jnp.where(imp, float(mm_v), best_metal)
 
     if i_spec is not None:
       for m_idx, it in enumerate(i_spec.meshes):
@@ -292,7 +332,7 @@ def make_openusd_4chip_renderer(compiled: Dict[str, Any], devices: List[jax.Devi
         d_m, n_w_m = _pallas_tlas2_compact_instanced_raycast(
             it, l2_r, l2_a, l0_a, leaf_b,
             ray_orig, ray_dir, best_d, i_xp[m_idx], i_xm[m_idx],
-            band_h, W, tlas_group_size=16, tlas_top_groups=4, max_active_per_tile=16, any_hit=False, interpret=False,
+            band_h_pad, W, tlas_group_size=16, tlas_top_groups=4, max_active_per_tile=16, any_hit=False, interpret=False,
         )
         imp = d_m < best_d
         best_d = jnp.where(imp, d_m, best_d)
@@ -300,6 +340,9 @@ def make_openusd_4chip_renderer(compiled: Dict[str, Any], devices: List[jax.Devi
         best_nrm = jnp.where(imp[..., None], n_w_m, best_nrm)
         alb_m = jnp.asarray(it.rgba[:3], dtype=jnp.float32)[None, None, :]
         best_alb = jnp.where(imp[..., None], alb_m, best_alb)
+        rm_v, mm_v, _ = i_pbr[m_idx]
+        best_rough = jnp.where(imp, float(rm_v), best_rough)
+        best_metal = jnp.where(imp, float(mm_v), best_metal)
 
     vdir = -ray_dir
     best_nrm = jnp.where(best_hit[..., None], best_nrm, 0.0)
@@ -326,7 +369,7 @@ def make_openusd_4chip_renderer(compiled: Dict[str, Any], devices: List[jax.Devi
           ro_l = jnp.einsum("bji,brj->bri", rmat, sh_o - p[:, None, :], precision=jax.lax.Precision.HIGHEST)
           rd_l = jnp.einsum("bji,brj->bri", rmat, L, precision=jax.lax.Precision.HIGHEST)
           sh_lim_rem = jnp.where(occ, 0.0, sh_lim)
-          d_sh, _, _ = _pallas_compact_bvh_raycast(l2_r, l2_a, l0_a, leaf_b, ro_l, rd_l, sh_lim_rem, band_h, W, any_hit=True, interpret=False)
+          d_sh, _, _ = _pallas_compact_bvh_raycast(l2_r, l2_a, l0_a, leaf_b, ro_l, rd_l, sh_lim_rem, band_h_pad, W, any_hit=True, interpret=False)
           occ = occ | (d_sh < sh_lim_rem)
       if i_spec is not None:
         for m_idx, it in enumerate(i_spec.meshes):
@@ -336,26 +379,48 @@ def make_openusd_4chip_renderer(compiled: Dict[str, Any], devices: List[jax.Devi
               it, l2_r, l2_a, l0_a, leaf_b,
               sh_o, jnp.broadcast_to(L, ray_orig.shape), sh_lim_rem,
               i_xp[m_idx], i_xm[m_idx],
-              band_h, W, tlas_group_size=16, tlas_top_groups=4, max_active_per_tile=16, any_hit=True, interpret=False,
+              band_h_pad, W, tlas_group_size=16, tlas_top_groups=4, max_active_per_tile=16, any_hit=True, interpret=False,
           )
           occ = occ | (d_sh < sh_lim_rem)
-      vis = jnp.where(occ, float(spec_band.shadow_light_fraction), 1.0)
+      vis = jnp.where(occ, 0.22, 1.0)
 
-    l_amb = jnp.asarray(spec_band.light_ambient, dtype=jnp.float32)
-    l_diff = jnp.asarray(spec_band.light_diffuse, dtype=jnp.float32)
-    l_spec = jnp.asarray(spec_band.light_specular, dtype=jnp.float32)
+    # PBR GGX Cook-Torrance shading + Hemisphere sky/ground IBL + AgX filmic tonemapping
     H_vec = (L + vdir) / jnp.maximum(jnp.linalg.norm(L + vdir, axis=-1, keepdims=True), 1e-12)
-    spec_w = (jnp.maximum(0.0, jnp.sum(best_nrm * H_vec, axis=-1)) ** 32.0) * 0.25 * vis
-    direct_rgb = jnp.clip(
-        best_alb * (l_amb[None, None, :] + l_diff[None, None, :] * (ndotl * vis)[..., None]) + l_spec[None, None, :] * spec_w[..., None],
-        0.0, 1.0,
+    ndoth = jnp.maximum(0.0, jnp.sum(best_nrm * H_vec, axis=-1))
+    ndotv = jnp.maximum(1e-3, jnp.sum(best_nrm * vdir, axis=-1))
+    alpha = jnp.clip(best_rough * best_rough, 0.04, 0.96)
+    a2 = alpha * alpha
+    denom = ndoth * ndoth * (a2 - 1.0) + 1.0
+    D_ggx = a2 / (np.pi * denom * denom + 1e-6)
+    f0 = 0.04 * (1.0 - best_metal[..., None]) + best_alb * best_metal[..., None]
+    F_schlick = f0 + (1.0 - f0) * ((1.0 - jnp.maximum(0.0, jnp.sum(H_vec * vdir, axis=-1)))[..., None] ** 5.0)
+    spec_rgb = (D_ggx[..., None] * F_schlick) / (4.0 * ndotv * jnp.maximum(ndotl, 0.05) + 0.12)[..., None]
+    spec_rgb = jnp.minimum(spec_rgb, 3.0) * (ndotl * vis)[..., None]
+
+    # Subtle world-space micro-texture on surfaces so large planes aren't flat
+    micro = 0.94 + 0.06 * jnp.sin(hit_pos[..., 0] * 6.0) * jnp.cos(hit_pos[..., 1] * 6.0)
+    alb_tex = best_alb * micro[..., None]
+    diff_alb = alb_tex * (1.0 - best_metal[..., None])
+
+    sky_up = 0.5 + 0.5 * best_nrm[..., 2]
+    amb_hemi = (
+        sky_up[..., None] * jnp.array([0.44, 0.52, 0.64], dtype=jnp.float32)[None, None, :]
+        + (1.0 - sky_up[..., None]) * jnp.array([0.18, 0.16, 0.14], dtype=jnp.float32)[None, None, :]
     )
+    l_diff = jnp.asarray(spec_band.light_diffuse, dtype=jnp.float32)[None, None, :] * 1.95
+    # Rim/fill bounce light for crisp robotics silhouette readability
+    rim_dir = jnp.array([-0.55, 0.65, 0.52], dtype=jnp.float32)
+    rim_dir = rim_dir / jnp.linalg.norm(rim_dir)
+    rim_l = jnp.maximum(0.0, jnp.sum(best_nrm * rim_dir[None, None, :], axis=-1))[..., None]
+    hdr_surf = diff_alb * (l_diff * (ndotl * vis)[..., None] + amb_hemi * 0.42 + rim_l * 0.25) + spec_rgb * l_diff
+
     sky_t = jnp.clip(0.5 * (ray_dir[..., 2] + 1.0), 0.0, 1.0)[..., None]
     sky_rgb = (
-        sky_t * jnp.asarray(spec_band.sky_rgb1, dtype=jnp.float32)[None, None, :]
-        + (1.0 - sky_t) * jnp.asarray(spec_band.sky_rgb2, dtype=jnp.float32)[None, None, :]
+        sky_t * jnp.array([0.38, 0.54, 0.78], dtype=jnp.float32)[None, None, :]
+        + (1.0 - sky_t) * jnp.array([0.14, 0.18, 0.25], dtype=jnp.float32)[None, None, :]
     )
-    return jnp.where(best_hit[..., None], direct_rgb, sky_rgb).reshape(B, band_h, W, 3)
+    ldr_rgb = _agx_tonemap(jnp.where(best_hit[..., None], hdr_surf, sky_rgb), exposure=1.15)
+    return ldr_rgb.reshape(B, band_h_pad, W, 3)[:, :band_h, :, :]
 
   sharded = shard_map(
       _shard_fn,
@@ -364,12 +429,13 @@ def make_openusd_4chip_renderer(compiled: Dict[str, Any], devices: List[jax.Devi
       out_specs=P(None, "spatial", None, None),
       check_rep=False,
   )
-  fn = jax.jit(lambda: sharded(
+  fn = jax.jit(sharded)
+  r_args = (
       u_devs, compiled["obj_xpos"], compiled["obj_xmat"],
       i_devs, compiled["inst_xpos"], compiled["inst_xmat"],
       compiled["cam_xpos"], compiled["cam_xmat"],
-  ))
-  return fn
+  )
+  return fn, r_args
 
 
 def _bench_stage(name: str, stage_path: str, devs: List[jax.Device], png_4k: str, subdivide_k: int = 1) -> Dict[str, Any]:
@@ -379,25 +445,26 @@ def _bench_stage(name: str, stage_path: str, devs: List[jax.Device], png_4k: str
   st = compiled["stage"]
   print(f"Compiled OpenUSD {name}: unique_meshes={len(st.unique_meshes)} ({compiled['unique_tris']:,} tris), inst_groups={len(st.instanced_groups)} ({compiled['inst_effective_tris']:,} eff tris), HBM={compiled['hbm_bytes']/1e6:.2f} MB in {compile_host_s:.2f}s", flush=True)
 
-  fn_4k = make_openusd_4chip_renderer(compiled, devs, 2160, 3840)
-  htxt = fn_4k.lower().as_text()
+  fn_4k, r_args = make_openusd_4chip_renderer(compiled, devs, 2160, 3840)
+  htxt = fn_4k.lower(*r_args).as_text()
   hlo = inspect_hlo_ops(htxt)
   hlo["send_recv_ops"] = len(re.findall(r"\bsend\(|\brecv\(", htxt, re.I))
   assert hlo["host_callbacks"] == 0 and hlo["send_recv_ops"] == 0 and hlo["gather_ops"] == 0, hlo
 
   tc0 = time.perf_counter()
-  rgb = fn_4k()
+  rgb = fn_4k(*r_args)
   jax.block_until_ready(rgb)
   xla_compile_s = time.perf_counter() - tc0
 
   img = Image.fromarray(np.clip(np.asarray(rgb[0]) * 255.0 + 0.5, 0, 255).astype(np.uint8))
+  os.makedirs(os.path.dirname(png_4k), exist_ok=True)
   img.save(png_4k)
   print(f"Saved Native 4K OpenUSD render ({img.size}) to {png_4k}", flush=True)
 
   n_steps = 3
   t1 = time.perf_counter()
   for _ in range(n_steps):
-    rgb = fn_4k()
+    rgb = fn_4k(*r_args)
   jax.block_until_ready(rgb)
   ms = (time.perf_counter() - t1) * 1e3 / n_steps
 
@@ -430,17 +497,25 @@ def main():
   ap.add_argument("--png-usdc", default="/dev/shm/zaychik-tpu-mjx-w2/v3_w2_openusd_4k.png")
   ap.add_argument("--png-robowild", default="/dev/shm/zaychik-tpu-mjx-w2/v3_w2_openusd_robowild_4k.png")
   ap.add_argument("--png-franka", default="/dev/shm/zaychik-tpu-mjx-w2/v3_w2_openusd_franka_4k.png")
+  ap.add_argument("--moana-json", default="")
   args = ap.parse_args()
 
   devs = jax.devices()
   assert len(devs) == 4
   asset_root = "/dev/shm/zaychik-tpu-mjx/assets/robowild"
-  scene01_path, franka_path = download_robowild_sparse(asset_root)
-  usdc_path = "/dev/shm/zaychik-tpu-mjx/assets/sponza/sponza_instanced.usdc"
-  export_sponza_instanced_usdc(usdc_path)
+  scene01_path = os.path.join(asset_root, "scenes/scene01/scene.usda")
+  franka_path = os.path.join(asset_root, "robots/franka/panda_robotiq_2f_85/franka_robotiq_2f_85_flattened.usd")
+  if not (os.path.exists(scene01_path) and os.path.exists(franka_path)):
+    scene01_path, franka_path = download_robowild_sparse(asset_root)
 
   stages = []
-  stages.append(_bench_stage("Sponza_PointInstancer_Binary_USDC", usdc_path, devs, args.png_usdc, subdivide_k=2))
+  if args.moana_json and os.path.exists(args.moana_json):
+    with open(args.moana_json, "r") as fm:
+      stages.append(json.load(fm))
+  if os.path.exists("/dev/shm/zaychik-tpu-mjx/assets/sponza/Sponza.gltf"):
+    usdc_path = "/dev/shm/zaychik-tpu-mjx-w2/sponza_instanced.usdc"
+    export_sponza_instanced_usdc(usdc_path)
+    stages.append(_bench_stage("Sponza_PointInstancer_Binary_USDC", usdc_path, devs, args.png_usdc, subdivide_k=2))
   stages.append(_bench_stage("RoboWild_Franka_Robotiq_2F85_USD", franka_path, devs, args.png_franka, subdivide_k=1))
   stages.append(_bench_stage("RoboWild_Scene01_IsaacLab_USDA", scene01_path, devs, args.png_robowild, subdivide_k=1))
 
