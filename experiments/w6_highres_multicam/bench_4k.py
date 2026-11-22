@@ -558,13 +558,16 @@ def run_4k_suite(
     jax.block_until_ready((rgb_sp, dep_sp))
     dt_sp_e2e = (time.perf_counter() - t1) / 5
 
-    # Verify parity against 1-chip B=1
+    # Verify parity against 1-chip B=1 on devs[0] (single-device placement avoids auto-SPMD on Mosaic)
+    dx1_d0 = jax.device_put(dx1, devs[0])
+    ctrl1_d0 = jax.device_put(ctrl1, devs[0])
+    mx_d0 = jax.device_put(mx, devs[0])
     gb_ref_1c = jax.jit(lambda d: render_batch(spec_4k, d, mode="pallas_v2", pallas_interpret=pallas_interp))(
-        jax.jit(lambda d, u: jax.vmap(lambda x, c: mjx.step(mx_rep, x.replace(ctrl=c)))(d, u))(dx1_rep, ctrl1_rep)
+        jax.jit(lambda d, u: jax.vmap(lambda x, c: mjx.step(mx_d0, x.replace(ctrl=c)))(d, u))(dx1_d0, ctrl1_d0)
     )
     jax.block_until_ready(gb_ref_1c.rgb)
-    sp_depth_mae = float(jnp.mean(jnp.abs(dep_sp - gb_ref_1c.depth)))
-    sp_rgb_max = float(jnp.max(jnp.abs(rgb_sp - gb_ref_1c.rgb)))
+    sp_depth_mae = float(np.mean(np.abs(np.asarray(dep_sp) - np.asarray(gb_ref_1c.depth))))
+    sp_rgb_max = float(np.max(np.abs(np.asarray(rgb_sp) - np.asarray(gb_ref_1c.rgb))))
     assert sp_depth_mae < 1e-5, sp_depth_mae
 
     results["spatial_split_4c"] = {

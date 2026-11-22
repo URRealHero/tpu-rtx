@@ -247,14 +247,16 @@ def _compute_camera_rays_band(
     W_full: int,
     band_idx: jax.Array,
     band_h: int,
+    band_stride_h: Optional[int] = None,
 ) -> Tuple[jax.Array, jax.Array, jax.Array]:
   """Compute (B, band_h * W_full, 3) rays for horizontal spatial band `band_idx` on-device."""
+  stride_h = band_h if band_stride_h is None else int(band_stride_h)
   aspect = float(W_full) / float(H_full)
   fovy_rad = float(spec.cam_fovy) * (np.pi / 180.0)
   half_h = float(spec.znear) * float(np.tan(0.5 * fovy_rad))
   half_w = half_h * aspect
   u = (jnp.arange(W_full, dtype=jnp.float32) + 0.5) / float(W_full)
-  v = (band_idx.astype(jnp.float32) * float(band_h) + jnp.arange(band_h, dtype=jnp.float32) + 0.5) / float(H_full)
+  v = (band_idx.astype(jnp.float32) * float(stride_h) + jnp.arange(band_h, dtype=jnp.float32) + 0.5) / float(H_full)
   gx, gy = jnp.meshgrid(u, v, indexing="xy")
   x = -half_w + (2.0 * half_w) * gx
   y = half_h - (2.0 * half_h) * gy
@@ -513,12 +515,13 @@ def render_compact_bvh_batch(
     band_idx: Optional[jax.Array] = None,
     H_full: Optional[int] = None,
     W_full: Optional[int] = None,
+    band_stride_h: Optional[int] = None,
 ):
   """Render compact 16-row Wide-BVH batch (optionally a horizontal spatial band for 8K 4-chip sharding)."""
   H, W = spec.height, spec.width
   if band_idx is not None:
     assert H_full is not None and W_full is not None
-    ray_orig, ray_dir, neg_z = _compute_camera_rays_band(spec, cam_xpos, cam_xmat, H_full, W_full, band_idx, H)
+    ray_orig, ray_dir, neg_z = _compute_camera_rays_band(spec, cam_xpos, cam_xmat, H_full, W_full, band_idx, H, band_stride_h=band_stride_h)
   else:
     ray_orig, ray_dir, neg_z = _compute_camera_rays_band(spec, cam_xpos, cam_xmat, H, W, jnp.int32(0), H)
 
@@ -871,12 +874,13 @@ def render_tlas2_compact_instanced_batch(
     band_idx: Optional[jax.Array] = None,
     H_full: Optional[int] = None,
     W_full: Optional[int] = None,
+    band_stride_h: Optional[int] = None,
 ):
   """2-Level TLAS + Shared Compact BLAS renderer supporting 1B-10B+ dynamic instanced tris & 8K spatial bands."""
   H, W = spec.height, spec.width
   if band_idx is not None:
     assert H_full is not None and W_full is not None
-    ray_orig, ray_dir, neg_z = _compute_camera_rays_band(spec, cam_xpos, cam_xmat, H_full, W_full, band_idx, H)
+    ray_orig, ray_dir, neg_z = _compute_camera_rays_band(spec, cam_xpos, cam_xmat, H_full, W_full, band_idx, H, band_stride_h=band_stride_h)
   else:
     ray_orig, ray_dir, neg_z = _compute_camera_rays_band(spec, cam_xpos, cam_xmat, H, W, jnp.int32(0), H)
 
@@ -944,21 +948,23 @@ def make_spatial_8k_sharded_instanced_renderer(
     max_active_per_tile: int = 16,
     interpret: bool = False,
 ):
-  """4-chip spatial-sharded renderer: splits H into 4 bands (e.g. 4 x 1080 x 7680 for Native 8K)."""
+  """4-chip spatial-sharded renderer: splits H into 4 bands (e.g. 4 x 540 for 4K, 4 x 1080 for 8K)."""
   n_chips = len(devices)
-  assert spec_full.height % (n_chips * TILE_H) == 0, (spec_full.height, n_chips)
+  assert spec_full.height % n_chips == 0, (spec_full.height, n_chips)
   band_h = spec_full.height // n_chips
-  spec_band = dataclasses.replace(spec_full, height=band_h)
+  band_h_pad = ((band_h + TILE_H - 1) // TILE_H) * TILE_H
+  spec_band = dataclasses.replace(spec_full, height=band_h_pad)
   mesh = Mesh(np.array(devices), ("spatial",))
 
   def _shard_fn(da, ixp, ixm, cxp, cxm):
     bidx = jax.lax.axis_index("spatial")
-    return render_tlas2_compact_instanced_batch(
+    rgb = render_tlas2_compact_instanced_batch(
         spec_band, da, ixp, ixm, cxp, cxm,
         tlas_group_size=tlas_group_size, tlas_top_groups=tlas_top_groups,
         max_active_per_tile=max_active_per_tile, interpret=interpret,
-        band_idx=bidx, H_full=spec_full.height, W_full=spec_full.width,
+        band_idx=bidx, H_full=spec_full.height, W_full=spec_full.width, band_stride_h=band_h,
     ).rgb
+    return rgb[:, :band_h, :, :]
 
   # Replicate inputs, shard output along H axis (axis 1 of (B, H, W, 3)) -> ZERO cross-chip AllReduce!
   sharded = shard_map(
@@ -977,19 +983,21 @@ def make_spatial_8k_sharded_unique_renderer(
     dev_arrays: Tuple[Tuple[jax.Array, ...], ...],
     interpret: bool = False,
 ):
-  """4-chip spatial-sharded renderer for unique non-instanced meshes (e.g. Sponza Megascene 8K)."""
+  """4-chip spatial-sharded renderer for unique non-instanced meshes (e.g. Sponza Megascene 4K & 8K)."""
   n_chips = len(devices)
-  assert spec_full.height % (n_chips * TILE_H) == 0
+  assert spec_full.height % n_chips == 0, (spec_full.height, n_chips)
   band_h = spec_full.height // n_chips
-  spec_band = dataclasses.replace(spec_full, height=band_h)
+  band_h_pad = ((band_h + TILE_H - 1) // TILE_H) * TILE_H
+  spec_band = dataclasses.replace(spec_full, height=band_h_pad)
   mesh = Mesh(np.array(devices), ("spatial",))
 
   def _shard_fn(da, oxp, oxm, cxp, cxm):
     bidx = jax.lax.axis_index("spatial")
-    return render_compact_bvh_batch(
+    rgb = render_compact_bvh_batch(
         spec_band, da, oxp, oxm, cxp, cxm,
-        interpret=interpret, band_idx=bidx, H_full=spec_full.height, W_full=spec_full.width,
+        interpret=interpret, band_idx=bidx, H_full=spec_full.height, W_full=spec_full.width, band_stride_h=band_h,
     ).rgb
+    return rgb[:, :band_h, :, :]
 
   sharded = shard_map(
       _shard_fn,

@@ -590,6 +590,35 @@ class _ShaderGraphWalker:
       c, ct = self._eval_color(fn.inputs.get("Color"), default, new_stack, depth + 1)
       i_fn = lambda a: ((1.0 - fac) * a + fac * (1.0 - a)).astype(np.float32)
       return i_fn(c), (i_fn(ct) if ct is not None else None)
+    if fn.type == "CURVE_RGB":
+      fac, _ = self._eval_scalar(fn.inputs.get("Fac"), 1.0, new_stack, depth + 1)
+      c, ct = self._eval_color(fn.inputs.get("Color"), default, new_stack, depth + 1)
+      try:
+        mapping = fn.mapping
+        mapping.initialize()
+        curves = mapping.curves
+        # Curves: 0=R, 1=G, 2=B, 3=Combined(C)
+        def _eval_lut(arr_in):
+          lut_x = np.linspace(0.0, 1.0, 65, dtype=np.float32)
+          out = np.empty_like(arr_in, dtype=np.float32)
+          c_lut = np.array([mapping.evaluate(curves[3], float(x)) for x in lut_x], dtype=np.float32) if len(curves) > 3 else lut_x
+          for ch in range(3):
+            v_ch = np.interp(np.clip(arr_in[..., ch], 0.0, 1.0), lut_x, c_lut)
+            if ch < len(curves):
+              ch_lut = np.array([mapping.evaluate(curves[ch], float(x)) for x in lut_x], dtype=np.float32)
+              v_ch = np.interp(np.clip(v_ch, 0.0, 1.0), lut_x, ch_lut)
+            out[..., ch] = v_ch
+          return np.clip((1.0 - fac) * arr_in + fac * out, 0.0, 1.0).astype(np.float32)
+        return _eval_lut(c), (_eval_lut(ct) if ct is not None else None)
+      except Exception:
+        return c, ct
+    if fn.type == "BLACKBODY":
+      temp, _ = self._eval_scalar(fn.inputs.get("Temperature"), 6500.0, new_stack, depth + 1)
+      t = float(np.clip(temp, 1000.0, 12000.0)) / 100.0
+      r = 1.0 if t <= 66.0 else np.clip(1.292936 * ((t - 60.0) ** -0.1332047592), 0.0, 1.0)
+      g = np.clip(0.39008157 * math.log(max(t, 1.0)) - 0.63184144, 0.0, 1.0) if t <= 66.0 else np.clip(1.129891 * ((t - 60.0) ** -0.0755148492), 0.0, 1.0)
+      b = 1.0 if t >= 66.0 else (0.0 if t <= 19.0 else np.clip(0.54320678 * math.log(max(t - 10.0, 1.0)) - 1.19625408, 0.0, 1.0))
+      return _srgb_to_linear(np.array([r, g, b], dtype=np.float32)), None
     if fn.type == "AMBIENT_OCCLUSION":
       return self._eval_color(fn.inputs.get("Color"), default, new_stack, depth + 1)
     if fn.type == "GROUP" and fn.node_tree is not None:
@@ -1010,7 +1039,7 @@ def compile_active_blend(
 
   for inst in depsgraph.object_instances:
     obj = inst.object
-    if obj.hide_render or obj.type not in ("MESH", "CURVE", "SURFACE", "FONT", "META"):
+    if obj.hide_render or (not getattr(obj, "visible_camera", True)) or obj.type not in ("MESH", "CURVE", "SURFACE", "FONT", "META"):
       continue
     me = obj.to_mesh(preserve_all_data_layers=True, depsgraph=depsgraph)
     if me is None or len(me.polygons) == 0:
@@ -1287,7 +1316,8 @@ def render_cycles_gt_and_depth(
 
   # Set up compositor EXR depth output for Frame 0
   bpy.context.view_layer.use_pass_z = True
-  orig_use_nodes = getattr(scene, "use_nodes", False)
+  orig_use_comp = bool(scene.render.use_compositing)
+  scene.render.use_compositing = True
   orig_comp = getattr(scene, "compositing_node_group", None)
   ng = bpy.data.node_groups.new("BlendCompilerDepthComp", "CompositorNodeTree")
   scene.compositing_node_group = ng
@@ -1340,6 +1370,7 @@ def render_cycles_gt_and_depth(
 
   cam_obj.matrix_world = orig_mat
   scene.compositing_node_group = orig_comp
+  scene.render.use_compositing = orig_use_comp
   shutil.rmtree(tmpdir, ignore_errors=True)
 
   os.makedirs(os.path.dirname(os.path.abspath(out_gt_npz)), exist_ok=True)

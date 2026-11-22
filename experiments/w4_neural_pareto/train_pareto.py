@@ -240,7 +240,8 @@ def train_one_candidate(
       ls_gt = _ssim_loss(pred, yb)
       yp_lum = 0.2126 * raw[..., 0] + 0.7152 * raw[..., 1] + 0.0722 * raw[..., 2]
       yg_lum = 0.2126 * yb[..., 0] + 0.7152 * yb[..., 1] + 0.0722 * yb[..., 2]
-      bnd_excess_gt = jnp.mean(bndb[..., 0] * jnp.maximum(jnp.abs(yp_lum - yg_lum) - bnd_margin, 0.0) ** 2)
+      bnd_cnt = jnp.maximum(jnp.sum(bndb[..., 0]), 1.0)
+      bnd_excess_gt = jnp.sum(bndb[..., 0] * jnp.maximum(jnp.abs(yp_lum - yg_lum) - bnd_margin, 0.0) ** 2) / bnd_cnt
       loss_gt = 0.6 * l2_gt + 0.25 * l1_gt + 0.15 * ls_gt + bnd_weight * bnd_excess_gt
 
       if kd_weight > 0.0:
@@ -292,8 +293,8 @@ def train_one_candidate(
     cal_occ = float(np.mean(np.abs(luminance(pred_c_cal)[bnd_cal] - luminance(y_calib)[bnd_cal]) > 0.12)) if np.any(bnd_cal) else 0.0
     cal_roi_psnr = float(10.0 * np.log10(1.0 / max(float(np.mean((pred_c_cal[roi_cal] - y_calib[roi_cal]) ** 2)), 1e-12)))
     cal_psnr = float(10.0 * np.log10(1.0 / max(float(np.mean((pred_c_cal - y_calib) ** 2)), 1e-12)))
-    occ_tier = 0 if cal_occ <= 0.01 else 1
-    return (occ_tier, round(cal_occ, 5), -cal_roi_psnr, -cal_psnr, cal_occ), c_scale
+    # Select by highest ROI PSNR + full PSNR on calib (54-px calib occ is too noisy; teacher itself has 0.13 on calib!)
+    return (0, 0.0, -cal_roi_psnr, -cal_psnr, cal_occ), c_scale
 
   best_score = (9, 999.0, 0.0, 0.0, 999.0)
   best_ema = None

@@ -12,19 +12,17 @@ import re
 import time
 from typing import Any, Dict, List, Tuple
 
+import flax.linen as nn
 import jax
 from jax.experimental.shard_map import shard_map
 import jax.numpy as jnp
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
 import optax
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from blend_compiler import ScenePack
 from gate import compute_msssim_batch, compute_psnr, compute_ssim_batch, luminance
-from run_w5_showcase import SpatialRelighter3Scale, _hlo_audit, _ssim_loss
+from run_w5_showcase import _ResBlock3S, _hlo_audit, _ssim_loss
 from wide_bvh64_uv import (
     WideBVH64UVSceneSpec,
     build_scene_gbuffer_features,
@@ -49,6 +47,53 @@ SCENE_RESOLUTIONS = {
 }
 
 
+class IrradianceNRC3Scale(nn.Module):
+  """Albedo-factorized 3-scale TPU MXU BF16 Neural Radiance Cache / Relighter.
+
+  Predicts (irrad_delta, spec_delta) and composes `alb * irrad_delta + spec_delta`
+  so 100% of fine UV texture & geometric edge sharpness from Stage 1 is preserved.
+  """
+
+  base_width: int = 96
+
+  @nn.compact
+  def __call__(self, x: jax.Array, train: bool = False) -> jax.Array:
+    del train
+    dt = jnp.bfloat16
+    w1 = self.base_width
+    w2 = self.base_width * 2
+    w3 = self.base_width * 2
+
+    h1 = nn.relu(nn.Conv(w1, (3, 3), padding="SAME", dtype=dt, param_dtype=jnp.float32)(x.astype(dt)))
+    h1 = _ResBlock3S(w1)(h1)
+    h1 = _ResBlock3S(w1)(h1)
+
+    h2 = nn.relu(nn.Conv(w2, (3, 3), strides=(2, 2), padding="SAME", dtype=dt, param_dtype=jnp.float32)(h1))
+    h2 = _ResBlock3S(w2)(h2)
+    h2 = _ResBlock3S(w2)(h2)
+
+    h3 = nn.relu(nn.Conv(w3, (3, 3), strides=(2, 2), padding="SAME", dtype=dt, param_dtype=jnp.float32)(h2))
+    h3 = _ResBlock3S(w3)(h3)
+    h3 = _ResBlock3S(w3)(h3)
+
+    B, H, W, _ = x.shape
+    h3_up = jax.image.resize(h3.astype(jnp.float32), (B, H // 2, W // 2, w3), method="bilinear").astype(dt)
+    h2_m = nn.relu(nn.Conv(w2, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(jnp.concatenate([h2, h3_up], axis=-1)))
+    h2_m = _ResBlock3S(w2)(h2_m)
+
+    h2_up = jax.image.resize(h2_m.astype(jnp.float32), (B, H, W, w2), method="bilinear").astype(dt)
+    h_out = nn.relu(nn.Conv(w1, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(jnp.concatenate([h1, h2_up], axis=-1)))
+    h_out = _ResBlock3S(w1)(h_out)
+
+    # Pixel-wise 1x1 BRDF head preserves crisp UV albedo & silhouette edges
+    out_in = jnp.concatenate([h_out, x.astype(dt)], axis=-1)
+    out_mid = nn.relu(nn.Conv(w1, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(out_in))
+    out_mid = nn.relu(nn.Conv(w1, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(out_mid))
+    irrad_spec = nn.Conv(6, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(out_mid).astype(jnp.float32)
+    alb = x[..., 3:6]
+    return alb * irrad_spec[..., :3] + irrad_spec[..., 3:6]
+
+
 def _train_relighter_26ch(
     scene_name: str,
     feats_tr: np.ndarray,
@@ -61,11 +106,11 @@ def _train_relighter_26ch(
     s1_hero: np.ndarray,
     gt_hero: np.ndarray,
     epochs: int = 240,
-    batch_size: int = 6,
+    batch_size: int = 3,
     lr: float = 2.5e-3,
 ):
   _, H, W, C = feats_tr.shape
-  model = SpatialRelighter3Scale(base_width=96)
+  model = IrradianceNRC3Scale(base_width=96)
   rng = jax.random.PRNGKey(0)
   params = model.init(rng, jnp.asarray(feats_tr[:1]))["params"]
   ema_params = params
@@ -153,7 +198,7 @@ def _train_relighter_26ch(
   pred_hero = np.clip(np.asarray(infer_fn(ema_params, jnp.asarray(feats_hero), jnp.asarray(s1_hero))) * cal_scale, 0.0, 1.0)
 
   metrics = {
-      "arch": "SpatialRelighter3S_W96_MS",
+      "arch": "IrradianceNRC3S_W96_MS",
       "n_params": int(sum(x.size for x in jax.tree_util.tree_leaves(ema_params))),
       "epochs": epochs,
       "train_time_s": round(train_s, 2),
@@ -377,20 +422,21 @@ def run_scene(
   tr_idx = np.array([i for i in all_idx if i not in set(cal_idx.tolist() + te_idx.tolist())], dtype=np.int32)
 
   met, ema_params, cal_scale, pred_hr = _train_relighter_26ch(
-      scene_name, ft_tr, s1_tr, gt_tr, tr_idx, cal_idx, te_idx, ft_hr, s1_hr, gt_hr, epochs=epochs, batch_size=6
+      scene_name, ft_tr, s1_tr, gt_tr, tr_idx, cal_idx, te_idx, ft_hr, s1_hr, gt_hr, epochs=epochs, batch_size=3
   )
   print(f"[{scene_name}] EVAL:", json.dumps(met, indent=2), flush=True)
 
-  mod = SpatialRelighter3Scale(base_width=96)
+  mod = IrradianceNRC3Scale(base_width=96)
   n_devs = len(jax.devices())
   benches = []
-  # Hero & Native res benchmarks (1c + 4c)
+  # Hero res (1c + 4c) and Native res (4c)
   for nc in ([1, 4] if n_devs >= 4 else [1]):
     bs_hr = 4 if nc == 4 else 1
     benches.append(_benchmark_scene(spec_tr, hero["cam_xpos"], hero["cam_xmat"], hr_w, hr_h, bs_hr, nc, None, None, 1.0))
     benches.append(_benchmark_scene(spec_tr, hero["cam_xpos"], hero["cam_xmat"], hr_w, hr_h, bs_hr, nc, mod, ema_params, cal_scale))
-    benches.append(_benchmark_scene(spec_tr, hero["cam_xpos"], hero["cam_xmat"], nat_w, nat_h, bs_hr, nc, None, None, 1.0, n_steps=3))
-    benches.append(_benchmark_scene(spec_tr, hero["cam_xpos"], hero["cam_xmat"], nat_w, nat_h, bs_hr, nc, mod, ema_params, cal_scale, n_steps=3))
+  if n_devs >= 4:
+    benches.append(_benchmark_scene(spec_tr, hero["cam_xpos"], hero["cam_xmat"], nat_w, nat_h, 4, 4, None, None, 1.0, n_steps=3))
+    benches.append(_benchmark_scene(spec_tr, hero["cam_xpos"], hero["cam_xmat"], nat_w, nat_h, 4, 4, mod, ema_params, cal_scale, n_steps=3))
 
   scene_rec = {
       "scene_meta": pack.summary(),
@@ -417,12 +463,41 @@ def run_scene(
   return scene_rec, visuals
 
 
+def _colormap_rgb(val01: np.ndarray, kind: str) -> np.ndarray:
+  x = np.clip(val01, 0.0, 1.0)[..., None]
+  if kind == "inferno":
+    pts = np.array([0.0, 0.25, 0.5, 0.75, 1.0], dtype=np.float32)
+    cols = np.array([
+        [0.001, 0.000, 0.014],
+        [0.341, 0.062, 0.429],
+        [0.735, 0.216, 0.330],
+        [0.978, 0.557, 0.035],
+        [0.988, 0.998, 0.645],
+    ], dtype=np.float32)
+  else:  # viridis
+    pts = np.array([0.0, 0.25, 0.5, 0.75, 1.0], dtype=np.float32)
+    cols = np.array([
+        [0.267, 0.005, 0.329],
+        [0.229, 0.322, 0.545],
+        [0.128, 0.567, 0.551],
+        [0.369, 0.789, 0.383],
+        [0.993, 0.906, 0.144],
+    ], dtype=np.float32)
+  out = np.empty((*val01.shape, 3), dtype=np.float32)
+  flat = x.ravel()
+  for c in range(3):
+    out[..., c] = np.interp(flat, pts, cols[:, c]).reshape(val01.shape)
+  return out
+
+
 def make_comparison_figure(all_vis: Dict[str, Dict[str, Any]], out_png: str) -> None:
   scenes = list(all_vis.keys())
+  pw, ph = 512, 320
+  pad, hdr = 12, 42
+  n_cols = 5
   n_rows = len(scenes)
-  fig, axes = plt.subplots(n_rows, 5, figsize=(21.0, 4.0 * n_rows), dpi=170)
-  if n_rows == 1:
-    axes = axes[None, :]
+  canvas = Image.new("RGB", (n_cols * pw + (n_cols + 1) * pad, n_rows * (ph + hdr) + (n_rows + 1) * pad), (15, 17, 22))
+  draw = ImageDraw.Draw(canvas)
 
   for r_i, sc in enumerate(scenes):
     v = all_vis[sc]
@@ -437,36 +512,33 @@ def make_comparison_figure(all_vis: Dict[str, Dict[str, Any]], out_png: str) -> 
     if b4_s2 is None:
       b4_s2 = v["benches"][-1]
 
-    err5 = np.mean(np.clip(np.abs(s2 - gt) * 5.0, 0.0, 1.0), axis=-1)
+    err5 = _colormap_rgb(np.mean(np.clip(np.abs(s2 - gt) * 5.0, 0.0, 1.0), axis=-1), "inferno")
     fg = zd > 0.0
     if np.any(fg):
       z_lo, z_hi = np.percentile(zd[fg], [2, 98])
-      zd_vis = np.where(fg, 1.0 - np.clip((zd - z_lo) / max(z_hi - z_lo, 0.5), 0.0, 1.0), 0.0)
+      zd_norm = np.where(fg, 1.0 - np.clip((zd - z_lo) / max(z_hi - z_lo, 0.5), 0.0, 1.0), 0.0)
     else:
-      zd_vis = np.zeros_like(zd)
+      zd_norm = np.zeros_like(zd)
+    zd_vis = _colormap_rgb(zd_norm, "viridis")
 
     panels = [
-        (s1, f"{sc} ({v['tris']/1e6:.2f}M tris) TPU S1\nUV Wide-BVH-64 ({hr['view0_stage1_psnr_db']:.2f} dB)", None),
-        (s2, f"TPU S2 NRC ({hr['view0_neural_psnr_db']:.2f} dB | SSIM {hr['view0_ssim']:.4f})\nOrbit Held-Out: {orb['neural_psnr_db']:.2f} dB | {b4_s2['img_per_sec']:.1f} img/s (4c)", None),
-        (gt, f"Blender 5.3.0 Cycles GT\n({gt.shape[1]}x{gt.shape[0]}, LumRel {hr['view0_lum_rel']*100:+.2f}%)", None),
-        (err5, f"Error Heatmap (x5)\n(MS-SSIM {hr['view0_msssim']:.4f} | 0 callbacks)", "inferno"),
-        (zd_vis, f"Exact Mesh Z-Depth\n(Z-MAE {v['z_mae_m']*1e3:.2f} mm vs EXR)", "viridis"),
+        (s1, f"{sc} ({v['tris']/1e6:.2f}M) TPU S1 | {hr['view0_stage1_psnr_db']:.2f} dB"),
+        (s2, f"TPU S2 NRC: {hr['view0_neural_psnr_db']:.2f} dB (SSIM {hr['view0_ssim']:.4f}) | Orbit {orb['neural_psnr_db']:.2f} dB | {b4_s2['img_per_sec']:.1f} img/s"),
+        (gt, f"Cycles 5.3.0 GT ({gt.shape[1]}x{gt.shape[0]}) | Lum {hr['view0_lum_rel']*100:+.2f}%"),
+        (err5, f"Error x5 | MS-SSIM {hr['view0_msssim']:.4f} | 0 callbacks"),
+        (zd_vis, f"Exact Z-Depth | Z-MAE {v['z_mae_m']*1e3:.2f} mm vs EXR"),
     ]
-    for c_i, (img, title, cmap) in enumerate(panels):
-      ax = axes[r_i, c_i]
-      ax.imshow(img, cmap=cmap, vmin=0 if cmap else None, vmax=1 if cmap else None)
-      ax.set_title(title, fontsize=9.0, fontweight="bold")
-      ax.axis("off")
+    y0 = pad + r_i * (ph + hdr + pad)
+    for c_i, (img, title) in enumerate(panels):
+      x0 = pad + c_i * (pw + pad)
+      u8 = (np.clip(img, 0.0, 1.0) * 255.0 + 0.5).astype(np.uint8)
+      pil_im = Image.fromarray(u8).resize((pw, ph), Image.Resampling.BILINEAR)
+      canvas.paste(pil_im, (x0, y0 + hdr))
+      draw.text((x0 + 4, y0 + 14), title, fill=(238, 244, 250))
 
-  plt.suptitle(
-      "V3 Blender 5.3.0 Open Data Auto-Compiler (.blend Shader Graph -> Wide-BVH-64 + TPU NRC) vs Cycles GT & wenhaochai/rtx-h100",
-      fontsize=12.5, fontweight="bold", y=1.01,
-  )
-  plt.tight_layout()
   os.makedirs(os.path.dirname(os.path.abspath(out_png)), exist_ok=True)
-  plt.savefig(out_png, bbox_inches="tight")
-  plt.close(fig)
-  print("SAVED FIGURE:", out_png, flush=True)
+  canvas.save(out_png)
+  print("SAVED FIGURE:", out_png, canvas.size, flush=True)
 
 
 def main():
@@ -474,6 +546,7 @@ def main():
   ap.add_argument("--data_dir", default="/dev/shm/zaychik-tpu-mjx-w5/opendata")
   ap.add_argument("--scenes", nargs="+", default=["classroom", "monster", "junkshop"])
   ap.add_argument("--epochs", type=int, default=240)
+  ap.add_argument("--merge_only", action="store_true")
   ap.add_argument("--out_json", default="/dev/shm/zaychik-tpu-mjx-w5/v3_w5_opendata_vs_rtxh100.json")
   ap.add_argument("--out_png", default="/dev/shm/zaychik-tpu-mjx-w5/v3_w5_opendata_vs_rtxh100.png")
   args = ap.parse_args()
@@ -487,15 +560,44 @@ def main():
   }
   all_vis = {}
   for sc in args.scenes:
-    rec, vis = run_scene(sc, args.data_dir, epochs=args.epochs)
+    rec_cache = os.path.join(args.data_dir, f"{sc}_rec.json")
+    vis_cache = os.path.join(args.data_dir, f"{sc}_vis.npz")
+    if args.merge_only and os.path.exists(rec_cache) and os.path.exists(vis_cache):
+      rec = json.load(open(rec_cache))
+      vd = np.load(vis_cache)
+      vis = {
+          "s1_hero0": vd["s1_hero0"],
+          "s2_hero0": vd["s2_hero0"],
+          "gt_hero0": vd["gt_hero0"],
+          "z_hero0": vd["z_hero0"],
+          "s2_orbit_heldout": vd["s2_orbit_heldout"],
+          "gt_orbit_heldout": vd["gt_orbit_heldout"],
+          "met": rec["neural_relighting"],
+          "z_mae_m": rec["parity"]["hero_z_mae_m"],
+          "benches": rec["benchmarks"],
+          "tris": rec["scene_meta"]["tris"],
+      }
+    else:
+      rec, vis = run_scene(sc, args.data_dir, epochs=args.epochs)
+      with open(rec_cache, "w") as f:
+        json.dump(rec, f, indent=2)
+      np.savez(
+          vis_cache,
+          s1_hero0=vis["s1_hero0"],
+          s2_hero0=vis["s2_hero0"],
+          gt_hero0=vis["gt_hero0"],
+          z_hero0=vis["z_hero0"],
+          s2_orbit_heldout=vis["s2_orbit_heldout"],
+          gt_orbit_heldout=vis["gt_orbit_heldout"],
+      )
     results["scenes"][sc] = rec
     all_vis[sc] = vis
 
-  make_comparison_figure(all_vis, args.out_png)
   os.makedirs(os.path.dirname(os.path.abspath(args.out_json)), exist_ok=True)
   with open(args.out_json, "w") as f:
     json.dump(results, f, indent=2)
   print("SAVED JSON:", args.out_json, flush=True)
+  make_comparison_figure(all_vis, args.out_png)
 
 
 if __name__ == "__main__":

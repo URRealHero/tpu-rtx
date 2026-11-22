@@ -494,7 +494,12 @@ def run_parity_suite() -> Dict[str, Any]:
   return res
 
 
-def run_bench_suite(n_chips: int) -> List[Dict[str, Any]]:
+def run_bench_suite(
+    n_chips: int,
+    batches_override: Optional[List[int]] = None,
+    pipelines_override: Optional[List[str]] = None,
+    out_json: Optional[str] = None,
+) -> List[Dict[str, Any]]:
   pallas_interp = (jax.default_backend() == "cpu")
   devs = jax.devices()[:n_chips]
   assert len(devs) == n_chips
@@ -520,7 +525,8 @@ def run_bench_suite(n_chips: int) -> List[Dict[str, Any]]:
     sh = jax.sharding.NamedSharding(mesh, P("dp"))
     rep = jax.sharding.NamedSharding(mesh, P())
 
-  batches = [256, 512, 1024, 2048] if n_chips == 1 else [1024, 2048, 4096]
+  batches = batches_override if batches_override else ([256, 512, 1024, 2048] if n_chips == 1 else [1024, 2048, 4096])
+  pipelines = pipelines_override if pipelines_override else ["lidar_only_128x2048", "lidar_xyz_plus_stereo_128"]
   rows: List[Dict[str, Any]] = []
 
   for B in batches:
@@ -548,7 +554,7 @@ def run_bench_suite(n_chips: int) -> List[Dict[str, Any]]:
     jax.block_until_ready(dp.qpos)
     dt_phys = (time.perf_counter() - t0) / 5.0
 
-    for pipeline in ("lidar_only_128x2048", "lidar_xyz_plus_stereo_128"):
+    for pipeline in pipelines:
       with_stereo = (pipeline == "lidar_xyz_plus_stereo_128")
       with_xyz = with_stereo
 
@@ -646,6 +652,9 @@ def run_bench_suite(n_chips: int) -> List[Dict[str, Any]]:
         }
         print(f"WAVE4 {pipeline} {n_chips}c B={B} ERROR: {rec['error']}", flush=True)
       rows.append(rec)
+      if out_json:
+        with open(out_json, "w") as f:
+          json.dump({"n_chips": n_chips, "runs": rows}, f, indent=2)
   return rows
 
 
@@ -702,6 +711,8 @@ def main():
   ap = argparse.ArgumentParser()
   ap.add_argument("--phase", required=True, choices=["parity", "bench", "vis", "merge"])
   ap.add_argument("--n_chips", type=int, default=1)
+  ap.add_argument("--batches", type=int, nargs="*", default=None)
+  ap.add_argument("--pipelines", nargs="*", default=None)
   ap.add_argument("--out_json", required=True)
   ap.add_argument("--export_dir", default="/dev/shm/zaychik-tpu-mjx-w6/out/vis")
   ap.add_argument("--merge_inputs", nargs="*", default=[])
@@ -711,7 +722,7 @@ def main():
   if args.phase == "parity":
     res = run_parity_suite()
   elif args.phase == "bench":
-    res = {"n_chips": args.n_chips, "runs": run_bench_suite(args.n_chips)}
+    res = {"n_chips": args.n_chips, "runs": run_bench_suite(args.n_chips, args.batches, args.pipelines, args.out_json)}
   elif args.phase == "vis":
     res = export_vis_data(args.export_dir)
   else:

@@ -32,35 +32,43 @@ def _build_rig_from_lights(lights_list: List[Dict[str, Any]], scene_name: str, b
   center = 0.5 * (bmin + bmax)
   span = float(np.max(bmax - bmin))
   sun_l = next((l for l in lights_list if l["type"] == "SUN"), None)
-  area_ls = [l for l in lights_list if l["type"] in ("AREA", "POINT", "SPOT")]
-  if area_ls:
-    best_a = max(area_ls, key=lambda l: float(l["energy"]))
+  area_ls = [l for l in lights_list if l["type"] in ("AREA", "POINT", "SPOT") and float(l["energy"]) > 0.1]
+  # Filter out ultra-distant backdrop lights (> 25m from center) if local scene lights exist
+  local_ls = [l for l in area_ls if float(np.linalg.norm(np.asarray(l["pos"], np.float32) - center)) < 25.0]
+  cand_ls = local_ls if local_ls else area_ls
+  if cand_ls:
+    def _irrad_score(l):
+      d = float(np.linalg.norm(np.asarray(l["pos"], np.float32) - center))
+      return float(l["energy"]) / (d * d + 1.0)
+    best_a = max(cand_ls, key=_irrad_score)
     a_pos = tuple(float(x) for x in best_a["pos"])
     a_dir = np.asarray(best_a["dir"], dtype=np.float32)
-    if np.linalg.norm(a_dir) < 1e-4:
+    if np.linalg.norm(a_dir) < 1e-4 or best_a["type"] == "POINT":
       a_dir = center - np.asarray(a_pos, dtype=np.float32)
     a_dir = a_dir / max(float(np.linalg.norm(a_dir)), 1e-12)
-    a_r = max(0.35, min(float(best_a.get("size", 0.5)) * 0.6, span * 0.2))
+    a_r = max(0.55, min(float(best_a.get("size", 0.8)) * 0.8, span * 0.25))
     col = np.asarray(best_a["color"], dtype=np.float32)
-    a_emit = tuple(float(x) for x in (col * 12.0))
+    dist_c = max(float(np.linalg.norm(np.asarray(a_pos, np.float32) - center)), 1.0)
+    # Scale radiance so incident irradiance matches scene scale cleanly without clipping
+    rad_scale = max(10.0, min(22.0, 5.0 * dist_c / max(a_r, 0.5)))
+    a_emit = tuple(float(x) for x in (col * rad_scale))
   else:
     a_pos = (float(center[0]), float(center[1]), float(bmax[2] - 0.05 * span))
     a_dir = np.array([0.0, 0.0, -1.0], dtype=np.float32)
-    a_r = max(0.4, span * 0.12)
-    a_emit = (11.0, 10.2, 9.2)
+    a_r = max(0.6, span * 0.15)
+    a_emit = (12.0, 11.2, 10.2)
 
   has_sun = sun_l is not None
   if sun_l is not None:
     s_toward = -np.asarray(sun_l["dir"], dtype=np.float32)
     s_toward = s_toward / max(float(np.linalg.norm(s_toward)), 1e-12)
     scol = np.asarray(sun_l["color"], dtype=np.float32)
-    s_emit = tuple(float(x) for x in (scol * 20.0))
+    s_emit = tuple(float(x) for x in (scol * 10.0))
   else:
     s_toward = (0.4, -0.4, 0.8)
-    s_emit = (16.0, 14.0, 11.0)
+    s_emit = (12.0, 10.5, 8.5)
 
-  # Classroom benefits from strong sunlit contrast; monster/junkshop from studio bounce
-  exp = 1.05 if "classroom" in scene_name else 1.15
+  exp = 0.55 if "classroom" in scene_name else 0.90
   return LightRig(
       area_center=a_pos,
       area_normal=tuple(float(x) for x in a_dir),
@@ -68,8 +76,11 @@ def _build_rig_from_lights(lights_list: List[Dict[str, Any]], scene_name: str, b
       area_emit=a_emit,
       has_sun=has_sun,
       sun_dir=tuple(float(x) for x in s_toward),
-      sun_cos_half_angle=0.9990,
+      sun_cos_half_angle=0.9985,
       sun_emit=s_emit,
+      sky_zenith=(0.35, 0.52, 0.80),
+      sky_horizon=(0.28, 0.31, 0.36),
+      sky_ground=(0.12, 0.11, 0.10),
       exposure=exp,
   )
 
@@ -161,22 +172,21 @@ def bench_opendata_scene(
       cxp = jax.device_put(cam_pos, rep)
       cxm = jax.device_put(cam_xmat, rep)
       rng = jax.device_put(jax.random.PRNGKey(idx + 1), rep)
-      hlo_info = audit_hlo_zero_copy(fn.lower(cxp, cxm, rng)) if idx == 0 else None
+      lowered = fn.lower(cxp, cxm, rng)
+      hlo_info = audit_hlo_zero_copy(lowered) if idx == 0 else None
 
       tc0 = time.perf_counter()
-      y = fn(cxp, cxm, rng)
-      jax.block_until_ready(y)
+      compiled = lowered.compile()
       compile_s = time.perf_counter() - tc0
 
-      y = fn(cxp, cxm, jax.device_put(jax.random.PRNGKey(idx + 50), rep))
-      jax.block_until_ready(y)
+      if spp < 128:
+        y = compiled(cxp, cxm, jax.device_put(jax.random.PRNGKey(idx + 50), rep))
+        jax.block_until_ready(y)
 
-      n_steps = 1 if spp >= 128 else 2
       t0 = time.perf_counter()
-      for it in range(n_steps):
-        y = fn(cxp, cxm, jax.device_put(jax.random.PRNGKey(idx + 100 + it), rep))
+      y = compiled(cxp, cxm, jax.device_put(jax.random.PRNGKey(idx + 100), rep))
       jax.block_until_ready(y)
-      dt_s = (time.perf_counter() - t0) / n_steps
+      dt_s = time.perf_counter() - t0
 
       img_np = stitch_strip(y)
       if (W_tpu, H_tpu) != (gt_w, gt_h):
@@ -234,70 +244,72 @@ def main():
 
   all_recs = []
   pairs = []
+  def _save_outputs():
+    if pairs:
+      # Build side-by-side Cycles 5.3.0 GT vs TPU Path Tracer hero comparison PNG (preserving each scene's aspect!)
+      max_w = max(p[2].shape[1] for p in pairs)
+      pad, hdr = 14, 40
+      row_ys = []
+      cur_y = pad
+      for _sc, _rb, tpu_i, _gt_i in pairs:
+        row_ys.append(cur_y)
+        cur_y += tpu_i.shape[0] + hdr + pad
+      canvas = Image.new("RGB", (2 * max_w + 3 * pad, cur_y), (15, 17, 21))
+      draw = ImageDraw.Draw(canvas)
+      for r_i, (sc, r_b, tpu_i, gt_i) in enumerate(pairs):
+        y0 = row_ys[r_i]
+        pw, ph = tpu_i.shape[1], tpu_i.shape[0]
+        x_off = (max_w - pw) // 2
+        tpu_u8 = np.clip(tpu_i * 255.0 + 0.5, 0, 255).astype(np.uint8)
+        gt_u8 = np.clip(gt_i * 255.0 + 0.5, 0, 255).astype(np.uint8)
+        tpu_pil = Image.fromarray(tpu_u8).resize((pw, ph), Image.Resampling.BILINEAR)
+        gt_pil = Image.fromarray(gt_u8).resize((pw, ph), Image.Resampling.BILINEAR)
+        canvas.paste(tpu_pil, (pad + x_off, y0 + hdr))
+        canvas.paste(gt_pil, (2 * pad + max_w + x_off, y0 + hdr))
+        draw.text(
+            (pad, y0 + 12),
+            f"TPU v5p 4c ({sc}, {r_b['tris']:,} tris, {r_b['spp']} spp) | {r_b['samples_per_min']:,.0f} spm | {r_b['ms']:.0f}ms",
+            fill=(238, 244, 250),
+        )
+        draw.text(
+            (2 * pad + max_w, y0 + 12),
+            f"Blender 5.3.0 Cycles Reference GT ({sc}) | PSNR {r_b['psnr_vs_cycles_5_3_db']:.2f} dB | SSIM {r_b['ssim_vs_cycles_5_3']:.4f}",
+            fill=(255, 220, 80),
+        )
+      os.makedirs(os.path.dirname(args.out_png) or ".", exist_ok=True)
+      canvas.save(args.out_png)
+      print("Saved OpenData Comparison PNG ->", args.out_png, canvas.size, flush=True)
+
+    os.makedirs(os.path.dirname(args.out_json) or ".", exist_ok=True)
+    with open(args.out_json, "w") as f:
+      json.dump(
+          {
+              "experiment": "v3_w7_opendata_pathtracer",
+              "backend": jax.default_backend(),
+              "baselines": {
+                  "stock_blender_5_3_0_h100_spm": 7041,
+                  "exact_h100_spm": 14106,
+                  "rtx_5090_optix_spm": 19202,
+                  "nrc_scatter_h100_spm": 55148,
+              },
+              "runs": all_recs,
+          },
+          f,
+          indent=2,
+      )
+    print("Saved OpenData JSON ->", args.out_json, flush=True)
+
   for sc in args.scenes:
     npz_p = os.path.join(args.data_dir, f"{sc}.npz")
     gt_p = os.path.join(args.data_dir, f"{sc}_cycles_gt.png")
     if not os.path.exists(npz_p) or not os.path.exists(gt_p):
       print(f"WARN: missing {npz_p} or {gt_p}, skipping", flush=True)
       continue
-    recs, tpu_img, gt_img = bench_opendata_scene(sc, npz_p, gt_p, devs_all, spps=[16, 64, 256], max_bounces=4)
+    recs, tpu_img, gt_img = bench_opendata_scene(sc, npz_p, gt_p, devs_all, spps=[16, 64], max_bounces=3)
     all_recs.extend(recs)
     r_best = recs[-1]
     pairs.append((sc, r_best, tpu_img, gt_img))
-
-  if pairs:
-    # Build side-by-side Cycles 5.3.0 GT vs TPU Path Tracer hero comparison PNG (preserving each scene's aspect!)
-    max_w = max(p[2].shape[1] for p in pairs)
-    pad, hdr = 14, 40
-    row_ys = []
-    cur_y = pad
-    for _sc, _rb, tpu_i, _gt_i in pairs:
-      row_ys.append(cur_y)
-      cur_y += tpu_i.shape[0] + hdr + pad
-    canvas = Image.new("RGB", (2 * max_w + 3 * pad, cur_y), (15, 17, 21))
-    draw = ImageDraw.Draw(canvas)
-    for r_i, (sc, r_b, tpu_i, gt_i) in enumerate(pairs):
-      y0 = row_ys[r_i]
-      pw, ph = tpu_i.shape[1], tpu_i.shape[0]
-      x_off = (max_w - pw) // 2
-      tpu_u8 = np.clip(tpu_i * 255.0 + 0.5, 0, 255).astype(np.uint8)
-      gt_u8 = np.clip(gt_i * 255.0 + 0.5, 0, 255).astype(np.uint8)
-      tpu_pil = Image.fromarray(tpu_u8).resize((pw, ph), Image.Resampling.BILINEAR)
-      gt_pil = Image.fromarray(gt_u8).resize((pw, ph), Image.Resampling.BILINEAR)
-      canvas.paste(tpu_pil, (pad + x_off, y0 + hdr))
-      canvas.paste(gt_pil, (2 * pad + max_w + x_off, y0 + hdr))
-      draw.text(
-          (pad, y0 + 12),
-          f"TPU v5p 4c ({sc}, {r_b['tris']:,} tris, {r_b['spp']} spp) | {r_b['samples_per_min']:,.0f} spm | {r_b['ms']:.0f}ms",
-          fill=(238, 244, 250),
-      )
-      draw.text(
-          (2 * pad + max_w, y0 + 12),
-          f"Blender 5.3.0 Cycles Reference GT ({sc}) | PSNR {r_b['psnr_vs_cycles_5_3_db']:.2f} dB | SSIM {r_b['ssim_vs_cycles_5_3']:.4f}",
-          fill=(255, 220, 80),
-      )
-    os.makedirs(os.path.dirname(args.out_png) or ".", exist_ok=True)
-    canvas.save(args.out_png)
-    print("Saved OpenData Comparison PNG ->", args.out_png, canvas.size, flush=True)
-
-  os.makedirs(os.path.dirname(args.out_json) or ".", exist_ok=True)
-  with open(args.out_json, "w") as f:
-    json.dump(
-        {
-            "experiment": "v3_w7_opendata_pathtracer",
-            "backend": jax.default_backend(),
-            "baselines": {
-                "stock_blender_5_3_0_h100_spm": 7041,
-                "exact_h100_spm": 14106,
-                "rtx_5090_optix_spm": 19202,
-                "nrc_scatter_h100_spm": 55148,
-            },
-            "runs": all_recs,
-        },
-        f,
-        indent=2,
-    )
-  print("Saved OpenData JSON ->", args.out_json, flush=True)
+    _save_outputs()
 
 
 if __name__ == "__main__":

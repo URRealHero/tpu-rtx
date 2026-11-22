@@ -294,8 +294,6 @@ def pallas_raycast_hierarchical(
     lr = lray_ref[...]
     pf = pf_ref[...]
     linfo = light_ref[...]
-    gfs = [r[...] for r in gf_refs]
-    mfs = [r[...] for r in mf_refs]
 
     ldx, ldy, ldz = lr[0:1, :], lr[1:2, :], lr[2:3, :]
     lox, loy, loz = lr[3:4, :], lr[4:5, :], lr[5:6, :]
@@ -392,27 +390,34 @@ def pallas_raycast_hierarchical(
     # 2. Bounded dynamic geoms per type
     state_p = (best_d, best_gid, best_nx, best_ny, best_nz)
     for t_i, gt in enumerate(active_types):
-      gf_t = gfs[t_i]
-      mf_t = mfs[t_i]
+      gf_ref_t = gf_refs[t_i]
+      mf_ref_t = mf_refs[t_i]
       n_micro_t = n_micro_list[t_i]
       n_macro_t = n_macro_list[t_i]
 
-      def _run_micro_by_idx(c_idx, st, _gt=gt, _gf=gf_t):
-        c_slice = jax.lax.dynamic_slice(_gf, (c_idx * 18 * block_b, 0), (18 * block_b, 128))
+      def _run_micro_by_idx(c_idx, st, _gt=gt, _gf_ref=gf_ref_t):
+        base_r = c_idx * 18 * block_b
         if cull_mode == "flat_loop":
+          c_slice = _gf_ref[pl.ds(base_r, 17 * block_b), :]
           return _eval_micro_primary(_gt, c_slice, st)
-        ccx = c_slice[17 * block_b : 18 * block_b, 0:1]
-        ccy = c_slice[17 * block_b : 18 * block_b, 1:2]
-        ccz = c_slice[17 * block_b : 18 * block_b, 2:3]
-        cr2 = c_slice[17 * block_b : 18 * block_b, 3:4]
+        c_meta = _gf_ref[pl.ds(base_r + 17 * block_b, block_b), :]
+        ccx = c_meta[:, 0:1]
+        ccy = c_meta[:, 1:2]
+        ccz = c_meta[:, 2:3]
+        cr2 = c_meta[:, 3:4]
         u_hit = jnp.any(_sphere_tile_hit(rox, roy, roz, rdx, rdy, rdz, ccx, ccy, ccz, cr2))
-        return jax.lax.cond(u_hit, lambda s: _eval_micro_primary(_gt, c_slice, s), lambda s: s, st)
+        return jax.lax.cond(
+            u_hit,
+            lambda s: _eval_micro_primary(_gt, _gf_ref[pl.ds(base_r, 17 * block_b), :], s),
+            lambda s: s,
+            st,
+        )
 
       if cull_mode in ("flat_loop", "cluster1"):
         state_p = jax.lax.fori_loop(0, n_micro_t, _run_micro_by_idx, state_p)
       else:  # hier2
-        def _macro_step(m_idx, st, _mf=mf_t, _rm=_run_micro_by_idx):
-          m_slice = jax.lax.dynamic_slice(_mf, (m_idx * 4 * block_b, 0), (4 * block_b, 128))
+        def _macro_step(m_idx, st, _mf_ref=mf_ref_t, _rm=_run_micro_by_idx):
+          m_slice = _mf_ref[pl.ds(m_idx * 4 * block_b, 4 * block_b), :]
           mcx = m_slice[0 * block_b : 1 * block_b, 0:1]
           mcy = m_slice[1 * block_b : 2 * block_b, 0:1]
           mcz = m_slice[2 * block_b : 3 * block_b, 0:1]
@@ -499,27 +504,34 @@ def pallas_raycast_hierarchical(
         return occ_cur
 
       for t_i, gt in enumerate(active_types):
-        gf_t = gfs[t_i]
-        mf_t = mfs[t_i]
+        gf_ref_t = gf_refs[t_i]
+        mf_ref_t = mf_refs[t_i]
         n_micro_t = n_micro_list[t_i]
         n_macro_t = n_macro_list[t_i]
 
-        def _run_sh_micro(c_idx, occ_in, _gt=gt, _gf=gf_t):
-          c_slice = jax.lax.dynamic_slice(_gf, (c_idx * 18 * block_b, 0), (18 * block_b, 128))
+        def _run_sh_micro(c_idx, occ_in, _gt=gt, _gf_ref=gf_ref_t):
+          base_r = c_idx * 18 * block_b
           if cull_mode == "flat_loop":
+            c_slice = _gf_ref[pl.ds(base_r, 17 * block_b), :]
             return _eval_micro_shadow(_gt, c_slice, occ_in)
-          ccx = c_slice[17 * block_b : 18 * block_b, 0:1]
-          ccy = c_slice[17 * block_b : 18 * block_b, 1:2]
-          ccz = c_slice[17 * block_b : 18 * block_b, 2:3]
-          cr2 = c_slice[17 * block_b : 18 * block_b, 3:4]
+          c_meta = _gf_ref[pl.ds(base_r + 17 * block_b, block_b), :]
+          ccx = c_meta[:, 0:1]
+          ccy = c_meta[:, 1:2]
+          ccz = c_meta[:, 2:3]
+          cr2 = c_meta[:, 3:4]
           u_hit = jnp.any(_sphere_tile_hit(hx, hy, hz, lx_v, ly_v, lz_v, ccx, ccy, ccz, cr2, dist_cap=sh_max))
-          return jax.lax.cond(u_hit, lambda o: _eval_micro_shadow(_gt, c_slice, o), lambda o: o, occ_in)
+          return jax.lax.cond(
+              u_hit,
+              lambda o: _eval_micro_shadow(_gt, _gf_ref[pl.ds(base_r, 17 * block_b), :], o),
+              lambda o: o,
+              occ_in,
+          )
 
         if cull_mode in ("flat_loop", "cluster1"):
           occ_i32 = jax.lax.fori_loop(0, n_micro_t, _run_sh_micro, occ_i32)
         else:
-          def _sh_macro(m_idx, occ_in, _mf=mf_t, _rm=_run_sh_micro):
-            m_slice = jax.lax.dynamic_slice(_mf, (m_idx * 4 * block_b, 0), (4 * block_b, 128))
+          def _sh_macro(m_idx, occ_in, _mf_ref=mf_ref_t, _rm=_run_sh_micro):
+            m_slice = _mf_ref[pl.ds(m_idx * 4 * block_b, 4 * block_b), :]
             mcx = m_slice[0 * block_b : 1 * block_b, 0:1]
             mcy = m_slice[1 * block_b : 2 * block_b, 0:1]
             mcz = m_slice[2 * block_b : 3 * block_b, 0:1]

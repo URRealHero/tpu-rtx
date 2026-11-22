@@ -69,6 +69,12 @@ def run_parity_wave2() -> List[Dict[str, Any]]:
     ref_gb = ref_fn(dx_batch)
     jax.block_until_ready((ref_gb.rgb, ref_gb.depth, ref_gb.geom_id))
 
+    pallas_ref_gb = None
+    if n_prims <= 50:
+      pallas_ref_gb = jax.jit(lambda d: render_batch(spec, d, mode="pallas_v2", pallas_interpret=pallas_interp))(dx_batch)
+      jax.block_until_ready((pallas_ref_gb.rgb, pallas_ref_gb.depth, pallas_ref_gb.geom_id))
+
+    flat_ref_gb = None
     for cm in ("flat_loop", "cluster1", "hier2"):
       fn = jax.jit(lambda d, _cm=cm: pallas_raycast_hierarchical(
           spec, d, interpret=pallas_interp, block_b=8, block_r=512, cull_mode=_cm
@@ -76,10 +82,17 @@ def run_parity_wave2() -> List[Dict[str, Any]]:
       hlo_info = _check_hlo_zero_copy(fn.lower(dx_batch).as_text())
       gb = fn(dx_batch)
       jax.block_until_ready((gb.rgb, gb.depth, gb.geom_id))
+      if cm == "flat_loop":
+        flat_ref_gb = gb
 
-      geom_match = float(jnp.mean(gb.geom_id == ref_gb.geom_id))
-      depth_mae = float(jnp.mean(jnp.abs(gb.depth - ref_gb.depth)))
-      max_rgb_diff = float(jnp.max(jnp.abs(gb.rgb - ref_gb.rgb)))
+      comp_gb = pallas_ref_gb if pallas_ref_gb is not None else flat_ref_gb
+      geom_match = float(jnp.mean(gb.geom_id == comp_gb.geom_id))
+      depth_mae = float(jnp.mean(jnp.abs(gb.depth - comp_gb.depth)))
+      max_rgb_diff = float(jnp.max(jnp.abs(gb.rgb - comp_gb.rgb)))
+      mean_rgb_diff = float(jnp.mean(jnp.abs(gb.rgb - comp_gb.rgb)))
+      soa_geom_match = float(jnp.mean(gb.geom_id == ref_gb.geom_id))
+      soa_depth_mae = float(jnp.mean(jnp.abs(gb.depth - ref_gb.depth)))
+      soa_mean_rgb_diff = float(jnp.mean(jnp.abs(gb.rgb - ref_gb.rgb)))
       passed = (
           geom_match == 1.0
           and depth_mae < 1e-5
@@ -91,14 +104,21 @@ def run_parity_wave2() -> List[Dict[str, Any]]:
           "n_target_prims": n_prims,
           "n_enabled_geoms": len(spec.enabled_geom_ids),
           "cull_mode": cm,
+          "ref_used": "pallas_v2" if pallas_ref_gb is not None else "flat_loop",
           "geom_match": geom_match,
           "depth_mae_m": depth_mae,
           "max_rgb_diff": max_rgb_diff,
+          "mean_rgb_diff": mean_rgb_diff,
+          "geom_match_vs_v2_soa": soa_geom_match,
+          "depth_mae_vs_v2_soa": soa_depth_mae,
+          "mean_rgb_diff_vs_v2_soa": soa_mean_rgb_diff,
           "host_callbacks": hlo_info["host_callbacks"],
           "send_recv_ops": hlo_info["send_recv_ops"],
           "passed": passed,
       }
-      print(f"[W2 PARITY] G={len(spec.enabled_geom_ids)} {cm} -> pass={passed} geom={geom_match} depth_mae={depth_mae:.3e} rgb_max={max_rgb_diff:.3e}", flush=True)
+      print(f"[W2 PARITY] G={len(spec.enabled_geom_ids)} {cm} -> pass={passed} "
+            f"vs_{rec['ref_used']}(geom={geom_match}, d_mae={depth_mae:.2e}, rgb_max={max_rgb_diff:.2e}) "
+            f"vs_soa(geom={soa_geom_match}, d_mae={soa_depth_mae:.2e}, rgb_mean={soa_mean_rgb_diff:.2e})", flush=True)
       results.append(rec)
   return results
 
@@ -284,20 +304,24 @@ def bench_4c_case(n_prims: int, batch_size: int, res: int, mode: str, n_warmup: 
 
 
 def render_showcase_npz(out_npz: str) -> None:
-  """Render crisp 256x256 & 512x512 cluttered warehouse frames (G=200 & G=1000) on live w1 TPU."""
+  """Render crisp 256x256 cluttered warehouse frames (G=200 & G=1000, overview & closeup) on live w1 TPU."""
   pallas_interp = (jax.default_backend() == "cpu")
   arrays = {}
-  for n_prims, res in ((200, 256), (1000, 256), (1000, 512)):
-    for cam_name in ("overview", "closeup"):
-      if res == 512 and cam_name == "closeup":
-        continue
-      m, mx, spec, dx_batch, ctrl = _make_warehouse_batch(n_prims, batch_size=8, height=res, width=res, cam_name=cam_name)
-      dx_batch = jax.device_put(dx_batch, jax.devices()[0])
-      ctrl = jax.device_put(ctrl, jax.devices()[0])
-      step_fn = jax.jit(lambda d, u: jax.vmap(lambda di, ui: mjx.step(mx, di.replace(ctrl=ui)))(d, u))
-      for _ in range(10):
-        dx_batch = step_fn(dx_batch, ctrl)
-      jax.block_until_ready(dx_batch.geom_xpos)
+  for n_prims, res, cams in ((200, 256, ("overview",)), (1000, 256, ("overview", "closeup"))):
+    t0 = time.perf_counter()
+    m, mx, spec0, dx_batch, ctrl = _make_warehouse_batch(n_prims, batch_size=8, height=res, width=res, cam_name=cams[0])
+    dx_batch = jax.device_put(dx_batch, jax.devices()[0])
+    ctrl = jax.device_put(ctrl, jax.devices()[0])
+    step_fn = jax.jit(lambda d, u: jax.vmap(lambda di, ui: mjx.step(mx, di.replace(ctrl=ui)))(d, u))
+    for _ in range(10):
+      dx_batch = step_fn(dx_batch, ctrl)
+    jax.block_until_ready(dx_batch.geom_xpos)
+    print(f"[SHOWCASE] G={len(spec0.enabled_geom_ids)} mjx_stepped in {time.perf_counter()-t0:.1f}s", flush=True)
+
+    for cam_name in cams:
+      cam_id = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_CAMERA, cam_name)
+      spec = RenderSceneSpec.from_mjmodel(m, cam_id=cam_id, height=res, width=res, use_shadows=True)
+      t1 = time.perf_counter()
       gb = jax.jit(lambda d: pallas_raycast_hierarchical(
           spec, d, interpret=pallas_interp, block_b=8, block_r=1024, cull_mode="hier2"
       ))(dx_batch)
@@ -306,7 +330,7 @@ def render_showcase_npz(out_npz: str) -> None:
       arrays[f"{key}_rgb"] = np.asarray(gb.rgb[0])
       arrays[f"{key}_depth"] = np.asarray(gb.depth[0])
       arrays[f"{key}_gid"] = np.asarray(gb.geom_id[0])
-      print(f"[SHOWCASE] rendered {key} shape={arrays[f'{key}_rgb'].shape}", flush=True)
+      print(f"[SHOWCASE] rendered {key} shape={arrays[f'{key}_rgb'].shape} in {time.perf_counter()-t1:.1f}s", flush=True)
   os.makedirs(os.path.dirname(out_npz) or ".", exist_ok=True)
   np.savez_compressed(out_npz, **arrays)
 

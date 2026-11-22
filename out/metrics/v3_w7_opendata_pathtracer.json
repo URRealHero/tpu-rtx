@@ -1,0 +1,98 @@
+{
+  "experiment": "v3_w7_opendata_pathtracer",
+  "backend": "tpu",
+  "baselines": {
+    "stock_blender_5_3_0_h100_spm": 7041,
+    "exact_h100_spm": 14106,
+    "rtx_5090_optix_spm": 19202,
+    "nrc_scatter_h100_spm": 55148
+  },
+  "runs": [
+    {
+      "scene": "classroom",
+      "tris": 606140,
+      "native_blend_res": "1920x1080@100%",
+      "res": "360x640",
+      "n_chips": 1,
+      "spp": 16,
+      "max_bounces": 3,
+      "compile_s": 16.02,
+      "ms": 24308.59,
+      "images_per_sec": 0.041,
+      "samples_per_min": 39.5,
+      "mrays_per_s": 1.36,
+      "psnr_vs_cycles_5_3_db": 8.0,
+      "ssim_vs_cycles_5_3": 0.0819,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 2721,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "scene": "classroom",
+      "tris": 606140,
+      "native_blend_res": "1920x1080@100%",
+      "res": "360x640",
+      "n_chips": 4,
+      "spp": 16,
+      "max_bounces": 3,
+      "compile_s": 17.36,
+      "ms": 6967.43,
+      "images_per_sec": 0.144,
+      "samples_per_min": 137.8,
+      "mrays_per_s": 4.76,
+      "psnr_vs_cycles_5_3_db": 8.0,
+      "ssim_vs_cycles_5_3": 0.0817,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 2724,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "scene": "classroom",
+      "tris": 606140,
+      "native_blend_res": "1920x1080@100%",
+      "res": "360x640",
+      "n_chips": 4,
+      "spp": 64,
+      "max_bounces": 3,
+      "compile_s": 17.26,
+      "ms": 27836.78,
+      "images_per_sec": 0.036,
+      "samples_per_min": 137.9,
+      "mrays_per_s": 4.77,
+      "psnr_vs_cycles_5_3_db": 8.11,
+      "ssim_vs_cycles_5_3": 0.1239
+    },
+    {
+      "scene": "classroom",
+      "tris": 606140,
+      "native_blend_res": "1920x1080@100%",
+      "res": "360x640",
+      "n_chips": 4,
+      "spp": 128,
+      "max_bounces": 3,
+      "compile_s": 17.02,
+      "ms": 55803.84,
+      "images_per_sec": 0.018,
+      "samples_per_min": 137.6,
+      "mrays_per_s": 4.76,
+      "psnr_vs_cycles_5_3_db": 8.09,
+      "ssim_vs_cycles_5_3": 0.155
+    }
+  ]
+}

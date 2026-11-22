@@ -211,7 +211,7 @@ def pbr_raycast_tpu(
   B, R, _ = ro.shape
   rays_2d, n_tiles, can_2d_tile = _pack_rays_tiled(ro, rd, t_limit, H, W)
   total_tiles = B * n_tiles
-  leaf_rows = 16 if any_hit else 24
+  leaf_rows = 24
 
   def _bvh_pbr_kernel(
       ray_ref, l2_roots_ref, l2_hbm_ref, l0_hbm_ref, leaf_hbm_ref, out_ref,
@@ -333,8 +333,9 @@ def pbr_raycast_tpu(
           hit_t = ok_a & (u >= 0.0) & (v >= 0.0) & ((u + v) <= 1.0) & (t >= 0.0) & (t < bd0)
 
           if any_hit:
-            # Skip dielectric glass (mat_code == 2.0) when row 23 available? any_hit loads 16 rows for speed!
-            any_ray_hit = jnp.any(hit_t, axis=1, keepdims=True)
+            # Skip dielectric glass & emissives (mat_code >= 1.8) so sunlight passes through window glass
+            hit_opq = hit_t & (pk[23:24, :] < 1.8)
+            any_ray_hit = jnp.any(hit_opq, axis=1, keepdims=True)
             new_bd = jnp.where(any_ray_hit, 0.0, bd0)
             t0_next = jnp.min(jnp.where((tmin0_eff < new_bd) & (unvis0_next_f > 0.5), tmin0_eff, 1e20), axis=0, keepdims=True)
             return (t0_next, unvis0_next_f, new_bd, nx0, ny0, nz0, ar0, ag0, ab0, pk0)

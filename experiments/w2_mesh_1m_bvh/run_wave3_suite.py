@@ -614,7 +614,7 @@ def run_w3_sponza_megascene(out_path: str, png_4k_path: str):
 
 
 def run_w3_1b_unique_4c(out_path: str):
-  """4-Chip Geometry-Sharded 1.059B (10.59 亿) 100% Unique Non-Instanced Tris via shard_map + pmin."""
+  """4-Chip Geometry-Sharded 1.029B (10.29 亿) 100% Unique Non-Instanced Tris via shard_map + pmin."""
   ds, base_meshes = load_base_scene()
   devs = jax.devices()
   assert len(devs) == 4
@@ -624,13 +624,13 @@ def run_w3_1b_unique_4c(out_path: str):
   data = _load_or_init(out_path)
   kw = dict(cam_fovy=float(ds["cam_fovy"]), znear=float(ds["znear"]), zfar=float(ds["zfar"]), light_pos=tuple(float(x) for x in ds["light_pos"]))
 
-  base_nv, base_nf, base_nn = subdivide_mesh_barycentric(base_meshes[0]["verts"], base_meshes[0]["faces"], 82)
+  base_nv, base_nf, base_nn = subdivide_mesh_barycentric(base_meshes[0]["verts"], base_meshes[0]["faces"], 90)
   palette = [
       [0.86, 0.48, 0.28], [0.24, 0.72, 0.76], [0.88, 0.74, 0.28], [0.78, 0.34, 0.46],
       [0.36, 0.54, 0.88], [0.42, 0.78, 0.46], [0.76, 0.78, 0.82], [0.68, 0.46, 0.84],
   ]
-  n_per_chip = 10
-  n_total = 4 * n_per_chip  # 40 uniquely displaced Suzannes = 1,058,626,560 unique tris!
+  n_per_chip = 8
+  n_total = 4 * n_per_chip  # 32 uniquely displaced Suzannes (k=90) = 1,028,505,600 unique tris!
 
   def _build_one(s_i: int):
     fx, fy, fz, ph = 18.0 + 3.1 * s_i, 21.0 + 2.7 * s_i, 25.0 + 4.3 * s_i, 0.61 * s_i
@@ -647,15 +647,21 @@ def run_w3_1b_unique_4c(out_path: str):
   t_b0 = time.perf_counter()
   hbm_bytes = 0
   tot_tris = 0
-  # Build slot m across the 4 chips and place each directly onto its target chip HBM
+  # Build in 2 batches of 16 across 208 CPU cores, then stack per slot across 4 chips
+  built_all = []
+  for b_start in range(0, n_total, 16):
+    ids = list(range(b_start, min(b_start + 16, n_total)))
+    with ThreadPoolExecutor(max_workers=len(ids)) as ex:
+      built_all.extend(list(ex.map(_build_one, ids)))
+  del base_nv, base_nf, base_nn
+  gc.collect()
+
   per_slot_sharded = []
   rgba_host = np.zeros((4, n_per_chip, 3), dtype=np.float32)
   for m_slot in range(n_per_chip):
-    ids = [c * n_per_chip + m_slot for c in range(4)]
-    with ThreadPoolExecutor(max_workers=4) as ex:
-      built = list(ex.map(_build_one, ids))
     s_r, s_l2, s_l0, s_lf = [], [], [], []
-    for c, it in enumerate(built):
+    for c in range(4):
+      it = built_all[c * n_per_chip + m_slot]
       hbm_bytes += it.l2_roots_aabb.nbytes + it.l2_aabbs.nbytes + it.l0_aabbs.nbytes + it.leaf_bank.nbytes
       tot_tris += it.n_tris_orig
       rgba_host[c, m_slot] = it.rgba[:3]
@@ -663,22 +669,20 @@ def run_w3_1b_unique_4c(out_path: str):
       s_l2.append(jax.device_put(it.l2_aabbs[None], devs[c]))
       s_l0.append(jax.device_put(it.l0_aabbs[None], devs[c]))
       s_lf.append(jax.device_put(it.leaf_bank[None], devs[c]))
+      built_all[c * n_per_chip + m_slot] = None
     per_slot_sharded.append((
-        jax.make_array_from_single_device_arrays((4, *built[0].l2_roots_aabb.shape), sh_geom, s_r),
-        jax.make_array_from_single_device_arrays((4, *built[0].l2_aabbs.shape), sh_geom, s_l2),
-        jax.make_array_from_single_device_arrays((4, *built[0].l0_aabbs.shape), sh_geom, s_l0),
-        jax.make_array_from_single_device_arrays((4, *built[0].leaf_bank.shape), sh_geom, s_lf),
+        jax.make_array_from_single_device_arrays((4, *s_r[0].shape[1:]), sh_geom, s_r),
+        jax.make_array_from_single_device_arrays((4, *s_l2[0].shape[1:]), sh_geom, s_l2),
+        jax.make_array_from_single_device_arrays((4, *s_l0[0].shape[1:]), sh_geom, s_l0),
+        jax.make_array_from_single_device_arrays((4, *s_lf[0].shape[1:]), sh_geom, s_lf),
     ))
-    del built
     gc.collect()
   t_bvh = time.perf_counter() - t_b0
-  del base_nv, base_nf, base_nn
-  gc.collect()
   dev_sharded = tuple(per_slot_sharded)
   rgba_sharded = jax.device_put(rgba_host, sh_geom)
-  print(f"BUILT 1.06B UNIQUE 4-CHIP: tris={tot_tris:,} meshes={n_total} bvh={t_bvh:.2f}s hbm={hbm_bytes/(1024**3):.3f} GB", flush=True)
+  print(f"BUILT 1.03B UNIQUE 4-CHIP: tris={tot_tris:,} meshes={n_total} bvh={t_bvh:.2f}s hbm={hbm_bytes/(1024**3):.3f} GB", flush=True)
 
-  for H, W, B in [(64, 64, 64), (512, 512, 8), (2160, 3840, 1)]:
+  for H, W, B in [(2160, 3840, 1), (64, 64, 64), (512, 512, 8)]:
     spec_t = _make_spec([], kw, H, W, use_shadows=True)
     fn_4c, _ = make_geometry_sharded_unique_renderer(spec_t, devs, n_per_chip, interpret=False)
     oxp, oxm, cxp, cxm = make_gallery_n_poses(ds, B, n_total)
@@ -699,7 +703,7 @@ def run_w3_1b_unique_4c(out_path: str):
     jax.block_until_ready(rgb)
     cs = time.perf_counter() - tc0
 
-    n_steps = 2 if H >= 2160 else (5 if H >= 512 else 10)
+    n_steps = 2 if H >= 2160 else 3
     t0 = time.perf_counter()
     for _ in range(n_steps):
       rgb = fn_4c(dev_sharded, rgba_sharded, oxp_s, oxm_s, cxp_r, cxm_r)
@@ -721,7 +725,7 @@ def run_w3_1b_unique_4c(out_path: str):
     }
     data["track_3a_compact_unique"].append(rec)
     _save(out_path, data)
-    print("3A 1.06B 4C:", rec, flush=True)
+    print("3A 1.03B 4C:", rec, flush=True)
 
 
 def main():

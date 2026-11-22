@@ -239,8 +239,8 @@ def run_sdk_and_parity_suite(out_json: str, payload: Dict[str, Any]) -> None:
       elif sname == "panda_pick_cube":
         d.qpos[:7] += rng.uniform(-0.25, 0.25, size=7)
         d.qpos[7:9] = rng.uniform(0.0, 0.04)
-        d.qpos[9] += rng.uniform(-0.10, 0.10)
-        d.qpos[10] += rng.uniform(-0.12, 0.12)
+        d.qpos[9] += rng.uniform(-0.12, 0.12)
+        d.qpos[10] += rng.uniform(-0.15, 0.15)
       elif sname == "humanoid_21dof":
         d.qpos[7:] += rng.uniform(-0.28, 0.28, size=m.nq - 7)
         d.qpos[0] += rng.uniform(-0.15, 0.15)
@@ -324,13 +324,16 @@ def run_sdk_and_parity_suite(out_json: str, payload: Dict[str, Any]) -> None:
       gid_p = np.asarray(obs["seg_id"], dtype=np.int32)
 
       valid = (gid_p >= 0) & (gid_r >= 0)
+      same_g = valid & (gid_p == gid_r)
       depth_mae = float(np.mean(np.abs(depth_p[valid] - depth_r[valid])))
+      depth_mae_same_geom = float(np.mean(np.abs(depth_p[same_g] - depth_r[same_g])))
       ndot = np.clip(np.sum(nrm_p[valid] * nrm_r[valid], axis=-1), -1.0, 1.0)
       nrm_deg = float(np.mean(np.degrees(np.arccos(ndot))))
       geom_match = float(np.mean(gid_p == gid_r))
 
       rec = {
           "depth_mae_m": depth_mae,
+          "depth_mae_same_geom_m": depth_mae_same_geom,
           "normal_deg": nrm_deg,
           "geom_match": geom_match,
           "hlo": hlo_info,
@@ -645,6 +648,8 @@ def main():
   ap = argparse.ArgumentParser()
   ap.add_argument("--out_json", required=True)
   ap.add_argument("--step", default="all", choices=["all", "parity", "render_push", "e2e_push"])
+  ap.add_argument("--e2e_start", type=int, default=0)
+  ap.add_argument("--e2e_end", type=int, default=999)
   args = ap.parse_args()
 
   if os.path.exists(args.out_json):
@@ -658,72 +663,66 @@ def main():
 
   if args.step in ("all", "render_push"):
     print("=== Running Wave 3 Render-Only 1,000,000+ FPS Sweep ===", flush=True)
-    render_runs = []
-    # 1-chip vs 4-chip scaling + tile sweep at 64x64 (RL 2-out vs full 5-out SDK)
-    for n_chips, B in [(1, 2048), (4, 8192), (4, 16384)]:
-      for bb, br in [(16, 512), (8, 1024), (8, 2048)]:
-        try:
-          r = _bench_render_only_config(
-              "panda_pick_cube", "fast_fused", 64, n_chips, B, bb, br, "bfloat16", ("rgb", "depth")
-          )
-          render_runs.append(r)
-        except Exception as exc:
-          print(f"SKIP render {n_chips}c B={B} b{bb}_r{br}: {exc}", flush=True)
-    # Full 5-channel SDK (rgb, depth, normal, seg_id, flow) on 4-chip 64x64 & 128x128
-    render_runs.append(_bench_render_only_config(
-        "panda_pick_cube", "fast_fused", 64, 4, 8192, 16, 512, "bfloat16", ("rgb", "depth", "normal", "seg_id", "flow")
-    ))
-    render_runs.append(_bench_render_only_config(
-        "panda_pick_cube", "fused_ao_ggx", 128, 4, 4096, 8, 512, "bfloat16", ("rgb", "depth", "normal", "seg_id", "flow")
-    ))
-    payload["render_push"] = render_runs
-    _save_payload(args.out_json, payload)
+    render_runs = list(payload.get("render_push", []))
+    done_labels = {r["label"] for r in render_runs}
+    configs = [
+        ("panda_pick_cube", "fast_fused", 64, 1, 2048, 16, 512, "bfloat16", ("rgb", "depth")),
+        ("panda_pick_cube", "fast_fused", 64, 4, 8192, 16, 512, "bfloat16", ("rgb", "depth")),
+        ("panda_pick_cube", "fast_fused", 64, 4, 8192, 8, 1024, "bfloat16", ("rgb", "depth")),
+        ("panda_pick_cube", "fast_fused", 64, 4, 8192, 8, 2048, "bfloat16", ("rgb", "depth")),
+        ("panda_pick_cube", "fast_fused", 64, 4, 16384, 16, 512, "bfloat16", ("rgb", "depth")),
+        ("panda_pick_cube", "fast_fused", 64, 4, 16384, 8, 1024, "bfloat16", ("rgb", "depth")),
+        ("panda_pick_cube", "fast_fused", 64, 4, 8192, 16, 512, "bfloat16", ("rgb", "depth", "normal", "seg_id", "flow")),
+        ("panda_pick_cube", "fused_ao_ggx", 128, 4, 4096, 8, 512, "bfloat16", ("rgb", "depth", "normal", "seg_id", "flow")),
+    ]
+    for cfg in configs:
+      sc_name, sh, rs, nc, bs, bb, br, dt_s, outs = cfg
+      lbl = f"{nc}c_{rs}x{rs}_{sh}_b{bb}_r{br}_{dt_s}_B{bs}_{len(outs)}out"
+      if lbl in done_labels:
+        print(f"SKIP DONE render: {lbl}", flush=True)
+        continue
+      try:
+        r = _bench_render_only_config(*cfg, n_scan_steps=20)
+        render_runs.append(r)
+        done_labels.add(lbl)
+        payload["render_push"] = render_runs
+        _save_payload(args.out_json, payload)
+      except Exception as exc:
+        print(f"SKIP render {cfg}: {exc}", flush=True)
 
   if args.step in ("all", "e2e_push"):
     print("=== Running Wave 3 E2E > 300k-400k+ FPS Push ===", flush=True)
-    payload["solver_parity"] = run_solver_parity_check()
-    e2e_runs = []
-    # 1. PandaPickCube 1-chip vs 4-chip baseline & lax.scan rollout
-    e2e_runs.append(_bench_e2e_rollout(
-        "panda_1c_64x64_std_B2048", "panda_pick_cube", "fast_fused", 64, 1, 2048, 16, 512, "bfloat16", ("rgb", "depth"),
-    ))
-    e2e_runs.append(_bench_e2e_rollout(
-        "panda_4c_64x64_std_scan_B8192", "panda_pick_cube", "fast_fused", 64, 4, 8192, 16, 512, "bfloat16", ("rgb", "depth"),
-    ))
-    e2e_runs.append(_bench_e2e_rollout(
-        "panda_4c_64x64_std_scan_B16384", "panda_pick_cube", "fast_fused", 64, 4, 16384, 16, 512, "bfloat16", ("rgb", "depth"),
-    ))
-    # 2. Tuned solver (it=2, ls=4) & BF16 matmul
-    e2e_runs.append(_bench_e2e_rollout(
-        "panda_4c_64x64_it2ls4_B8192", "panda_pick_cube", "fast_fused", 64, 4, 8192, 16, 512, "bfloat16", ("rgb", "depth"),
-        iterations=2, ls_iterations=4,
-    ))
-    e2e_runs.append(_bench_e2e_rollout(
-        "panda_4c_64x64_it2ls4_B16384", "panda_pick_cube", "fast_fused", 64, 4, 16384, 16, 512, "bfloat16", ("rgb", "depth"),
-        iterations=2, ls_iterations=4,
-    ))
-    e2e_runs.append(_bench_e2e_rollout(
-        "panda_4c_64x64_it2ls4_bf16mm_B16384", "panda_pick_cube", "fast_fused", 64, 4, 16384, 16, 512, "bfloat16", ("rgb", "depth"),
-        iterations=2, ls_iterations=4, bf16_matmul=True,
-    ))
-    e2e_runs.append(_bench_e2e_rollout(
-        "panda_4c_64x64_it1ls2_B16384", "panda_pick_cube", "fast_fused", 64, 4, 16384, 16, 512, "bfloat16", ("rgb", "depth"),
-        iterations=1, ls_iterations=2,
-    ))
-    # 3. Diverse scenes E2E: Cartpole & Humanoid 21-DOF + 128x128 GGX PBR+AO
-    e2e_runs.append(_bench_e2e_rollout(
-        "cartpole_4c_64x64_B16384", "cartpole", "fast_fused", 64, 4, 16384, 16, 512, "bfloat16", ("rgb", "depth"),
-    ))
-    e2e_runs.append(_bench_e2e_rollout(
-        "humanoid_4c_64x64_B8192", "humanoid_21dof", "fast_fused", 64, 4, 8192, 16, 512, "bfloat16", ("rgb", "depth"),
-    ))
-    e2e_runs.append(_bench_e2e_rollout(
-        "panda_4c_128x128_ggx_ao_B4096", "panda_pick_cube", "fused_ao_ggx", 128, 4, 4096, 8, 512, "bfloat16",
-        ("rgb", "depth", "normal", "seg_id", "flow"),
-    ))
-    payload["e2e_push"] = e2e_runs
+    if "solver_parity" not in payload:
+      payload["solver_parity"] = run_solver_parity_check()
+      _save_payload(args.out_json, payload)
+    e2e_runs = list(payload.get("e2e_push", []))
+    done_e2e = {r["label"] for r in e2e_runs}
 
-    # Pod scaling verification table (using best measured 4c/1c render FPS)
+    e2e_specs = [
+        (("panda_1c_64x64_std_B2048", "panda_pick_cube", "fast_fused", 64, 1, 2048, 16, 512, "bfloat16", ("rgb", "depth")), {}),
+        (("panda_4c_64x64_std_scan_B8192", "panda_pick_cube", "fast_fused", 64, 4, 8192, 16, 512, "bfloat16", ("rgb", "depth")), {}),
+        (("panda_4c_64x64_std_scan_B16384", "panda_pick_cube", "fast_fused", 64, 4, 16384, 16, 512, "bfloat16", ("rgb", "depth")), {}),
+        (("panda_4c_64x64_it2ls4_B8192", "panda_pick_cube", "fast_fused", 64, 4, 8192, 16, 512, "bfloat16", ("rgb", "depth")), {"iterations": 2, "ls_iterations": 4}),
+        (("panda_4c_64x64_it2ls4_B16384", "panda_pick_cube", "fast_fused", 64, 4, 16384, 16, 512, "bfloat16", ("rgb", "depth")), {"iterations": 2, "ls_iterations": 4}),
+        (("panda_4c_64x64_it2ls4_bf16mm_B16384", "panda_pick_cube", "fast_fused", 64, 4, 16384, 16, 512, "bfloat16", ("rgb", "depth")), {"iterations": 2, "ls_iterations": 4, "bf16_matmul": True}),
+        (("panda_4c_64x64_it1ls2_B16384", "panda_pick_cube", "fast_fused", 64, 4, 16384, 16, 512, "bfloat16", ("rgb", "depth")), {"iterations": 1, "ls_iterations": 2}),
+        (("panda_4c_64x64_std_ar2_B16384", "panda_pick_cube", "fast_fused", 64, 4, 16384, 16, 512, "bfloat16", ("rgb", "depth")), {"substeps": 2}),
+        (("cartpole_4c_64x64_B16384", "cartpole", "fast_fused", 64, 4, 16384, 16, 512, "bfloat16", ("rgb", "depth")), {}),
+        (("humanoid_4c_64x64_B8192", "humanoid_21dof", "fast_fused", 64, 4, 8192, 16, 512, "bfloat16", ("rgb", "depth")), {}),
+        (("panda_4c_128x128_ggx_ao_B4096", "panda_pick_cube", "fused_ao_ggx", 128, 4, 4096, 8, 512, "bfloat16", ("rgb", "depth", "normal", "seg_id", "flow")), {}),
+    ]
+
+    for pos_args, kw_args in e2e_specs[args.e2e_start : args.e2e_end]:
+      lbl = pos_args[0]
+      if lbl in done_e2e:
+        print(f"SKIP DONE e2e: {lbl}", flush=True)
+        continue
+      rec = _bench_e2e_rollout(*pos_args, n_rollout_steps=10, **kw_args)
+      e2e_runs.append(rec)
+      done_e2e.add(lbl)
+      payload["e2e_push"] = e2e_runs
+      _save_payload(args.out_json, payload)
+
     best_1c_rfps = max((r["render_scan_fps"] for r in payload.get("render_push", []) if r["n_chips"] == 1), default=240000.0)
     payload["pod_scaling"] = tpu_rtx.verify_pod_topology(
         n_chips_list=(1, 4, 32, 64, 1000),

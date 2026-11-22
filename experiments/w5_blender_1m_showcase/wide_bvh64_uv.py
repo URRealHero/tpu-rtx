@@ -102,6 +102,7 @@ def build_wide_bvh64_uv(
   tri_mid = np.asarray(pack.tri_mat_id, dtype=np.int32)
   tri_alb = np.asarray(pack.tri_albedo, dtype=np.float32)
   tri_rgh = np.clip(np.asarray(pack.tri_roughness, dtype=np.float32), 0.02, 0.99)
+  tri_mc = np.asarray(pack.tri_mat_code, dtype=np.float32)
 
   centroids = (verts[faces[:, 0]] + verts[faces[:, 1]] + verts[faces[:, 2]]) * (1.0 / 3.0)
   if build_method == "morton":
@@ -115,6 +116,7 @@ def build_wide_bvh64_uv(
   tri_mid = tri_mid[order]
   tri_alb = tri_alb[order]
   tri_rgh = tri_rgh[order]
+  tri_mc = tri_mc[order]
   del order
 
   F = int(faces.shape[0])
@@ -152,8 +154,10 @@ def build_wide_bvh64_uv(
   _pack_vec3(6, verts[faces[:, 2]] - tv0)
   del tv0
 
+  # Row 9: 2.0 = opaque shadow-casting tri, 1.0 = glass/transparent (primary hit only, shadow pass-through), 0.0 = pad
   tv_buf = np.zeros((F_pad,), dtype=np.float32)
-  tv_buf[:F] = 1.0
+  is_glass_tri = (tri_mc >= 1.8) & (tri_mc < 2.8)
+  tv_buf[:F] = np.where(is_glass_tri, 1.0, 2.0).astype(np.float32)
   leaf_bank[:, 9, :] = tv_buf.reshape(n_leaves, LEAF_SIZE)
   del tv_buf
 
@@ -483,7 +487,7 @@ def pallas_wide_bvh64_uv_raycast(
           v0x, v0y, v0z = pk[0:1, :], pk[1:2, :], pk[2:3, :]
           e1x, e1y, e1z = pk[3:4, :], pk[4:5, :], pk[5:6, :]
           e2x, e2y, e2z = pk[6:7, :], pk[7:8, :], pk[8:9, :]
-          tv = pk[9:10, :] > 0.5
+          tv = (pk[9:10, :] > 1.5) if any_hit else (pk[9:10, :] > 0.5)
 
           hx = rdy * e2z - rdz * e2y
           hy = rdz * e2x - rdx * e2z
@@ -704,7 +708,7 @@ def pallas_wide_bvh64_uv_raycast(
           v0x, v0y, v0z = pk[0:1, :], pk[1:2, :], pk[2:3, :]
           e1x, e1y, e1z = pk[3:4, :], pk[4:5, :], pk[5:6, :]
           e2x, e2y, e2z = pk[6:7, :], pk[7:8, :], pk[8:9, :]
-          tv = pk[9:10, :] > 0.5
+          tv = (pk[9:10, :] > 1.5) if any_hit else (pk[9:10, :] > 0.5)
 
           hx = rdy * e2z - rdz * e2y
           hy = rdz * e2x - rdx * e2z
@@ -943,10 +947,11 @@ def render_wide_bvh64_uv_stage1(
   alb_lin, rgh = _sample_tex_atlas_bilinear(tex_d, tex_id, uv, fb_alb, fb_rgh)
   hit_pos = ro + jnp.where(hit, best_d, 0.0)[..., None] * rd
 
-  # Multi-light GGX + Diffuse + Emissive + Sky direct shading
+  # Multi-light GGX + Diffuse + Emissive + Glass + Sky direct shading
   metallic = jnp.clip(mcode, 0.0, 1.0)
   is_emit = mcode >= 2.8
-  emit_pow = jnp.where(is_emit, (mcode - 2.0) * 1.5, 0.0)
+  is_glass = (mcode >= 1.8) & (mcode < 2.8)
+  emit_pow = jnp.where(is_emit, (mcode - 2.0) * 2.5, 0.0)
 
   # Primary light shadow raycast
   l_pos0 = jnp.asarray(spec.light_pos[0], dtype=jnp.float32)
@@ -1009,6 +1014,9 @@ def render_wide_bvh64_uv_stage1(
     rad = rad + (diff_term + spec_term) * lc[None, None, :] * (ndotl * atten * vis_i)[..., None]
 
   rad = rad + jnp.where(is_emit[..., None], alb_lin * emit_pow[..., None], 0.0)
+  # Brighten dielectric glass panes / lamp shades with Fresnel sky glow
+  glass_fres = 0.04 + 0.96 * ((1.0 - ndotv) ** 4)
+  rad = jnp.where(is_glass[..., None], alb_lin * (0.45 * sky_h[None, None, :] + 0.65 * glass_fres[..., None]), rad)
   rad_tm = rad / (1.0 + 0.25 * rad)
   direct_srgb = jnp.clip(_linear_to_srgb_jnp(rad_tm), 0.0, 1.0)
   alb_srgb = jnp.clip(_linear_to_srgb_jnp(alb_lin), 0.0, 1.0)
