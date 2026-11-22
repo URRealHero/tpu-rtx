@@ -1,0 +1,3143 @@
+{
+  "worker": "w4",
+  "host": "tpu-v5p-64-2",
+  "zone": "us-east5-a",
+  "status": "wave1_partial_pareto_context_rotation",
+  "teacher_baseline": {
+    "arch": "M2_spatial_128",
+    "n_params": 922051,
+    "cal_scale": 0.9998908042907715,
+    "gate_cal": {
+      "psnr_db": 38.35318249851903,
+      "stage1_psnr_db": 13.834067918406001,
+      "psnr_gain_db": 24.519114580113033,
+      "ssim": 0.9889277995092524,
+      "msssim": 0.9915584872699682,
+      "lum_rel": 0.00032220385330905543,
+      "roi_psnr_db": 30.30811784035627,
+      "roi_edge_px": 0.1572078849421814,
+      "roi_occ_mismatch": 0.007142857142857143,
+      "passed": true,
+      "thresholds": {
+        "psnr_min": 30.0,
+        "psnr_gain_min": 4.0,
+        "ssim_min": 0.94,
+        "msssim_min": 0.96,
+        "lum_rel_max": 0.005,
+        "roi_psnr_min": 28.0,
+        "roi_edge_px_max": 1.0,
+        "roi_occ_mismatch_max": 0.01
+      }
+    },
+    "stage2_bench_1c": {
+      "B1024": {
+        "stage2_ms": 18.922,
+        "stage2_only_fps": 54115.6
+      },
+      "B2048": {
+        "stage2_ms": 37.938,
+        "stage2_only_fps": 53982.1
+      },
+      "B4096": {
+        "stage2_ms": 75.679,
+        "stage2_only_fps": 54123.1
+      },
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 16,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 295,
+        "send_recv_ops": 0
+      }
+    }
+  },
+  "runs": {
+    "v3_w4_ablation_run1.json": {
+      "backend": "tpu",
+      "device_kind": "TPU v5",
+      "M2_spatial_128_teacher": {
+        "arch": "M2_spatial_128",
+        "n_params": 922051,
+        "cal_scale": 0.9998908042907715,
+        "gate_cal": {
+          "psnr_db": 38.35318249851903,
+          "stage1_psnr_db": 13.834067918406001,
+          "psnr_gain_db": 24.519114580113033,
+          "ssim": 0.9889277995092524,
+          "msssim": 0.9915584872699682,
+          "lum_rel": 0.00032220385330905543,
+          "roi_psnr_db": 30.30811784035627,
+          "roi_edge_px": 0.1572078849421814,
+          "roi_occ_mismatch": 0.007142857142857143,
+          "passed": true,
+          "thresholds": {
+            "psnr_min": 30.0,
+            "psnr_gain_min": 4.0,
+            "ssim_min": 0.94,
+            "msssim_min": 0.96,
+            "lum_rel_max": 0.005,
+            "roi_psnr_min": 28.0,
+            "roi_edge_px_max": 1.0,
+            "roi_occ_mismatch_max": 0.01
+          }
+        },
+        "stage2_bench_1c": {
+          "B1024": {
+            "stage2_ms": 18.928,
+            "stage2_only_fps": 54098.9
+          },
+          "B2048": {
+            "stage2_ms": 37.929,
+            "stage2_only_fps": 53995.9
+          },
+          "B4096": {
+            "stage2_ms": 75.671,
+            "stage2_only_fps": 54129.0
+          },
+          "hlo_ops": {
+            "host_callbacks": 0,
+            "dot_ops": 0,
+            "conv_ops": 16,
+            "while_ops": 0,
+            "gather_ops": 0,
+            "custom_calls": 0,
+            "hlo_lines": 295,
+            "send_recv_ops": 0
+          }
+        }
+      },
+      "candidates": {
+        "M2_spatial_64": {
+          "arch": "M2_spatial_64",
+          "n_params": 234723,
+          "cal_scale": 0.9992314577102661,
+          "gate_cal": {
+            "psnr_db": 38.031022568707925,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 24.196954650301926,
+            "ssim": 0.9883032374596258,
+            "msssim": 0.9910919271735225,
+            "lum_rel": -0.00011663884727841634,
+            "roi_psnr_db": 30.009008577765016,
+            "roi_edge_px": 0.1640622596605681,
+            "roi_occ_mismatch": 0.03571428571428571,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 7.008,
+              "stage2_only_fps": 146119.3
+            },
+            "B2048": {
+              "stage2_ms": 14.121,
+              "stage2_only_fps": 145028.3
+            },
+            "B4096": {
+              "stage2_ms": 28.447,
+              "stage2_only_fps": 143987.5
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 16,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 295,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_spatial_64_params.pkl"
+        },
+        "M2_spatial_96": {
+          "arch": "M2_spatial_96",
+          "n_params": 521811,
+          "cal_scale": 0.9996560215950012,
+          "gate_cal": {
+            "psnr_db": 38.47548521590076,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 24.641417297494762,
+            "ssim": 0.9894349378032566,
+            "msssim": 0.9918948303620334,
+            "lum_rel": 8.603211216562379e-05,
+            "roi_psnr_db": 30.4933430663913,
+            "roi_edge_px": 0.17143844231031835,
+            "roi_occ_mismatch": 0.03571428571428571,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 12.308,
+              "stage2_only_fps": 83197.9
+            },
+            "B2048": {
+              "stage2_ms": 24.788,
+              "stage2_only_fps": 82619.8
+            },
+            "B4096": {
+              "stage2_ms": 50.061,
+              "stage2_only_fps": 81819.4
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 16,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 295,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_spatial_96_params.pkl"
+        },
+        "M2_convnext_lite": {
+          "arch": "M2_convnext_lite",
+          "n_params": 511267,
+          "cal_scale": 0.9998778700828552,
+          "gate_cal": {
+            "psnr_db": 37.82948896182009,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.99542104341409,
+            "ssim": 0.9880643511881839,
+            "msssim": 0.9908137247755501,
+            "lum_rel": -9.883607585170484e-05,
+            "roi_psnr_db": 29.802422667983745,
+            "roi_edge_px": 0.18544906983152032,
+            "roi_occ_mismatch": 0.03571428571428571,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 7.602,
+              "stage2_only_fps": 134694.7
+            },
+            "B2048": {
+              "stage2_ms": 15.13,
+              "stage2_only_fps": 135357.3
+            },
+            "B4096": {
+              "stage2_ms": 30.451,
+              "stage2_only_fps": 134511.2
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 13,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 423,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_convnext_lite_params.pkl"
+        }
+      }
+    },
+    "v3_w4_calibsel.json": {
+      "backend": "tpu",
+      "device_kind": "TPU v5",
+      "M2_spatial_128_teacher": {
+        "arch": "M2_spatial_128",
+        "n_params": 922051,
+        "cal_scale": 0.9998908042907715,
+        "gate_cal": {
+          "psnr_db": 38.35318249851903,
+          "stage1_psnr_db": 13.834067918406001,
+          "psnr_gain_db": 24.519114580113033,
+          "ssim": 0.9889277995092524,
+          "msssim": 0.9915584872699682,
+          "lum_rel": 0.00032220385330905543,
+          "roi_psnr_db": 30.30811784035627,
+          "roi_edge_px": 0.1572078849421814,
+          "roi_occ_mismatch": 0.007142857142857143,
+          "passed": true,
+          "thresholds": {
+            "psnr_min": 30.0,
+            "psnr_gain_min": 4.0,
+            "ssim_min": 0.94,
+            "msssim_min": 0.96,
+            "lum_rel_max": 0.005,
+            "roi_psnr_min": 28.0,
+            "roi_edge_px_max": 1.0,
+            "roi_occ_mismatch_max": 0.01
+          }
+        },
+        "stage2_bench_1c": {
+          "B1024": {
+            "stage2_ms": 18.935,
+            "stage2_only_fps": 54079.4
+          },
+          "B2048": {
+            "stage2_ms": 37.936,
+            "stage2_only_fps": 53985.3
+          },
+          "B4096": {
+            "stage2_ms": 75.683,
+            "stage2_only_fps": 54120.5
+          },
+          "hlo_ops": {
+            "host_callbacks": 0,
+            "dot_ops": 0,
+            "conv_ops": 16,
+            "while_ops": 0,
+            "gather_ops": 0,
+            "custom_calls": 0,
+            "hlo_lines": 295,
+            "send_recv_ops": 0
+          }
+        }
+      },
+      "candidates": {
+        "M2_spatial_64": {
+          "arch": "M2_spatial_64",
+          "n_params": 234723,
+          "epochs": 240,
+          "batch_size": 32,
+          "lr": 0.002,
+          "kd_weight": 0.25,
+          "best_seed": 0,
+          "best_epoch": 180,
+          "best_calib_occ": 0.018518518518518517,
+          "best_calib_roi_psnr": 28.663684621116015,
+          "train_time_s": 95.47,
+          "cal_scale": 0.9993979930877686,
+          "gate_uncal": {
+            "psnr_db": 37.46617679697316,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.63210887856716,
+            "ssim": 0.9863801958103015,
+            "msssim": 0.989717848869764,
+            "lum_rel": 0.000607486688043446,
+            "roi_psnr_db": 29.59271444559413,
+            "roi_edge_px": 0.18465575537993573,
+            "roi_occ_mismatch": 0.05,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_cal": {
+            "psnr_db": 37.46568206322424,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.631614144818244,
+            "ssim": 0.9863798120657173,
+            "msssim": 0.9897177173051687,
+            "lum_rel": 5.0865061218541285e-06,
+            "roi_psnr_db": 29.59371617164185,
+            "roi_edge_px": 0.18465575537993573,
+            "roi_occ_mismatch": 0.05,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_apply": {
+            "psnr_db": 37.46567821630088,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.63161029789488,
+            "ssim": 0.9863797971593907,
+            "msssim": 0.9897177094856765,
+            "lum_rel": 5.0865061218541285e-06,
+            "roi_psnr_db": 29.593710026947985,
+            "roi_edge_px": 0.18465575537993573,
+            "roi_occ_mismatch": 0.05,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 7.013,
+              "stage2_only_fps": 146014.9
+            },
+            "B2048": {
+              "stage2_ms": 14.083,
+              "stage2_only_fps": 145421.6
+            },
+            "B4096": {
+              "stage2_ms": 28.29,
+              "stage2_only_fps": 144785.9
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 16,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 295,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_spatial_64_params.pkl"
+        },
+        "M2_spatial_96": {
+          "arch": "M2_spatial_96",
+          "n_params": 521811,
+          "epochs": 240,
+          "batch_size": 32,
+          "lr": 0.002,
+          "kd_weight": 0.25,
+          "best_seed": 1,
+          "best_epoch": 160,
+          "best_calib_occ": 0.09259259259259259,
+          "best_calib_roi_psnr": 28.862676824187822,
+          "train_time_s": 96.72,
+          "cal_scale": 0.9997734427452087,
+          "gate_uncal": {
+            "psnr_db": 37.88676374946059,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 24.052695831054592,
+            "ssim": 0.9877769142697653,
+            "msssim": 0.9906875968765304,
+            "lum_rel": 0.0002033725464951619,
+            "roi_psnr_db": 30.00870451774562,
+            "roi_edge_px": 0.17899219173705205,
+            "roi_occ_mismatch": 0.02857142857142857,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_cal": {
+            "psnr_db": 37.88729366031625,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 24.053225741910254,
+            "ssim": 0.9877743745593802,
+            "msssim": 0.9906874428697525,
+            "lum_rel": -2.3240071074237534e-05,
+            "roi_psnr_db": 30.008868634582875,
+            "roi_edge_px": 0.17899219173705205,
+            "roi_occ_mismatch": 0.02857142857142857,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_apply": {
+            "psnr_db": 37.8872884687449,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 24.0532205503389,
+            "ssim": 0.9877743692510741,
+            "msssim": 0.9906874393142981,
+            "lum_rel": -2.3240071074237534e-05,
+            "roi_psnr_db": 30.00886602563515,
+            "roi_edge_px": 0.17899219173705205,
+            "roi_occ_mismatch": 0.02857142857142857,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 12.311,
+              "stage2_only_fps": 83174.9
+            },
+            "B2048": {
+              "stage2_ms": 24.905,
+              "stage2_only_fps": 82233.9
+            },
+            "B4096": {
+              "stage2_ms": 49.894,
+              "stage2_only_fps": 82094.3
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 16,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 295,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_spatial_96_params.pkl"
+        },
+        "M2_convnext_lite": {
+          "arch": "M2_convnext_lite",
+          "n_params": 511267,
+          "epochs": 240,
+          "batch_size": 32,
+          "lr": 0.002,
+          "kd_weight": 0.25,
+          "best_seed": 2,
+          "best_epoch": 160,
+          "best_calib_occ": 0.07407407407407407,
+          "best_calib_roi_psnr": 28.375729611290495,
+          "train_time_s": 79.74,
+          "cal_scale": 0.9998151063919067,
+          "gate_uncal": {
+            "psnr_db": 37.307330377516614,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.473262459110614,
+            "ssim": 0.9866996615644926,
+            "msssim": 0.9898855569501036,
+            "lum_rel": 0.0003943796212113604,
+            "roi_psnr_db": 29.273653735088054,
+            "roi_edge_px": 0.16880169956129976,
+            "roi_occ_mismatch": 0.014285714285714285,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_cal": {
+            "psnr_db": 37.3078691037259,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.4738011853199,
+            "ssim": 0.986699980715486,
+            "msssim": 0.9898853759477049,
+            "lum_rel": 0.00020933603643125132,
+            "roi_psnr_db": 29.273667011217682,
+            "roi_edge_px": 0.16880169956129976,
+            "roi_occ_mismatch": 0.014285714285714285,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_apply": {
+            "psnr_db": 37.3078691037259,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.4738011853199,
+            "ssim": 0.986699980715486,
+            "msssim": 0.9898853759477049,
+            "lum_rel": 0.00020933603643125132,
+            "roi_psnr_db": 29.273667011217682,
+            "roi_edge_px": 0.16880169956129976,
+            "roi_occ_mismatch": 0.014285714285714285,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 7.61,
+              "stage2_only_fps": 134551.4
+            },
+            "B2048": {
+              "stage2_ms": 15.142,
+              "stage2_only_fps": 135253.9
+            },
+            "B4096": {
+              "stage2_ms": 30.412,
+              "stage2_only_fps": 134684.7
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 13,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 423,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_convnext_lite_params.pkl"
+        }
+      }
+    },
+    "v3_w4_final_batch1.json": {
+      "backend": "tpu",
+      "device_kind": "TPU v5",
+      "M2_spatial_128_teacher": {
+        "arch": "M2_spatial_128",
+        "n_params": 922051,
+        "cal_scale": 0.9998908042907715,
+        "gate_cal": {
+          "psnr_db": 38.35318249851903,
+          "stage1_psnr_db": 13.834067918406001,
+          "psnr_gain_db": 24.519114580113033,
+          "ssim": 0.9889277995092524,
+          "msssim": 0.9915584872699682,
+          "lum_rel": 0.00032220385330905543,
+          "roi_psnr_db": 30.30811784035627,
+          "roi_edge_px": 0.1572078849421814,
+          "roi_occ_mismatch": 0.007142857142857143,
+          "passed": true,
+          "thresholds": {
+            "psnr_min": 30.0,
+            "psnr_gain_min": 4.0,
+            "ssim_min": 0.94,
+            "msssim_min": 0.96,
+            "lum_rel_max": 0.005,
+            "roi_psnr_min": 28.0,
+            "roi_edge_px_max": 1.0,
+            "roi_occ_mismatch_max": 0.01
+          }
+        },
+        "stage2_bench_1c": {
+          "B1024": {
+            "stage2_ms": 18.922,
+            "stage2_only_fps": 54115.8
+          },
+          "B2048": {
+            "stage2_ms": 37.938,
+            "stage2_only_fps": 53982.9
+          },
+          "B4096": {
+            "stage2_ms": 75.681,
+            "stage2_only_fps": 54122.1
+          },
+          "hlo_ops": {
+            "host_callbacks": 0,
+            "dot_ops": 0,
+            "conv_ops": 16,
+            "while_ops": 0,
+            "gather_ops": 0,
+            "custom_calls": 0,
+            "hlo_lines": 295,
+            "send_recv_ops": 0
+          }
+        }
+      },
+      "candidates": {
+        "M2_spatial_64": {
+          "arch": "M2_spatial_64",
+          "n_params": 234723,
+          "epochs": 240,
+          "batch_size": 32,
+          "lr": 0.002,
+          "kd_weight": 0.3,
+          "best_seed": 2,
+          "best_epoch": 240,
+          "best_calib_occ": 0.12962962962962962,
+          "best_calib_roi_psnr": 28.430875082990656,
+          "train_time_s": 95.07,
+          "cal_scale": 0.998821496963501,
+          "gate_uncal": {
+            "psnr_db": 37.48709018926773,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.653022270861733,
+            "ssim": 0.9866764640694421,
+            "msssim": 0.9899034745661354,
+            "lum_rel": 0.0009603849748467397,
+            "roi_psnr_db": 29.568333057078547,
+            "roi_edge_px": 0.18328417802695185,
+            "roi_occ_mismatch": 0.02142857142857143,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_cal": {
+            "psnr_db": 37.49327068331395,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.659202764907953,
+            "ssim": 0.9866768219898456,
+            "msssim": 0.9899033581192829,
+            "lum_rel": -0.00021924595353095544,
+            "roi_psnr_db": 29.56766872454565,
+            "roi_edge_px": 0.18328417802695185,
+            "roi_occ_mismatch": 0.02142857142857143,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_apply": {
+            "psnr_db": 37.49327068331395,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.659202764907953,
+            "ssim": 0.9866768219898456,
+            "msssim": 0.9899033581192829,
+            "lum_rel": -0.00021924595353095544,
+            "roi_psnr_db": 29.56766872454565,
+            "roi_edge_px": 0.18328417802695185,
+            "roi_occ_mismatch": 0.02142857142857143,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 7.009,
+              "stage2_only_fps": 146101.9
+            },
+            "B2048": {
+              "stage2_ms": 14.075,
+              "stage2_only_fps": 145504.0
+            },
+            "B4096": {
+              "stage2_ms": 28.274,
+              "stage2_only_fps": 144866.9
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 16,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 295,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_spatial_64_params.pkl"
+        },
+        "M2_spatial_96": {
+          "arch": "M2_spatial_96",
+          "n_params": 521811,
+          "epochs": 240,
+          "batch_size": 32,
+          "lr": 0.002,
+          "kd_weight": 0.3,
+          "best_seed": 1,
+          "best_epoch": 240,
+          "best_calib_occ": 0.1111111111111111,
+          "best_calib_roi_psnr": 28.373711620951912,
+          "train_time_s": 98.18,
+          "cal_scale": 0.9996867775917053,
+          "gate_uncal": {
+            "psnr_db": 37.717544847438106,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.883476929032106,
+            "ssim": 0.9873233253826353,
+            "msssim": 0.9902804849960447,
+            "lum_rel": 0.00046260896195016166,
+            "roi_psnr_db": 29.82617352471696,
+            "roi_edge_px": 0.1739718699536752,
+            "roi_occ_mismatch": 0.04285714285714286,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_cal": {
+            "psnr_db": 37.71951641839098,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.88544849998498,
+            "ssim": 0.9873229701392171,
+            "msssim": 0.9902802705688462,
+            "lum_rel": 0.00014917494678234888,
+            "roi_psnr_db": 29.82634666190605,
+            "roi_edge_px": 0.1739718699536752,
+            "roi_occ_mismatch": 0.04285714285714286,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_apply": {
+            "psnr_db": 37.71951283391881,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.885444915512814,
+            "ssim": 0.9873229682462213,
+            "msssim": 0.9902802688351142,
+            "lum_rel": 0.00014926264516379462,
+            "roi_psnr_db": 29.82634282874972,
+            "roi_edge_px": 0.1739718699536752,
+            "roi_occ_mismatch": 0.04285714285714286,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 12.315,
+              "stage2_only_fps": 83148.5
+            },
+            "B2048": {
+              "stage2_ms": 24.935,
+              "stage2_only_fps": 82134.8
+            },
+            "B4096": {
+              "stage2_ms": 49.986,
+              "stage2_only_fps": 81942.5
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 16,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 295,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_spatial_96_params.pkl"
+        },
+        "M2_convnext_lite": {
+          "arch": "M2_convnext_lite",
+          "n_params": 511267,
+          "epochs": 240,
+          "batch_size": 32,
+          "lr": 0.002,
+          "kd_weight": 0.3,
+          "best_seed": 0,
+          "best_epoch": 240,
+          "best_calib_occ": 0.037037037037037035,
+          "best_calib_roi_psnr": 28.091254018690304,
+          "train_time_s": 81.49,
+          "cal_scale": 0.9997386932373047,
+          "gate_uncal": {
+            "psnr_db": 37.43217349353641,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.59810557513041,
+            "ssim": 0.9866267726046897,
+            "msssim": 0.9898485697345819,
+            "lum_rel": -1.359324911887061e-05,
+            "roi_psnr_db": 29.391365502976324,
+            "roi_edge_px": 0.2106198196997866,
+            "roi_occ_mismatch": 0.03571428571428571,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_cal": {
+            "psnr_db": 37.43204029442595,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.597972376019953,
+            "ssim": 0.9866251878656321,
+            "msssim": 0.9898484727526417,
+            "lum_rel": -0.0002749344257277908,
+            "roi_psnr_db": 29.38939682583456,
+            "roi_edge_px": 0.2106198196997866,
+            "roi_occ_mismatch": 0.03571428571428571,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_apply": {
+            "psnr_db": 37.432029698110185,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.597961779704185,
+            "ssim": 0.9866251874029558,
+            "msssim": 0.9898484689060358,
+            "lum_rel": -0.0002749344257277908,
+            "roi_psnr_db": 29.389380552607626,
+            "roi_edge_px": 0.2106198196997866,
+            "roi_occ_mismatch": 0.03571428571428571,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 7.605,
+              "stage2_only_fps": 134640.2
+            },
+            "B2048": {
+              "stage2_ms": 15.138,
+              "stage2_only_fps": 135284.4
+            },
+            "B4096": {
+              "stage2_ms": 30.365,
+              "stage2_only_fps": 134890.9
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 13,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 423,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_convnext_lite_params.pkl"
+        }
+      }
+    },
+    "v3_w4_hinge06.json": {
+      "backend": "tpu",
+      "device_kind": "TPU v5",
+      "M2_spatial_128_teacher": {
+        "arch": "M2_spatial_128",
+        "n_params": 922051,
+        "cal_scale": 0.9998908042907715,
+        "gate_cal": {
+          "psnr_db": 38.35318249851903,
+          "stage1_psnr_db": 13.834067918406001,
+          "psnr_gain_db": 24.519114580113033,
+          "ssim": 0.9889277995092524,
+          "msssim": 0.9915584872699682,
+          "lum_rel": 0.00032220385330905543,
+          "roi_psnr_db": 30.30811784035627,
+          "roi_edge_px": 0.1572078849421814,
+          "roi_occ_mismatch": 0.007142857142857143,
+          "passed": true,
+          "thresholds": {
+            "psnr_min": 30.0,
+            "psnr_gain_min": 4.0,
+            "ssim_min": 0.94,
+            "msssim_min": 0.96,
+            "lum_rel_max": 0.005,
+            "roi_psnr_min": 28.0,
+            "roi_edge_px_max": 1.0,
+            "roi_occ_mismatch_max": 0.01
+          }
+        },
+        "stage2_bench_1c": {
+          "B1024": {
+            "stage2_ms": 18.92,
+            "stage2_only_fps": 54122.4
+          },
+          "B2048": {
+            "stage2_ms": 37.93,
+            "stage2_only_fps": 53994.5
+          },
+          "B4096": {
+            "stage2_ms": 75.672,
+            "stage2_only_fps": 54128.3
+          },
+          "hlo_ops": {
+            "host_callbacks": 0,
+            "dot_ops": 0,
+            "conv_ops": 16,
+            "while_ops": 0,
+            "gather_ops": 0,
+            "custom_calls": 0,
+            "hlo_lines": 295,
+            "send_recv_ops": 0
+          }
+        }
+      },
+      "candidates": {
+        "M2_spatial_64": {
+          "arch": "M2_spatial_64",
+          "n_params": 234723,
+          "epochs": 240,
+          "batch_size": 32,
+          "lr": 0.002,
+          "kd_weight": 0.15,
+          "train_time_s": 66.27,
+          "cal_scale": 0.9995247721672058,
+          "gate_uncal": {
+            "psnr_db": 37.492334290635405,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.658266372229406,
+            "ssim": 0.9866952355112995,
+            "msssim": 0.9899554683521277,
+            "lum_rel": 0.00037850621417567787,
+            "roi_psnr_db": 29.607528002865426,
+            "roi_edge_px": 0.1802808894426562,
+            "roi_occ_mismatch": 0.02142857142857143,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_cal": {
+            "psnr_db": 37.4954248816922,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.661356963286202,
+            "ssim": 0.9866956875783669,
+            "msssim": 0.9899555976694111,
+            "lum_rel": -9.681901307923013e-05,
+            "roi_psnr_db": 29.60669856362299,
+            "roi_edge_px": 0.1802808894426562,
+            "roi_occ_mismatch": 0.02142857142857143,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_apply": {
+            "psnr_db": 37.49538910960474,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.661321191198738,
+            "ssim": 0.9866956690293464,
+            "msssim": 0.9899555773636087,
+            "lum_rel": -9.681901307923013e-05,
+            "roi_psnr_db": 29.606641623342238,
+            "roi_edge_px": 0.1802808894426562,
+            "roi_occ_mismatch": 0.02142857142857143,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 7.014,
+              "stage2_only_fps": 146001.3
+            },
+            "B2048": {
+              "stage2_ms": 14.071,
+              "stage2_only_fps": 145545.5
+            },
+            "B4096": {
+              "stage2_ms": 28.347,
+              "stage2_only_fps": 144492.5
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 16,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 295,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_spatial_64_params.pkl"
+        },
+        "M2_spatial_64_h64": {
+          "arch": "M2_spatial_64_h64",
+          "n_params": 239747,
+          "epochs": 240,
+          "batch_size": 32,
+          "lr": 0.002,
+          "kd_weight": 0.15,
+          "train_time_s": 64.85,
+          "cal_scale": 0.9996276497840881,
+          "gate_uncal": {
+            "psnr_db": 37.59209844314794,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.75803052474194,
+            "ssim": 0.9873614732796344,
+            "msssim": 0.9904314170398878,
+            "lum_rel": 7.19126727581898e-05,
+            "roi_psnr_db": 29.559238066905436,
+            "roi_edge_px": 0.18292817956535146,
+            "roi_occ_mismatch": 0.04285714285714286,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_cal": {
+            "psnr_db": 37.59093564718838,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.75686772878238,
+            "ssim": 0.9873597133368198,
+            "msssim": 0.9904311489989766,
+            "lum_rel": -0.00030045465471872923,
+            "roi_psnr_db": 29.559128546616442,
+            "roi_edge_px": 0.18292817956535146,
+            "roi_occ_mismatch": 0.04285714285714286,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_apply": {
+            "psnr_db": 37.59092858912076,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.756860670714758,
+            "ssim": 0.987359705944208,
+            "msssim": 0.9904311441537217,
+            "lum_rel": -0.00030045465471872923,
+            "roi_psnr_db": 29.5591191223526,
+            "roi_edge_px": 0.18292817956535146,
+            "roi_occ_mismatch": 0.04285714285714286,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 7.303,
+              "stage2_only_fps": 140221.6
+            },
+            "B2048": {
+              "stage2_ms": 14.622,
+              "stage2_only_fps": 140059.2
+            },
+            "B4096": {
+              "stage2_ms": 29.418,
+              "stage2_only_fps": 139234.1
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 16,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 300,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_spatial_64_h64_params.pkl"
+        },
+        "M2_spatial_96": {
+          "arch": "M2_spatial_96",
+          "n_params": 521811,
+          "epochs": 240,
+          "batch_size": 32,
+          "lr": 0.002,
+          "kd_weight": 0.15,
+          "train_time_s": 62.63,
+          "cal_scale": 0.9999139308929443,
+          "gate_uncal": {
+            "psnr_db": 37.9526949568073,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 24.1186270384013,
+            "ssim": 0.9882111048342984,
+            "msssim": 0.9909988210980568,
+            "lum_rel": 0.00022880507710487663,
+            "roi_psnr_db": 29.922240074152214,
+            "roi_edge_px": 0.17976216127863154,
+            "roi_occ_mismatch": 0.05,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_cal": {
+            "psnr_db": 37.953003194500475,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 24.118935276094476,
+            "ssim": 0.9882110929277949,
+            "msssim": 0.9909987522855288,
+            "lum_rel": 0.00014277296493925284,
+            "roi_psnr_db": 29.922444870819387,
+            "roi_edge_px": 0.17976216127863154,
+            "roi_occ_mismatch": 0.05,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_apply": {
+            "psnr_db": 37.95299786945591,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 24.118929951049914,
+            "ssim": 0.988211090596006,
+            "msssim": 0.9909987489089828,
+            "lum_rel": 0.00014277296493925284,
+            "roi_psnr_db": 29.92243667012382,
+            "roi_edge_px": 0.17976216127863154,
+            "roi_occ_mismatch": 0.05,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 12.318,
+              "stage2_only_fps": 83129.8
+            },
+            "B2048": {
+              "stage2_ms": 24.923,
+              "stage2_only_fps": 82174.5
+            },
+            "B4096": {
+              "stage2_ms": 50.108,
+              "stage2_only_fps": 81744.1
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 16,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 295,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_spatial_96_params.pkl"
+        }
+      }
+    },
+    "v3_w4_pareto_runA.json": {
+      "backend": "tpu",
+      "device_kind": "TPU v5",
+      "M2_spatial_128_teacher": {
+        "arch": "M2_spatial_128",
+        "n_params": 922051,
+        "cal_scale": 0.9998908042907715,
+        "gate_cal": {
+          "psnr_db": 38.35318249851903,
+          "stage1_psnr_db": 13.834067918406001,
+          "psnr_gain_db": 24.519114580113033,
+          "ssim": 0.9889277995092524,
+          "msssim": 0.9915584872699682,
+          "lum_rel": 0.00032220385330905543,
+          "roi_psnr_db": 30.30811784035627,
+          "roi_edge_px": 0.1572078849421814,
+          "roi_occ_mismatch": 0.007142857142857143,
+          "passed": true,
+          "thresholds": {
+            "psnr_min": 30.0,
+            "psnr_gain_min": 4.0,
+            "ssim_min": 0.94,
+            "msssim_min": 0.96,
+            "lum_rel_max": 0.005,
+            "roi_psnr_min": 28.0,
+            "roi_edge_px_max": 1.0,
+            "roi_occ_mismatch_max": 0.01
+          }
+        },
+        "stage2_bench_1c": {
+          "B1024": {
+            "stage2_ms": 18.922,
+            "stage2_only_fps": 54115.6
+          },
+          "B2048": {
+            "stage2_ms": 37.938,
+            "stage2_only_fps": 53982.1
+          },
+          "B4096": {
+            "stage2_ms": 75.679,
+            "stage2_only_fps": 54123.1
+          },
+          "hlo_ops": {
+            "host_callbacks": 0,
+            "dot_ops": 0,
+            "conv_ops": 16,
+            "while_ops": 0,
+            "gather_ops": 0,
+            "custom_calls": 0,
+            "hlo_lines": 295,
+            "send_recv_ops": 0
+          }
+        }
+      },
+      "candidates": {
+        "M2_spatial_128_1rb": {
+          "arch": "M2_spatial_128_1rb",
+          "n_params": 553027,
+          "epochs": 240,
+          "batch_size": 32,
+          "lr": 0.002,
+          "kd_weight": 0.25,
+          "best_seed": 2,
+          "best_epoch": 240,
+          "best_calib_occ": 0.14814814814814814,
+          "best_calib_roi_psnr": 29.4659403789344,
+          "train_time_s": 94.93,
+          "cal_scale": 0.9995222091674805,
+          "gate_uncal": {
+            "psnr_db": 37.88140288350312,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 24.04733496509712,
+            "ssim": 0.9877680091828345,
+            "msssim": 0.9904457481937938,
+            "lum_rel": 0.000407972870330342,
+            "roi_psnr_db": 30.22869989952309,
+            "roi_edge_px": 0.16686428885441273,
+            "roi_occ_mismatch": 0.02142857142857143,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_cal": {
+            "psnr_db": 37.88417756787359,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 24.050109649467593,
+            "ssim": 0.9877672795750585,
+            "msssim": 0.9904456163309803,
+            "lum_rel": -6.99833083670498e-05,
+            "roi_psnr_db": 30.229061670879034,
+            "roi_edge_px": 0.16686428885441273,
+            "roi_occ_mismatch": 0.02142857142857143,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_apply": {
+            "psnr_db": 37.88417592930703,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 24.050108010901027,
+            "ssim": 0.9877672742144252,
+            "msssim": 0.9904456125153402,
+            "lum_rel": -6.99833083670498e-05,
+            "roi_psnr_db": 30.229061670879034,
+            "roi_edge_px": 0.16686428885441273,
+            "roi_occ_mismatch": 0.02142857142857143,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 14.886,
+              "stage2_only_fps": 68790.8
+            },
+            "B2048": {
+              "stage2_ms": 29.879,
+              "stage2_only_fps": 68543.7
+            },
+            "B4096": {
+              "stage2_ms": 59.61,
+              "stage2_only_fps": 68713.2
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 12,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 264,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_spatial_128_1rb_params.pkl"
+        },
+        "M2_v3_fast_64": {
+          "arch": "M2_v3_fast_64",
+          "n_params": 129891,
+          "epochs": 240,
+          "batch_size": 32,
+          "lr": 0.002,
+          "kd_weight": 0.25,
+          "best_seed": 2,
+          "best_epoch": 240,
+          "best_calib_occ": 0.018518518518518517,
+          "best_calib_roi_psnr": 28.708623580334635,
+          "train_time_s": 79.51,
+          "cal_scale": 0.9984354376792908,
+          "gate_uncal": {
+            "psnr_db": 36.59842083645488,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 22.76435291804888,
+            "ssim": 0.9838893886858112,
+            "msssim": 0.987360403611341,
+            "lum_rel": 0.0013871252987993632,
+            "roi_psnr_db": 29.385729448422317,
+            "roi_edge_px": 0.20361688829143532,
+            "roi_occ_mismatch": 0.04285714285714286,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_cal": {
+            "psnr_db": 36.61644097729952,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 22.78237305889352,
+            "ssim": 0.9838928298897267,
+            "msssim": 0.9873608779496376,
+            "lum_rel": -0.0001795185867511373,
+            "roi_psnr_db": 29.390918461336334,
+            "roi_edge_px": 0.20361688829143532,
+            "roi_occ_mismatch": 0.04285714285714286,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_apply": {
+            "psnr_db": 36.61644097729952,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 22.78237305889352,
+            "ssim": 0.9838928298897267,
+            "msssim": 0.9873608779496376,
+            "lum_rel": -0.0001795185867511373,
+            "roi_psnr_db": 29.390918461336334,
+            "roi_edge_px": 0.20361688829143532,
+            "roi_occ_mismatch": 0.04285714285714286,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 5.344,
+              "stage2_only_fps": 191623.4
+            },
+            "B2048": {
+              "stage2_ms": 10.556,
+              "stage2_only_fps": 194009.8
+            },
+            "B4096": {
+              "stage2_ms": 21.278,
+              "stage2_only_fps": 192502.7
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 9,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 247,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_v3_fast_64_params.pkl"
+        },
+        "M2_v3_fast_96": {
+          "arch": "M2_v3_fast_96",
+          "n_params": 274803,
+          "epochs": 240,
+          "batch_size": 32,
+          "lr": 0.002,
+          "kd_weight": 0.25,
+          "best_seed": 2,
+          "best_epoch": 240,
+          "best_calib_occ": 0.07407407407407407,
+          "best_calib_roi_psnr": 28.82191892966652,
+          "train_time_s": 86.3,
+          "cal_scale": 0.9987453818321228,
+          "gate_uncal": {
+            "psnr_db": 37.06483465807161,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.23076673966561,
+            "ssim": 0.9848799404769811,
+            "msssim": 0.9882548507657528,
+            "lum_rel": 0.0008200675645870792,
+            "roi_psnr_db": 29.65962499365521,
+            "roi_edge_px": 0.18373402178985998,
+            "roi_occ_mismatch": 0.03571428571428571,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_cal": {
+            "psnr_db": 37.0678087823578,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.2337408639518,
+            "ssim": 0.9848808766975944,
+            "msssim": 0.9882553029427357,
+            "lum_rel": -0.0004355978604752009,
+            "roi_psnr_db": 29.657317030113713,
+            "roi_edge_px": 0.18373402178985998,
+            "roi_occ_mismatch": 0.03571428571428571,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_apply": {
+            "psnr_db": 37.0677727536758,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.233704835269798,
+            "ssim": 0.9848808491894147,
+            "msssim": 0.9882552675816785,
+            "lum_rel": -0.0004355978604752009,
+            "roi_psnr_db": 29.6572536243568,
+            "roi_edge_px": 0.18373402178985998,
+            "roi_occ_mismatch": 0.03571428571428571,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 8.318,
+              "stage2_only_fps": 123099.1
+            },
+            "B2048": {
+              "stage2_ms": 16.599,
+              "stage2_only_fps": 123383.2
+            },
+            "B4096": {
+              "stage2_ms": 33.44,
+              "stage2_only_fps": 122487.4
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 9,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 247,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_v3_fast_96_params.pkl"
+        }
+      }
+    },
+    "v3_w4_s2d_batch.json": {
+      "backend": "tpu",
+      "device_kind": "TPU v5",
+      "M2_spatial_128_teacher": {
+        "arch": "M2_spatial_128",
+        "n_params": 922051,
+        "cal_scale": 0.9998908042907715,
+        "gate_cal": {
+          "psnr_db": 38.35318249851903,
+          "stage1_psnr_db": 13.834067918406001,
+          "psnr_gain_db": 24.519114580113033,
+          "ssim": 0.9889277995092524,
+          "msssim": 0.9915584872699682,
+          "lum_rel": 0.00032220385330905543,
+          "roi_psnr_db": 30.30811784035627,
+          "roi_edge_px": 0.1572078849421814,
+          "roi_occ_mismatch": 0.007142857142857143,
+          "passed": true,
+          "thresholds": {
+            "psnr_min": 30.0,
+            "psnr_gain_min": 4.0,
+            "ssim_min": 0.94,
+            "msssim_min": 0.96,
+            "lum_rel_max": 0.005,
+            "roi_psnr_min": 28.0,
+            "roi_edge_px_max": 1.0,
+            "roi_occ_mismatch_max": 0.01
+          }
+        },
+        "stage2_bench_1c": {
+          "B1024": {
+            "stage2_ms": 18.923,
+            "stage2_only_fps": 54113.5
+          },
+          "B2048": {
+            "stage2_ms": 37.94,
+            "stage2_only_fps": 53979.5
+          },
+          "B4096": {
+            "stage2_ms": 75.671,
+            "stage2_only_fps": 54128.8
+          },
+          "hlo_ops": {
+            "host_callbacks": 0,
+            "dot_ops": 0,
+            "conv_ops": 16,
+            "while_ops": 0,
+            "gather_ops": 0,
+            "custom_calls": 0,
+            "hlo_lines": 295,
+            "send_recv_ops": 0
+          }
+        }
+      },
+      "candidates": {
+        "M2_s2d_mxu_128": {
+          "arch": "M2_s2d_mxu_128",
+          "n_params": 1184707,
+          "epochs": 240,
+          "batch_size": 32,
+          "lr": 0.002,
+          "kd_weight": 0.25,
+          "best_seed": 1,
+          "best_epoch": 240,
+          "best_calib_occ": 0.09259259259259259,
+          "best_calib_roi_psnr": 28.487066299894867,
+          "train_time_s": 85.32,
+          "cal_scale": 1.0000003576278687,
+          "gate_uncal": {
+            "psnr_db": 37.806097484385354,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.972029565979355,
+            "ssim": 0.9878805882840216,
+            "msssim": 0.9909817097617775,
+            "lum_rel": -0.00037280581938392565,
+            "roi_psnr_db": 29.612371899227526,
+            "roi_edge_px": 0.15525791243999265,
+            "roi_occ_mismatch": 0.02857142857142857,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_cal": {
+            "psnr_db": 37.80609992418182,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.972032005775823,
+            "ssim": 0.987866552428326,
+            "msssim": 0.9909817101770187,
+            "lum_rel": -0.00037236732747691903,
+            "roi_psnr_db": 29.612372720871853,
+            "roi_edge_px": 0.15525791243999265,
+            "roi_occ_mismatch": 0.02857142857142857,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_apply": {
+            "psnr_db": 37.80609992418182,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.972032005775823,
+            "ssim": 0.987866552428326,
+            "msssim": 0.9909817101770187,
+            "lum_rel": -0.00037236732747691903,
+            "roi_psnr_db": 29.612372720871853,
+            "roi_edge_px": 0.15525791243999265,
+            "roi_occ_mismatch": 0.02857142857142857,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 37.506,
+              "stage2_only_fps": 27302.4
+            },
+            "B2048": {
+              "stage2_ms": 39.187,
+              "stage2_only_fps": 52262.6
+            },
+            "B4096": {
+              "stage2_ms": 78.406,
+              "stage2_only_fps": 52241.1
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 12,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 276,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_s2d_mxu_128_params.pkl"
+        },
+        "M2_s2d_mxu_64": {
+          "arch": "M2_s2d_mxu_64",
+          "n_params": 591427,
+          "epochs": 240,
+          "batch_size": 32,
+          "lr": 0.002,
+          "kd_weight": 0.25,
+          "best_seed": 2,
+          "best_epoch": 240,
+          "best_calib_occ": 0.09259259259259259,
+          "best_calib_roi_psnr": 28.179944746617394,
+          "train_time_s": 78.74,
+          "cal_scale": 0.9999996423721313,
+          "gate_uncal": {
+            "psnr_db": 37.22702979785793,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.39296187945193,
+            "ssim": 0.9863146770540215,
+            "msssim": 0.9897859279524088,
+            "lum_rel": 0.00042402167412869396,
+            "roi_psnr_db": 29.026307404104628,
+            "roi_edge_px": 0.1962455610919278,
+            "roi_occ_mismatch": 0.02142857142857143,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_cal": {
+            "psnr_db": 37.227031371213045,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.392963452807045,
+            "ssim": 0.9863213669682249,
+            "msssim": 0.9897859271460953,
+            "lum_rel": 0.00042367088060313307,
+            "roi_psnr_db": 29.02630846095686,
+            "roi_edge_px": 0.1962455610919278,
+            "roi_occ_mismatch": 0.02142857142857143,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_apply": {
+            "psnr_db": 37.22703137074455,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.39296345233855,
+            "ssim": 0.9863213669719842,
+            "msssim": 0.9897859271472975,
+            "lum_rel": 0.00042367088060313307,
+            "roi_psnr_db": 29.02630846095686,
+            "roi_edge_px": 0.1962455610919278,
+            "roi_occ_mismatch": 0.02142857142857143,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 4.934,
+              "stage2_only_fps": 207528.6
+            },
+            "B2048": {
+              "stage2_ms": 9.833,
+              "stage2_only_fps": 208288.1
+            },
+            "B4096": {
+              "stage2_ms": 19.506,
+              "stage2_only_fps": 209983.3
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 12,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 276,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_s2d_mxu_64_params.pkl"
+        },
+        "M2_unet_compact_64": {
+          "arch": "M2_unet_compact_64",
+          "n_params": 475011,
+          "epochs": 240,
+          "batch_size": 32,
+          "lr": 0.002,
+          "kd_weight": 0.25,
+          "best_seed": 1,
+          "best_epoch": 240,
+          "best_calib_occ": 0.09259259259259259,
+          "best_calib_roi_psnr": 29.13387334333987,
+          "train_time_s": 78.06,
+          "cal_scale": 0.9992343783378601,
+          "gate_uncal": {
+            "psnr_db": 37.36317389957089,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.52910598116489,
+            "ssim": 0.9857016345346986,
+            "msssim": 0.9888311387684449,
+            "lum_rel": 0.0007032533205457714,
+            "roi_psnr_db": 29.936806530840734,
+            "roi_edge_px": 0.18678631813963875,
+            "roi_occ_mismatch": 0.02142857142857143,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_cal": {
+            "psnr_db": 37.367801653221974,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.533733734815975,
+            "ssim": 0.9857014557059216,
+            "msssim": 0.9888318430111579,
+            "lum_rel": -6.296743785405567e-05,
+            "roi_psnr_db": 29.936689370403478,
+            "roi_edge_px": 0.18678631813963875,
+            "roi_occ_mismatch": 0.02142857142857143,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_apply": {
+            "psnr_db": 37.36779500639622,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.533727087990222,
+            "ssim": 0.9857014521157539,
+            "msssim": 0.9888318389081313,
+            "lum_rel": -6.296743785405567e-05,
+            "roi_psnr_db": 29.936677619094908,
+            "roi_edge_px": 0.18678631813963875,
+            "roi_occ_mismatch": 0.02142857142857143,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 13.192,
+              "stage2_only_fps": 77621.3
+            },
+            "B2048": {
+              "stage2_ms": 26.393,
+              "stage2_only_fps": 77596.8
+            },
+            "B4096": {
+              "stage2_ms": 52.62,
+              "stage2_only_fps": 77841.7
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 9,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 241,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_unet_compact_64_params.pkl"
+        }
+      }
+    },
+    "v3_w4_train_summary.json": {
+      "backend": "tpu",
+      "device_kind": "TPU v5",
+      "M2_spatial_128_teacher": {
+        "arch": "M2_spatial_128",
+        "n_params": 922051,
+        "cal_scale": 0.9998908042907715,
+        "gate_cal": {
+          "psnr_db": 38.35318249851903,
+          "stage1_psnr_db": 13.834067918406001,
+          "psnr_gain_db": 24.519114580113033,
+          "ssim": 0.9889277995092524,
+          "msssim": 0.9915584872699682,
+          "lum_rel": 0.00032220385330905543,
+          "roi_psnr_db": 30.30811784035627,
+          "roi_edge_px": 0.1572078849421814,
+          "roi_occ_mismatch": 0.007142857142857143,
+          "passed": true,
+          "thresholds": {
+            "psnr_min": 30.0,
+            "psnr_gain_min": 4.0,
+            "ssim_min": 0.94,
+            "msssim_min": 0.96,
+            "lum_rel_max": 0.005,
+            "roi_psnr_min": 28.0,
+            "roi_edge_px_max": 1.0,
+            "roi_occ_mismatch_max": 0.01
+          }
+        },
+        "stage2_bench_1c": {
+          "B1024": {
+            "stage2_ms": 18.921,
+            "stage2_only_fps": 54120.2
+          },
+          "B2048": {
+            "stage2_ms": 37.941,
+            "stage2_only_fps": 53978.4
+          },
+          "B4096": {
+            "stage2_ms": 75.674,
+            "stage2_only_fps": 54127.2
+          },
+          "hlo_ops": {
+            "host_callbacks": 0,
+            "dot_ops": 0,
+            "conv_ops": 16,
+            "while_ops": 0,
+            "gather_ops": 0,
+            "custom_calls": 0,
+            "hlo_lines": 295,
+            "send_recv_ops": 0
+          }
+        }
+      },
+      "candidates": {
+        "M2_spatial_64": {
+          "arch": "M2_spatial_64",
+          "n_params": 234723,
+          "epochs": 280,
+          "batch_size": 16,
+          "lr": 0.002,
+          "kd_weight": 0.15,
+          "train_time_s": 63.68,
+          "cal_scale": 0.999812662601471,
+          "gate_uncal": {
+            "psnr_db": 37.366925688074204,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.532857769668205,
+            "ssim": 0.9866963067500011,
+            "msssim": 0.9898137150303674,
+            "lum_rel": 0.00032351932903029734,
+            "roi_psnr_db": 29.381619382955833,
+            "roi_edge_px": 0.21226097689941525,
+            "roi_occ_mismatch": 0.03571428571428571,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_cal": {
+            "psnr_db": 37.36743674830378,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.533368829897782,
+            "ssim": 0.9866969372628352,
+            "msssim": 0.9898136120098551,
+            "lum_rel": 0.00013610788795204165,
+            "roi_psnr_db": 29.38162364885113,
+            "roi_edge_px": 0.21226097689941525,
+            "roi_occ_mismatch": 0.03571428571428571,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_apply": {
+            "psnr_db": 37.36742661510546,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.53335869669946,
+            "ssim": 0.9866969325362621,
+            "msssim": 0.9898136056931468,
+            "lum_rel": 0.00013610788795204165,
+            "roi_psnr_db": 29.381607881876434,
+            "roi_edge_px": 0.21226097689941525,
+            "roi_occ_mismatch": 0.03571428571428571,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 7.0,
+              "stage2_only_fps": 146295.7
+            },
+            "B2048": {
+              "stage2_ms": 14.072,
+              "stage2_only_fps": 145539.2
+            },
+            "B4096": {
+              "stage2_ms": 28.267,
+              "stage2_only_fps": 144906.3
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 16,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 295,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_spatial_64_params.pkl"
+        },
+        "M2_unet_compact_64": {
+          "arch": "M2_unet_compact_64",
+          "n_params": 475011,
+          "epochs": 280,
+          "batch_size": 16,
+          "lr": 0.002,
+          "kd_weight": 0.15,
+          "train_time_s": 57.42,
+          "cal_scale": 0.9992325305938721,
+          "gate_uncal": {
+            "psnr_db": 37.45909284971141,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.62502493130541,
+            "ssim": 0.9859513130770727,
+            "msssim": 0.9890658436468815,
+            "lum_rel": 0.0005951212162642605,
+            "roi_psnr_db": 29.883592507232926,
+            "roi_edge_px": 0.1726886117248796,
+            "roi_occ_mismatch": 0.05714285714285714,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_cal": {
+            "psnr_db": 37.462398306827616,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.628330388421617,
+            "ssim": 0.9859522910414019,
+            "msssim": 0.9890663771902184,
+            "lum_rel": -0.00017285350976381508,
+            "roi_psnr_db": 29.885760209604012,
+            "roi_edge_px": 0.1726886117248796,
+            "roi_occ_mismatch": 0.05,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_apply": {
+            "psnr_db": 37.46236644828775,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.628298529881754,
+            "ssim": 0.9859522581285497,
+            "msssim": 0.9890663480916824,
+            "lum_rel": -0.00017285350976381508,
+            "roi_psnr_db": 29.885712022112525,
+            "roi_edge_px": 0.1726886117248796,
+            "roi_occ_mismatch": 0.05,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 13.194,
+              "stage2_only_fps": 77609.9
+            },
+            "B2048": {
+              "stage2_ms": 26.393,
+              "stage2_only_fps": 77597.0
+            },
+            "B4096": {
+              "stage2_ms": 52.615,
+              "stage2_only_fps": 77848.6
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 9,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 241,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_unet_compact_64_params.pkl"
+        },
+        "M2_convnext_lite": {
+          "arch": "M2_convnext_lite",
+          "n_params": 511267,
+          "epochs": 280,
+          "batch_size": 16,
+          "lr": 0.002,
+          "kd_weight": 0.15,
+          "train_time_s": 58.78,
+          "cal_scale": 0.9996588826179504,
+          "gate_uncal": {
+            "psnr_db": 36.856462357270594,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.022394438864595,
+            "ssim": 0.985279205420594,
+            "msssim": 0.9885940005281187,
+            "lum_rel": 0.0002251217450854881,
+            "roi_psnr_db": 28.83841870935765,
+            "roi_edge_px": 0.21385539424954914,
+            "roi_occ_mismatch": 0.02142857142857143,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_cal": {
+            "psnr_db": 36.85744983292869,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.023381914522687,
+            "ssim": 0.985279711003912,
+            "msssim": 0.9885939462185047,
+            "lum_rel": -0.00011602495860851825,
+            "roi_psnr_db": 28.83816124177916,
+            "roi_edge_px": 0.21385539424954914,
+            "roi_occ_mismatch": 0.02142857142857143,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_apply": {
+            "psnr_db": 36.85744161913322,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.02337370072722,
+            "ssim": 0.9852797062763461,
+            "msssim": 0.9885939420600888,
+            "lum_rel": -0.00011602495860851825,
+            "roi_psnr_db": 28.83814855947335,
+            "roi_edge_px": 0.21385539424954914,
+            "roi_occ_mismatch": 0.02142857142857143,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 7.604,
+              "stage2_only_fps": 134671.7
+            },
+            "B2048": {
+              "stage2_ms": 15.129,
+              "stage2_only_fps": 135368.2
+            },
+            "B4096": {
+              "stage2_ms": 30.354,
+              "stage2_only_fps": 134940.2
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 13,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 423,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_convnext_lite_params.pkl"
+        },
+        "M2_edgegate_64": {
+          "arch": "M2_edgegate_64",
+          "n_params": 240547,
+          "epochs": 220,
+          "batch_size": 32,
+          "lr": 0.002,
+          "kd_weight": 0.2,
+          "train_time_s": 63.94,
+          "cal_scale": 0.9996721744537354,
+          "gate_uncal": {
+            "psnr_db": 37.64859115179358,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.814523233387582,
+            "ssim": 0.9873358729325327,
+            "msssim": 0.9903660710529447,
+            "lum_rel": 0.0002032848481139382,
+            "roi_psnr_db": 29.671224802475198,
+            "roi_edge_px": 0.2013626677216962,
+            "roi_occ_mismatch": 0.02142857142857143,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_cal": {
+            "psnr_db": 37.649908873500365,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.815840955094366,
+            "ssim": 0.9873318704972135,
+            "msssim": 0.9903658749427521,
+            "lum_rel": -0.00012461939998698046,
+            "roi_psnr_db": 29.671970908296586,
+            "roi_edge_px": 0.2013626677216962,
+            "roi_occ_mismatch": 0.02142857142857143,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_apply": {
+            "psnr_db": 37.649906736431056,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.815838818025057,
+            "ssim": 0.9873318698383894,
+            "msssim": 0.9903658740823105,
+            "lum_rel": -0.00012461939998698046,
+            "roi_psnr_db": 29.67196757703933,
+            "roi_edge_px": 0.2013626677216962,
+            "roi_occ_mismatch": 0.02142857142857143,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 7.593,
+              "stage2_only_fps": 134868.1
+            },
+            "B2048": {
+              "stage2_ms": 15.226,
+              "stage2_only_fps": 134508.6
+            },
+            "B4096": {
+              "stage2_ms": 30.558,
+              "stage2_only_fps": 134038.4
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 17,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 315,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_edgegate_64_params.pkl"
+        },
+        "M2_convnext_edge": {
+          "arch": "M2_convnext_edge",
+          "n_params": 513667,
+          "epochs": 220,
+          "batch_size": 32,
+          "lr": 0.002,
+          "kd_weight": 0.2,
+          "train_time_s": 60.05,
+          "cal_scale": 0.999788224697113,
+          "gate_uncal": {
+            "psnr_db": 37.73160033523152,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.89753241682552,
+            "ssim": 0.9876637283051727,
+            "msssim": 0.9906649396516134,
+            "lum_rel": 0.00014540391638173666,
+            "roi_psnr_db": 29.738501635408902,
+            "roi_edge_px": 0.21246605680789798,
+            "roi_occ_mismatch": 0.04285714285714286,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_cal": {
+            "psnr_db": 37.73117915952601,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.897111241120008,
+            "ssim": 0.9876604560929826,
+            "msssim": 0.990664761597464,
+            "lum_rel": -6.6387674729107e-05,
+            "roi_psnr_db": 29.738090310254115,
+            "roi_edge_px": 0.21246605680789798,
+            "roi_occ_mismatch": 0.04285714285714286,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_apply": {
+            "psnr_db": 37.7311791609949,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.8971112425889,
+            "ssim": 0.9876604570460238,
+            "msssim": 0.9906647621712745,
+            "lum_rel": -6.6387674729107e-05,
+            "roi_psnr_db": 29.738090310254115,
+            "roi_edge_px": 0.21246605680789798,
+            "roi_occ_mismatch": 0.04285714285714286,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 9.002,
+              "stage2_only_fps": 113757.8
+            },
+            "B2048": {
+              "stage2_ms": 17.93,
+              "stage2_only_fps": 114221.3
+            },
+            "B4096": {
+              "stage2_ms": 36.155,
+              "stage2_only_fps": 113291.2
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 14,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 439,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_convnext_edge_params.pkl"
+        },
+        "M2_spatial_96": {
+          "arch": "M2_spatial_96",
+          "n_params": 521811,
+          "epochs": 220,
+          "batch_size": 32,
+          "lr": 0.002,
+          "kd_weight": 0.2,
+          "train_time_s": 63.16,
+          "cal_scale": 0.9997982382774353,
+          "gate_uncal": {
+            "psnr_db": 37.989649835039124,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 24.155581916633125,
+            "ssim": 0.9880493289402938,
+            "msssim": 0.9909112854949886,
+            "lum_rel": 0.0002261741256623928,
+            "roi_psnr_db": 30.0090328391278,
+            "roi_edge_px": 0.19621415718575008,
+            "roi_occ_mismatch": 0.05,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_cal": {
+            "psnr_db": 37.9915100063586,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 24.157442087952603,
+            "ssim": 0.9880464199077719,
+            "msssim": 0.9909112827401763,
+            "lum_rel": 2.446784841403371e-05,
+            "roi_psnr_db": 30.010086726441813,
+            "roi_edge_px": 0.19621415718575008,
+            "roi_occ_mismatch": 0.05,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_apply": {
+            "psnr_db": 37.991504637732106,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 24.157436719326107,
+            "ssim": 0.988046414946466,
+            "msssim": 0.9909112793059788,
+            "lum_rel": 2.446784841403371e-05,
+            "roi_psnr_db": 30.010086726441813,
+            "roi_edge_px": 0.19621415718575008,
+            "roi_occ_mismatch": 0.05,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 12.312,
+              "stage2_only_fps": 83170.6
+            },
+            "B2048": {
+              "stage2_ms": 24.887,
+              "stage2_only_fps": 82291.7
+            },
+            "B4096": {
+              "stage2_ms": 49.957,
+              "stage2_only_fps": 81990.8
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 16,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 295,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_spatial_96_params.pkl"
+        }
+      }
+    },
+    "v3_w4_v1recipe.json": {
+      "backend": "tpu",
+      "device_kind": "TPU v5",
+      "M2_spatial_128_teacher": {
+        "arch": "M2_spatial_128",
+        "n_params": 922051,
+        "cal_scale": 0.9998908042907715,
+        "gate_cal": {
+          "psnr_db": 38.35318249851903,
+          "stage1_psnr_db": 13.834067918406001,
+          "psnr_gain_db": 24.519114580113033,
+          "ssim": 0.9889277995092524,
+          "msssim": 0.9915584872699682,
+          "lum_rel": 0.00032220385330905543,
+          "roi_psnr_db": 30.30811784035627,
+          "roi_edge_px": 0.1572078849421814,
+          "roi_occ_mismatch": 0.007142857142857143,
+          "passed": true,
+          "thresholds": {
+            "psnr_min": 30.0,
+            "psnr_gain_min": 4.0,
+            "ssim_min": 0.94,
+            "msssim_min": 0.96,
+            "lum_rel_max": 0.005,
+            "roi_psnr_min": 28.0,
+            "roi_edge_px_max": 1.0,
+            "roi_occ_mismatch_max": 0.01
+          }
+        },
+        "stage2_bench_1c": {
+          "B1024": {
+            "stage2_ms": 18.922,
+            "stage2_only_fps": 54116.6
+          },
+          "B2048": {
+            "stage2_ms": 37.937,
+            "stage2_only_fps": 53984.2
+          },
+          "B4096": {
+            "stage2_ms": 75.675,
+            "stage2_only_fps": 54126.1
+          },
+          "hlo_ops": {
+            "host_callbacks": 0,
+            "dot_ops": 0,
+            "conv_ops": 16,
+            "while_ops": 0,
+            "gather_ops": 0,
+            "custom_calls": 0,
+            "hlo_lines": 295,
+            "send_recv_ops": 0
+          }
+        }
+      },
+      "candidates": {
+        "M2_spatial_64": {
+          "arch": "M2_spatial_64",
+          "n_params": 234723,
+          "epochs": 200,
+          "batch_size": 32,
+          "lr": 0.002,
+          "kd_weight": 0.0,
+          "train_time_s": 53.26,
+          "cal_scale": 1.0003143548965454,
+          "gate_uncal": {
+            "psnr_db": 37.42973007826653,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.59566215986053,
+            "ssim": 0.9863369932055791,
+            "msssim": 0.9898508902506417,
+            "lum_rel": -0.0005062827558935945,
+            "roi_psnr_db": 29.392533692634025,
+            "roi_edge_px": 0.18044250019011088,
+            "roi_occ_mismatch": 0.04285714285714286,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_cal": {
+            "psnr_db": 37.42937678645617,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.595308868050168,
+            "ssim": 0.9863334940242853,
+            "msssim": 0.9898507803504977,
+            "lum_rel": -0.00019197175691165747,
+            "roi_psnr_db": 29.39093435320356,
+            "roi_edge_px": 0.18044250019011088,
+            "roi_occ_mismatch": 0.04285714285714286,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_apply": {
+            "psnr_db": 37.42937678645617,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.595308868050168,
+            "ssim": 0.9863334940242853,
+            "msssim": 0.9898507803504977,
+            "lum_rel": -0.00019197175691165747,
+            "roi_psnr_db": 29.39093435320356,
+            "roi_edge_px": 0.18044250019011088,
+            "roi_occ_mismatch": 0.04285714285714286,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 7.013,
+              "stage2_only_fps": 146014.5
+            },
+            "B2048": {
+              "stage2_ms": 14.062,
+              "stage2_only_fps": 145639.7
+            },
+            "B4096": {
+              "stage2_ms": 28.356,
+              "stage2_only_fps": 144447.1
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 16,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 295,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_spatial_64_params.pkl"
+        },
+        "M2_spatial_96": {
+          "arch": "M2_spatial_96",
+          "n_params": 521811,
+          "epochs": 200,
+          "batch_size": 32,
+          "lr": 0.002,
+          "kd_weight": 0.0,
+          "train_time_s": 55.64,
+          "cal_scale": 0.9995644092559814,
+          "gate_uncal": {
+            "psnr_db": 38.03631392210938,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 24.20224600370338,
+            "ssim": 0.9878917280886471,
+            "msssim": 0.9907986940622819,
+            "lum_rel": 0.00039727366779795936,
+            "roi_psnr_db": 30.110256784985197,
+            "roi_edge_px": 0.17377924316679128,
+            "roi_occ_mismatch": 0.02857142857142857,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_cal": {
+            "psnr_db": 38.04035349788806,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 24.206285579482063,
+            "ssim": 0.9878885897031061,
+            "msssim": 0.9907984837915008,
+            "lum_rel": -3.841189105857623e-05,
+            "roi_psnr_db": 30.111446617887122,
+            "roi_edge_px": 0.17377924316679128,
+            "roi_occ_mismatch": 0.02857142857142857,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_apply": {
+            "psnr_db": 38.040338029292464,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 24.206270110886464,
+            "ssim": 0.9878885797248764,
+            "msssim": 0.9907984758804,
+            "lum_rel": -3.841189105857623e-05,
+            "roi_psnr_db": 30.111424134114646,
+            "roi_edge_px": 0.17377924316679128,
+            "roi_occ_mismatch": 0.02857142857142857,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 12.321,
+              "stage2_only_fps": 83107.8
+            },
+            "B2048": {
+              "stage2_ms": 24.883,
+              "stage2_only_fps": 82303.6
+            },
+            "B4096": {
+              "stage2_ms": 50.012,
+              "stage2_only_fps": 81900.5
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 16,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 295,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_spatial_96_params.pkl"
+        },
+        "M2_convnext_dw": {
+          "arch": "M2_convnext_dw",
+          "n_params": 216259,
+          "epochs": 200,
+          "batch_size": 32,
+          "lr": 0.002,
+          "kd_weight": 0.0,
+          "train_time_s": 48.97,
+          "cal_scale": 0.9997550845146179,
+          "gate_uncal": {
+            "psnr_db": 36.924593055098605,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.090525136692605,
+            "ssim": 0.9847353190994997,
+            "msssim": 0.988509514007844,
+            "lum_rel": 5.025117254930933e-05,
+            "roi_psnr_db": 28.994955939382493,
+            "roi_edge_px": 0.2102329672779888,
+            "roi_occ_mismatch": 0.04285714285714286,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_cal": {
+            "psnr_db": 36.923691375461196,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.089623457055197,
+            "ssim": 0.9847327123533298,
+            "msssim": 0.9885093457633898,
+            "lum_rel": -0.0001947781051168107,
+            "roi_psnr_db": 28.99474993571566,
+            "roi_edge_px": 0.2102329672779888,
+            "roi_occ_mismatch": 0.04285714285714286,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "gate_apply": {
+            "psnr_db": 36.923691375461196,
+            "stage1_psnr_db": 13.834067918406001,
+            "psnr_gain_db": 23.089623457055197,
+            "ssim": 0.9847327123533298,
+            "msssim": 0.9885093457633898,
+            "lum_rel": -0.0001947781051168107,
+            "roi_psnr_db": 28.99474993571566,
+            "roi_edge_px": 0.2102329672779888,
+            "roi_occ_mismatch": 0.04285714285714286,
+            "passed": false,
+            "thresholds": {
+              "psnr_min": 30.0,
+              "psnr_gain_min": 4.0,
+              "ssim_min": 0.94,
+              "msssim_min": 0.96,
+              "lum_rel_max": 0.005,
+              "roi_psnr_min": 28.0,
+              "roi_edge_px_max": 1.0,
+              "roi_occ_mismatch_max": 0.01
+            }
+          },
+          "stage2_bench_1c": {
+            "B1024": {
+              "stage2_ms": 7.491,
+              "stage2_only_fps": 136689.7
+            },
+            "B2048": {
+              "stage2_ms": 14.843,
+              "stage2_only_fps": 137975.1
+            },
+            "B4096": {
+              "stage2_ms": 29.672,
+              "stage2_only_fps": 138043.4
+            },
+            "hlo_ops": {
+              "host_callbacks": 0,
+              "dot_ops": 0,
+              "conv_ops": 16,
+              "while_ops": 0,
+              "gather_ops": 0,
+              "custom_calls": 0,
+              "hlo_lines": 450,
+              "send_recv_ops": 0
+            }
+          },
+          "ckpt_path": "/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_M2_convnext_dw_params.pkl"
+        }
+      }
+    }
+  }
+}

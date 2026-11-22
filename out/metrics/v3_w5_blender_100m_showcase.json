@@ -1,0 +1,148 @@
+{
+  "scene_meta": {
+    "unique_tris": 4419584,
+    "effective_tris": 101629952,
+    "n_unique_blas": 6,
+    "n_instances": 100,
+    "blas_tris": {
+      "suzanne_hero": 1007616,
+      "torus_knot": 1048576,
+      "wave_sculpture": 1046528,
+      "fluted_column": 1046528,
+      "pedestal": 65536,
+      "gallery_floor": 204800
+    },
+    "blas_instances": {
+      "suzanne_hero": 32,
+      "torus_knot": 22,
+      "wave_sculpture": 22,
+      "fluted_column": 22,
+      "pedestal": 1,
+      "gallery_floor": 1
+    },
+    "device_kind": "TPU v5",
+    "n_visible_devices": 1
+  },
+  "parity": {
+    "pallas_vs_cycles_256_z_mae_m": 5.4178050049813464e-05,
+    "pallas_vs_cycles_256_fg_match": 0.9999847412109375,
+    "hlo_256_host_callbacks": 0,
+    "hlo_256_send_recv_ops": 0,
+    "pallas_vs_cycles_512_z_mae_m": 5.403265095083043e-05,
+    "pallas_vs_cycles_512_fg_match": 0.9999885559082031,
+    "hlo_512_host_callbacks": 0,
+    "hlo_512_send_recv_ops": 0
+  },
+  "neural_relighting": {
+    "arch": "SpatialRelighter3S_W96_MS",
+    "n_params": 4459683,
+    "epochs": 240,
+    "train_time_s": 46.21,
+    "cal_scale": 1.003865,
+    "test_256": {
+      "stage1_psnr_db": 11.194,
+      "neural_psnr_db": 33.8318,
+      "psnr_gain_db": 22.6378,
+      "neural_ssim": 0.96017,
+      "neural_msssim": 0.97112,
+      "lum_rel": 0.00089
+    },
+    "hero_512": {
+      "stage1_psnr_db": 11.1399,
+      "neural_psnr_db": 31.6901,
+      "psnr_gain_db": 20.5501,
+      "neural_ssim": 0.94362,
+      "neural_msssim": 0.95316,
+      "lum_rel": 0.005696
+    }
+  },
+  "uhd_4k_quality": {
+    "resolution": "3840x2160",
+    "hlo": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 24,
+      "while_ops": 8,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 3130,
+      "send_recv_ops": 0
+    },
+    "z_mae_m": 1.8524850020185113e-05,
+    "fg_match": 0.9999937307098765,
+    "stage1_psnr_db": 10.7159,
+    "neural_psnr_db": 30.8593,
+    "psnr_gain_db": 20.1434,
+    "neural_ssim": 0.94524,
+    "neural_msssim": 0.94228,
+    "lum_rel": 0.021067
+  },
+  "benchmarks_1chip": [
+    {
+      "resolution": "256x256",
+      "batch_size": 16,
+      "n_chips": 1,
+      "stage2": false,
+      "dt_ms": 3179.407,
+      "fps": 5.032,
+      "mpix_per_sec": 0.33,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "512x512",
+      "batch_size": 4,
+      "n_chips": 1,
+      "stage2": false,
+      "dt_ms": 1305.737,
+      "fps": 3.063,
+      "mpix_per_sec": 0.8,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "3840x2160",
+      "batch_size": 1,
+      "n_chips": 1,
+      "stage2": false,
+      "dt_ms": 4648.055,
+      "fps": 0.215,
+      "mpix_per_sec": 1.78,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "256x256",
+      "batch_size": 16,
+      "n_chips": 1,
+      "stage2": true,
+      "dt_ms": 3193.102,
+      "fps": 5.011,
+      "mpix_per_sec": 0.33,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "512x512",
+      "batch_size": 4,
+      "n_chips": 1,
+      "stage2": true,
+      "dt_ms": 1344.727,
+      "fps": 2.975,
+      "mpix_per_sec": 0.78,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "3840x2160",
+      "batch_size": 1,
+      "n_chips": 1,
+      "stage2": true,
+      "dt_ms": 4969.19,
+      "fps": 0.201,
+      "mpix_per_sec": 1.67,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    }
+  ]
+}

@@ -509,7 +509,7 @@ def main():
     mod = SpatialRelighter3Scale(base_width=96)
 
     b1c = []
-    for rw, rh, bs, stp in [(256, 256, 1, 6), (256, 256, 16, 6), (512, 512, 1, 5), (512, 512, 4, 5), (3840, 2160, 1, 3)]:
+    for rw, rh, bs, stp in [(256, 256, 16, 6), (512, 512, 4, 5), (3840, 2160, 1, 3)]:
       r1 = benchmark_100m(spec_256, spec_arrs, inst_xpos_ord, inst_xmat_ord, cam_xpos, cam_xmat, rw, rh, bs, n_chips=1, n_steps=stp)
       print("100M+ BENCH 1c S1:", json.dumps(r1), flush=True)
       b1c.append(r1)

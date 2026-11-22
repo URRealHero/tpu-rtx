@@ -21,11 +21,13 @@ import numpy as np
 from PIL import Image
 import trimesh
 
+from typing import Optional
 from tpu_mjx_render.roofline import inspect_hlo_ops
 from wave3_500m_10b_8k import (
     CompactWideBVHMeshItem,
     CompactWideBVHSceneSpec,
     build_compact_bvh_mesh_item,
+    make_geometry_sharded_unique_renderer,
     make_spatial_8k_sharded_instanced_renderer,
     make_spatial_8k_sharded_unique_renderer,
     render_compact_bvh_batch,
@@ -148,10 +150,10 @@ def build_n_unique_suzannes_compact(suz_dict, n_meshes: int, k: int, kw: dict, m
     del nv_u, disp
     return it
 
-  # Build in small batches of 4 with ThreadPoolExecutor to keep host RAM < 10 GB while speeding up 3.5x
+  # Build in batches of 16 with ThreadPoolExecutor (w2 has 208 cores / 440 GB RAM)
   t_b0 = time.perf_counter()
-  for b_start in range(0, n_meshes, 4):
-    batch_ids = list(range(b_start, min(b_start + 4, n_meshes)))
+  for b_start in range(0, n_meshes, 16):
+    batch_ids = list(range(b_start, min(b_start + 16, n_meshes)))
     with ThreadPoolExecutor(max_workers=len(batch_ids)) as ex:
       built = list(ex.map(_build_one, batch_ids))
     for it in built:
@@ -312,7 +314,7 @@ def run_w3_500m_1c(out_path: str):
         htxt = fn.lower(dev_500, oxp, oxm, cxp, cxm).as_text()
         hi = inspect_hlo_ops(htxt)
         hi["send_recv_ops"] = len(re.findall(r"\bsend\(|\brecv\(", htxt, re.I))
-        assert hi["host_callbacks"] == 0 and hi["send_recv_ops"] == 0
+        assert hi["host_callbacks"] == 0 and hi["send_recv_ops"] == 0 and hi["gather_ops"] == 0
         data["parity"]["hlo_502m_4k_1c"] = hi
       tc0 = time.perf_counter()
       jax.block_until_ready(fn(dev_500, oxp, oxm, cxp, cxm))
@@ -407,8 +409,8 @@ def run_w3_tlas_1b_10b_4c(out_path: str, png_8k_path: str, png_crop_path: str):
   blas_tris = sum(it.n_tris_orig for it in items_c)
   print(f"BUILT 10.64M COMPACT BLAS: tris={blas_tris:,} hbm={hbm_b/(1024**2):.1f} MB", flush=True)
 
-  # Test K_inst = 96 (1.02B effective tris) and K_inst = 960 (10.22B effective tris) at 4K & Spatial-Sharded 8K!
-  for K_inst, grp_sz, top_g in [(96, 16, 4), (960, 30, 4)]:
+  # Test K_inst = 96 (1.02B), 960 (10.22B), and 9600 (102.18B effective tris) at 4K & Spatial-Sharded 8K!
+  for K_inst, grp_sz, top_g in [(96, 16, 4), (960, 30, 4), (9600, 64, 4)]:
     eff_tris = blas_tris * K_inst
     ixp, ixm, cxp, cxm = make_stratified_3d_poses(ds, 1, K_inst)
     ixp_r = tuple(jax.device_put(np.asarray(x), rep) for x in ixp)
@@ -421,26 +423,27 @@ def run_w3_tlas_1b_10b_4c(out_path: str, png_8k_path: str, png_crop_path: str):
       fn_8k, _ = make_spatial_8k_sharded_instanced_renderer(
           spec_full, devs, dev_c, tlas_group_size=grp_sz, tlas_top_groups=top_g, max_active_per_tile=16, interpret=False,
       )
-      if K_inst == 960 and H == 4320:
+      if K_inst in (960, 9600) and H == 4320:
         htxt = fn_8k.lower(ixp_r, ixm_r, cxp_r, cxm_r).as_text()
         hi = inspect_hlo_ops(htxt)
         hi["send_recv_ops"] = len(re.findall(r"\bsend\(|\brecv\(", htxt, re.I))
-        assert hi["host_callbacks"] == 0 and hi["send_recv_ops"] == 0
-        data["parity"]["hlo_10b_8k_4c_spatial"] = hi
+        assert hi["host_callbacks"] == 0 and hi["send_recv_ops"] == 0 and hi["gather_ops"] == 0, hi
+        key_h = "hlo_10b_8k_4c_spatial" if K_inst == 960 else "hlo_100b_8k_4c_spatial"
+        data["parity"][key_h] = hi
 
       tc0 = time.perf_counter()
       rgb = fn_8k(ixp_r, ixm_r, cxp_r, cxm_r)
       jax.block_until_ready(rgb)
       cs = time.perf_counter() - tc0
 
-      if K_inst == 96 and H == 4320:
+      if K_inst == 9600 and H == 4320:
         rgb_np = np.asarray(rgb[0])
         img = Image.fromarray(np.clip(rgb_np * 255.0 + 0.5, 0, 255).astype(np.uint8))
         img.save(png_8k_path)
         cx, cy = 7680 // 2, 4320 // 2
         crop = img.crop((cx - 960, cy - 540, cx + 960, cy + 540))
         crop.save(png_crop_path)
-        print(f"Saved Native 8K ({img.size}) + 100% crop ({crop.size}) to {png_8k_path}", flush=True)
+        print(f"Saved Native 8K 100B+ Hero ({img.size}) + 100% crop ({crop.size}) to {png_8k_path}", flush=True)
 
       n_steps = 2
       t0 = time.perf_counter()
@@ -477,42 +480,39 @@ def run_w3_sponza_megascene(out_path: str, png_4k_path: str):
   data = _load_or_init(out_path)
 
   sc = trimesh.load("/dev/shm/zaychik-tpu-mjx/assets/sponza/Sponza.gltf", force="scene", process=False)
-  # Group the 103 Sponza geometries into 8 architectural color buckets and rotate Y-up -> Z-up
+  with open("/dev/shm/zaychik-tpu-mjx/assets/sponza/Sponza.gltf", "r") as f_gltf:
+    gltf_meta = json.load(f_gltf)
+  prim_mats = [p.get("material", 0) for p in gltf_meta["meshes"][0]["primitives"]]
+  # Group the 103 Sponza primitives by material ID into 8 architectural color buckets and rotate Y-up -> Z-up
   bucket_verts = [[] for _ in range(8)]
   bucket_faces = [[] for _ in range(8)]
   bucket_voff = [0] * 8
   arch_palette = [
-      [0.78, 0.74, 0.66, 1.0],  # limestone arches
-      [0.64, 0.60, 0.54, 1.0],  # stone columns
-      [0.48, 0.44, 0.40, 1.0],  # marble floor / base
-      [0.72, 0.36, 0.24, 1.0],  # terracotta roof / trim
-      [0.36, 0.26, 0.20, 1.0],  # dark timber balconies
-      [0.68, 0.16, 0.16, 1.0],  # crimson banners
-      [0.20, 0.36, 0.56, 1.0],  # cobalt curtains
-      [0.76, 0.62, 0.32, 1.0],  # gilded moldings
+      [0.78, 0.74, 0.66, 1.0],  # 0: limestone arches & walls
+      [0.64, 0.60, 0.54, 1.0],  # 1: stone columns & capitals
+      [0.46, 0.43, 0.40, 1.0],  # 2: marble floor / base
+      [0.72, 0.36, 0.24, 1.0],  # 3: terracotta roof / brickwork
+      [0.36, 0.28, 0.20, 1.0],  # 4: dark timber / chains / foliage bases
+      [0.70, 0.16, 0.16, 1.0],  # 5: crimson banners & drapes
+      [0.20, 0.38, 0.58, 1.0],  # 6: cobalt / emerald curtains
+      [0.78, 0.64, 0.32, 1.0],  # 7: gilded moldings & lions
   ]
-  for g_idx, (g_name, geom) in enumerate(sc.geometry.items()):
-    v = np.asarray(geom.vertices, dtype=np.float32)
-    f = np.asarray(geom.faces, dtype=np.int32)
-    if v.size == 0 or f.size == 0:
+  mat_to_bucket = {
+      0: 4, 1: 4, 2: 7, 3: 4, 4: 0, 5: 0, 6: 0, 7: 1, 8: 1, 9: 2, 10: 0,
+      11: 1, 12: 0, 13: 1, 14: 5, 15: 6, 16: 5, 17: 6, 18: 5, 19: 6,
+      20: 4, 21: 4, 22: 2, 23: 7, 24: 3,
+  }
+  for g_idx, node_name in enumerate(sc.graph.nodes_geometry):
+    M, g_name = sc.graph.get(node_name)
+    geom = sc.geometry[g_name]
+    if geom.vertices.size == 0 or geom.faces.size == 0:
       continue
+    v = trimesh.transform_points(np.asarray(geom.vertices, dtype=np.float32), M).astype(np.float32)
+    f = np.asarray(geom.faces, dtype=np.int32)
     # Convert glTF Y-up -> Z-up: (x, y, z) -> (x, -z, y)
     vz = np.stack([v[:, 0], -v[:, 2], v[:, 1]], axis=-1)
-    nl = g_name.lower()
-    if "fabric" in nl or "banner" in nl or "curtain" in nl:
-      b = 5 if (g_idx % 2 == 0) else 6
-    elif "floor" in nl or "ground" in nl:
-      b = 2
-    elif "roof" in nl or "brick" in nl:
-      b = 3
-    elif "column" in nl or "pillar" in nl:
-      b = 1
-    elif "wood" in nl:
-      b = 4
-    elif "lion" in nl or "vase" in nl:
-      b = 7
-    else:
-      b = g_idx % 8
+    mat_id = prim_mats[g_idx] if g_idx < len(prim_mats) else (g_idx % 25)
+    b = mat_to_bucket.get(mat_id, g_idx % 8)
     bucket_verts[b].append(vz)
     bucket_faces[b].append(f + bucket_voff[b])
     bucket_voff[b] += vz.shape[0]
@@ -537,8 +537,8 @@ def run_w3_sponza_megascene(out_path: str, png_4k_path: str):
     mid += 1
     gc.collect()
 
-  # Plus 2 high-poly interior hero statues inside the colonnade atrium (k=32 -> ~4.5M tris)
-  suz_nv, suz_nf, suz_nn = subdivide_mesh_barycentric(base_meshes[0]["verts"] * 4.0, base_meshes[0]["faces"], 32)
+  # Plus high-poly interior hero statue inside the colonnade atrium (k=32 -> ~3.8M tris)
+  suz_nv, suz_nf, suz_nn = subdivide_mesh_barycentric(base_meshes[0]["verts"] * 8.0, base_meshes[0]["faces"], 32)
   it_s = build_compact_bvh_mesh_item(mid, {"name": "atrium_suzanne", "verts": suz_nv, "faces": suz_nf, "vert_normals": suz_nn, "rgba": [0.85, 0.72, 0.35, 1.0]}, "spatial_l1_morton")
   del suz_nv, suz_nf, suz_nn
   hbm_b += it_s.l2_roots_aabb.nbytes + it_s.l2_aabbs.nbytes + it_s.l0_aabbs.nbytes + it_s.leaf_bank.nbytes
@@ -551,20 +551,20 @@ def run_w3_sponza_megascene(out_path: str, png_4k_path: str):
   print(f"BUILT SPONZA MEGASCENE: tris={tot_tris:,} meshes={len(items_meta)} bvh={t_bvh:.2f}s hbm={hbm_b/(1024**3):.3f} GB", flush=True)
 
   # Camera inside Sponza colonnade looking down long atrium (deep multi-layer architectural occlusion)
-  cam_pos = np.array([[9.5, -0.4, 2.2]], dtype=np.float32)
-  target = np.array([-8.0, 0.0, 3.2], dtype=np.float32)
-  fwd = target[0] - cam_pos[0]; fwd /= np.linalg.norm(fwd)
+  cam_pos = np.array([[9.0, 0.25, 2.2]], dtype=np.float32)
+  target = np.array([-8.0, 0.25, 2.8], dtype=np.float32)
+  fwd = target - cam_pos[0]; fwd /= np.linalg.norm(fwd)
   right = np.cross(fwd, np.array([0.0, 0.0, 1.0], np.float32)); right /= np.linalg.norm(right)
   up = np.cross(right, fwd)
   cam_mat = np.stack([right, up, -fwd], axis=1)[None, :, :].astype(np.float32)
 
   oxp = np.zeros((1, len(items_meta), 3), dtype=np.float32)
-  oxp[0, -1] = np.array([1.5, 0.0, 1.2], dtype=np.float32)  # Hero statue in atrium center
+  oxp[0, -1] = np.array([1.5, 0.25, 1.1], dtype=np.float32)  # Hero statue in atrium center
   oxm = np.broadcast_to(np.eye(3, dtype=np.float32)[None, None, :, :], (1, len(items_meta), 3, 3)).copy()
 
   oxp_r, oxm_r = jax.device_put(oxp, rep), jax.device_put(oxm, rep)
   cxp_r, cxm_r = jax.device_put(cam_pos, rep), jax.device_put(cam_mat, rep)
-  kw = dict(cam_fovy=55.0, znear=0.1, zfar=80.0, light_pos=(2.0, -1.0, 12.0))
+  kw = dict(cam_fovy=55.0, znear=0.1, zfar=80.0, light_pos=(2.0, 0.25, 14.0))
 
   for H, W in [(2160, 3840), (4320, 7680)]:
     spec_full = _make_spec(items_meta, kw, H, W, use_shadows=True)
@@ -573,7 +573,7 @@ def run_w3_sponza_megascene(out_path: str, png_4k_path: str):
       htxt = fn_sp.lower(oxp_r, oxm_r, cxp_r, cxm_r).as_text()
       hi = inspect_hlo_ops(htxt)
       hi["send_recv_ops"] = len(re.findall(r"\bsend\(|\brecv\(", htxt, re.I))
-      assert hi["host_callbacks"] == 0 and hi["send_recv_ops"] == 0
+      assert hi["host_callbacks"] == 0 and hi["send_recv_ops"] == 0 and hi["gather_ops"] == 0
       data["parity"]["hlo_sponza_109m_4k_4c"] = hi
 
     tc0 = time.perf_counter()
@@ -613,18 +613,131 @@ def run_w3_sponza_megascene(out_path: str, png_4k_path: str):
     print("3C SPONZA 4C:", rec, flush=True)
 
 
+def run_w3_1b_unique_4c(out_path: str):
+  """4-Chip Geometry-Sharded 1.059B (10.59 亿) 100% Unique Non-Instanced Tris via shard_map + pmin."""
+  ds, base_meshes = load_base_scene()
+  devs = jax.devices()
+  assert len(devs) == 4
+  mesh = Mesh(np.array(devs), ("geom",))
+  sh_geom = NamedSharding(mesh, P("geom"))
+  rep = NamedSharding(mesh, P())
+  data = _load_or_init(out_path)
+  kw = dict(cam_fovy=float(ds["cam_fovy"]), znear=float(ds["znear"]), zfar=float(ds["zfar"]), light_pos=tuple(float(x) for x in ds["light_pos"]))
+
+  base_nv, base_nf, base_nn = subdivide_mesh_barycentric(base_meshes[0]["verts"], base_meshes[0]["faces"], 82)
+  palette = [
+      [0.86, 0.48, 0.28], [0.24, 0.72, 0.76], [0.88, 0.74, 0.28], [0.78, 0.34, 0.46],
+      [0.36, 0.54, 0.88], [0.42, 0.78, 0.46], [0.76, 0.78, 0.82], [0.68, 0.46, 0.84],
+  ]
+  n_per_chip = 10
+  n_total = 4 * n_per_chip  # 40 uniquely displaced Suzannes = 1,058,626,560 unique tris!
+
+  def _build_one(s_i: int):
+    fx, fy, fz, ph = 18.0 + 3.1 * s_i, 21.0 + 2.7 * s_i, 25.0 + 4.3 * s_i, 0.61 * s_i
+    disp = 0.007 * (np.sin(fx * base_nv[:, 0] + ph) * np.cos(fy * base_nv[:, 1] - ph) + 0.45 * np.sin(fz * base_nv[:, 2] + ph))
+    nv_u = (base_nv + disp[:, None] * base_nn).astype(np.float32)
+    it = build_compact_bvh_mesh_item(
+        s_i,
+        {"name": f"suz_1b_{s_i}", "verts": nv_u, "faces": base_nf, "vert_normals": base_nn, "rgba": palette[s_i % len(palette)]},
+        build_method="spatial_l1_morton",
+    )
+    del nv_u, disp
+    return it
+
+  t_b0 = time.perf_counter()
+  hbm_bytes = 0
+  tot_tris = 0
+  # Build slot m across the 4 chips and place each directly onto its target chip HBM
+  per_slot_sharded = []
+  rgba_host = np.zeros((4, n_per_chip, 3), dtype=np.float32)
+  for m_slot in range(n_per_chip):
+    ids = [c * n_per_chip + m_slot for c in range(4)]
+    with ThreadPoolExecutor(max_workers=4) as ex:
+      built = list(ex.map(_build_one, ids))
+    s_r, s_l2, s_l0, s_lf = [], [], [], []
+    for c, it in enumerate(built):
+      hbm_bytes += it.l2_roots_aabb.nbytes + it.l2_aabbs.nbytes + it.l0_aabbs.nbytes + it.leaf_bank.nbytes
+      tot_tris += it.n_tris_orig
+      rgba_host[c, m_slot] = it.rgba[:3]
+      s_r.append(jax.device_put(it.l2_roots_aabb[None], devs[c]))
+      s_l2.append(jax.device_put(it.l2_aabbs[None], devs[c]))
+      s_l0.append(jax.device_put(it.l0_aabbs[None], devs[c]))
+      s_lf.append(jax.device_put(it.leaf_bank[None], devs[c]))
+    per_slot_sharded.append((
+        jax.make_array_from_single_device_arrays((4, *built[0].l2_roots_aabb.shape), sh_geom, s_r),
+        jax.make_array_from_single_device_arrays((4, *built[0].l2_aabbs.shape), sh_geom, s_l2),
+        jax.make_array_from_single_device_arrays((4, *built[0].l0_aabbs.shape), sh_geom, s_l0),
+        jax.make_array_from_single_device_arrays((4, *built[0].leaf_bank.shape), sh_geom, s_lf),
+    ))
+    del built
+    gc.collect()
+  t_bvh = time.perf_counter() - t_b0
+  del base_nv, base_nf, base_nn
+  gc.collect()
+  dev_sharded = tuple(per_slot_sharded)
+  rgba_sharded = jax.device_put(rgba_host, sh_geom)
+  print(f"BUILT 1.06B UNIQUE 4-CHIP: tris={tot_tris:,} meshes={n_total} bvh={t_bvh:.2f}s hbm={hbm_bytes/(1024**3):.3f} GB", flush=True)
+
+  for H, W, B in [(64, 64, 64), (512, 512, 8), (2160, 3840, 1)]:
+    spec_t = _make_spec([], kw, H, W, use_shadows=True)
+    fn_4c, _ = make_geometry_sharded_unique_renderer(spec_t, devs, n_per_chip, interpret=False)
+    oxp, oxm, cxp, cxm = make_gallery_n_poses(ds, B, n_total)
+    oxp_s = jax.device_put(np.asarray(oxp).reshape(B, 4, n_per_chip, 3).transpose(1, 0, 2, 3), sh_geom)
+    oxm_s = jax.device_put(np.asarray(oxm).reshape(B, 4, n_per_chip, 3, 3).transpose(1, 0, 2, 3, 4), sh_geom)
+    cxp_r = jax.device_put(np.asarray(cxp), rep)
+    cxm_r = jax.device_put(np.asarray(cxm), rep)
+
+    if H == 2160:
+      htxt = fn_4c.lower(dev_sharded, rgba_sharded, oxp_s, oxm_s, cxp_r, cxm_r).as_text()
+      hi = inspect_hlo_ops(htxt)
+      hi["send_recv_ops"] = len(re.findall(r"\bsend\(|\brecv\(", htxt, re.I))
+      assert hi["host_callbacks"] == 0 and hi["send_recv_ops"] == 0 and hi["gather_ops"] == 0, hi
+      data["parity"]["hlo_1b_unique_4k_4c"] = hi
+
+    tc0 = time.perf_counter()
+    rgb = fn_4c(dev_sharded, rgba_sharded, oxp_s, oxm_s, cxp_r, cxm_r)
+    jax.block_until_ready(rgb)
+    cs = time.perf_counter() - tc0
+
+    n_steps = 2 if H >= 2160 else (5 if H >= 512 else 10)
+    t0 = time.perf_counter()
+    for _ in range(n_steps):
+      rgb = fn_4c(dev_sharded, rgba_sharded, oxp_s, oxm_s, cxp_r, cxm_r)
+    jax.block_until_ready(rgb)
+    ms = (time.perf_counter() - t0) * 1e3 / n_steps
+    rec = {
+        "total_tris": tot_tris,
+        "n_meshes": n_total,
+        "bvh_hbm_gb": round(hbm_bytes / (1024 ** 3), 4),
+        "bvh_build_s": round(t_bvh, 2),
+        "n_chips": 4,
+        "sharding": "geometry_4chip_pmin",
+        "res": f"{H}x{W}",
+        "B": B,
+        "compile_s": round(cs, 2),
+        "ms": round(ms, 2),
+        "fps": round(B * 1e3 / ms, 2),
+        "mrays_per_s": round((B * H * W * 2.0) / (ms * 1e-3) / 1e6, 2),
+    }
+    data["track_3a_compact_unique"].append(rec)
+    _save(out_path, data)
+    print("3A 1.06B 4C:", rec, flush=True)
+
+
 def main():
   ap = argparse.ArgumentParser()
-  ap.add_argument("--phase", choices=["w3_parity_250m", "w3_500m_1c", "w3_tlas_1b_10b_4c", "w3_sponza_megascene"], required=True)
+  ap.add_argument("--phase", choices=["w3_parity_250m", "w3_500m_1c", "w3_1b_unique_4c", "w3_tlas_1b_10b_4c", "w3_sponza_megascene"], required=True)
   ap.add_argument("--out", required=True)
-  ap.add_argument("--png8k", default="/dev/shm/zaychik-tpu-mjx-w2/v3_w2_mesh_billion_8k.png")
-  ap.add_argument("--pngcrop", default="/dev/shm/zaychik-tpu-mjx-w2/v3_w2_mesh_billion_8k_crop.png")
+  ap.add_argument("--png8k", default="/dev/shm/zaychik-tpu-mjx-w2/v3_w2_100b_8k_hero.png")
+  ap.add_argument("--pngcrop", default="/dev/shm/zaychik-tpu-mjx-w2/v3_w2_100b_8k_crop.png")
   ap.add_argument("--pngsponza", default="/dev/shm/zaychik-tpu-mjx-w2/v3_w2_complex_megascene_4k.png")
   args = ap.parse_args()
   if args.phase == "w3_parity_250m":
     run_w3_parity_and_250m(args.out)
   elif args.phase == "w3_500m_1c":
     run_w3_500m_1c(args.out)
+  elif args.phase == "w3_1b_unique_4c":
+    run_w3_1b_unique_4c(args.out)
   elif args.phase == "w3_tlas_1b_10b_4c":
     run_w3_tlas_1b_10b_4c(args.out, args.png8k, args.pngcrop)
   elif args.phase == "w3_sponza_megascene":

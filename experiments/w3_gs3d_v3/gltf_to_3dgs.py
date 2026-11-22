@@ -214,6 +214,8 @@ def sample_anisotropic_3dgs_from_gltf(
     scene_tris: Dict[str, Any],
     n_gaussians: int,
     seed: int = 42,
+    splat_scale: float = 1.0,
+    thick_ratio: float = 0.14,
 ) -> Dict[str, np.ndarray]:
   """Dense-sample N anisotropic tangent-aligned textured 3D Gaussians from glTF triangles."""
   rng = np.random.default_rng(seed)
@@ -289,8 +291,8 @@ def sample_anisotropic_3dgs_from_gltf(
   t2 = np.cross(nrm, t1)
 
   area_per_g = total_area / float(n_gaussians)
-  rad = float(np.sqrt(area_per_g / math.pi) * 1.65)
-  thick = max(rad * 0.14, 1e-4)
+  rad = float(np.sqrt(area_per_g / math.pi) * 1.65 * splat_scale)
+  thick = max(rad * float(thick_ratio), 1e-4)
   r2_val = np.float32(rad * rad)
   t2_val = np.float32(thick * thick)
 

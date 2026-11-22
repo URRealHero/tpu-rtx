@@ -672,16 +672,19 @@ def _pallas_tlas2_compact_instanced_raycast(
     )
     score_g = jnp.where(ok_g, tmin_g, 1e20)
     neg_g, top_g = jax.lax.top_k(-score_g, tlas_top_groups)  # (B, n_tiles, M_grp)
-    # Gather candidate instances from top_g groups: (B, n_tiles, M_grp * tlas_group_size)
-    cand_w_min = jnp.take_along_axis(
-        w_min_p.reshape(B, G, tlas_group_size, 3)[:, None, :, :, :],
-        top_g[:, :, :, None, None],
-        axis=2,
+    # Gather-free one-hot selection of candidate instances from top_g groups:
+    sel_g = (top_g[:, :, :, None] == jnp.arange(G, dtype=top_g.dtype)[None, None, None, :]).astype(jnp.float32)
+    cand_w_min = jnp.einsum(
+        "btmg,bgsc->btmsc",
+        sel_g,
+        w_min_p.reshape(B, G, tlas_group_size, 3),
+        precision=jax.lax.Precision.HIGHEST,
     ).reshape(B, n_tiles, tlas_top_groups * tlas_group_size, 3)
-    cand_w_max = jnp.take_along_axis(
-        w_max_p.reshape(B, G, tlas_group_size, 3)[:, None, :, :, :],
-        top_g[:, :, :, None, None],
-        axis=2,
+    cand_w_max = jnp.einsum(
+        "btmg,bgsc->btmsc",
+        sel_g,
+        w_max_p.reshape(B, G, tlas_group_size, 3),
+        precision=jax.lax.Precision.HIGHEST,
     ).reshape(B, n_tiles, tlas_top_groups * tlas_group_size, 3)
     base_ids = (top_g[:, :, :, None] * tlas_group_size + jnp.arange(tlas_group_size)[None, None, None, :]).reshape(
         B, n_tiles, tlas_top_groups * tlas_group_size
@@ -702,21 +705,33 @@ def _pallas_tlas2_compact_instanced_raycast(
       cand_w_min, cand_w_max,
   )
   score_i = jnp.where(ok_i & cand_valid, tmin_i, 1e20)
-  K_act = min(max_active_per_tile, score_i.shape[-1])
+  M_cand = score_i.shape[-1]
+  K_act = min(max_active_per_tile, M_cand)
   neg_i, top_local = jax.lax.top_k(-score_i, K_act)
-  top_inst_ids = jnp.take_along_axis(base_ids, top_local, axis=-1)
+  sel_i = (top_local[:, :, :, None] == jnp.arange(M_cand, dtype=top_local.dtype)[None, None, None, :]).astype(jnp.float32)
+  top_inst_ids = jnp.round(
+      jnp.einsum("btkc,btc->btk", sel_i, base_ids.astype(jnp.float32), precision=jax.lax.Precision.HIGHEST)
+  ).astype(jnp.int32)
   act_ids = jnp.where((-neg_i) < 1e19, top_inst_ids, -1).astype(jnp.float32)
 
-  act_blk = jnp.full((total_tiles, 8, 128), -1.0, dtype=jnp.float32)
-  act_blk = act_blk.at[:, 0, :K_act].set(act_ids.reshape(total_tiles, K_act))
-  act_2d = act_blk.reshape(total_tiles * 8, 128)
+  act_2d = jnp.concatenate([
+      jnp.concatenate([
+          act_ids.reshape(total_tiles, 1, K_act),
+          jnp.full((total_tiles, 1, 128 - K_act), -1.0, dtype=jnp.float32),
+      ], axis=2),
+      jnp.full((total_tiles, 7, 128), -1.0, dtype=jnp.float32),
+  ], axis=1).reshape(total_tiles * 8, 128)
 
   # Pack ALL K_inst poses into HBM as (B * n_pose_chunks, 16, 128) so K_inst is unlimited!
   n_pose_chunks = max(1, (K_inst + 127) // 128)
   K_pose_pad = n_pose_chunks * 128
-  poses_b = jnp.zeros((B, 16, K_pose_pad), dtype=jnp.float32)
-  poses_b = poses_b.at[:, 0:3, :K_inst].set(inst_xpos.transpose(0, 2, 1))
-  poses_b = poses_b.at[:, 3:12, :K_inst].set(inst_xmat.reshape(B, K_inst, 9).transpose(0, 2, 1))
+  pad_k = K_pose_pad - K_inst
+  pos_t = inst_xpos.transpose(0, 2, 1)  # (B, 3, K_inst)
+  rot_t = inst_xmat.reshape(B, K_inst, 9).transpose(0, 2, 1)  # (B, 9, K_inst)
+  if pad_k > 0:
+    pos_t = jnp.concatenate([pos_t, jnp.zeros((B, 3, pad_k), dtype=jnp.float32)], axis=2)
+    rot_t = jnp.concatenate([rot_t, jnp.zeros((B, 9, pad_k), dtype=jnp.float32)], axis=2)
+  poses_b = jnp.concatenate([pos_t, rot_t, jnp.zeros((B, 4, K_pose_pad), dtype=jnp.float32)], axis=1)
   poses_hbm = poses_b.reshape(B, 16, n_pose_chunks, 128).transpose(0, 2, 1, 3).reshape(B * n_pose_chunks, 16, 128)
 
   def _inst_kernel(
@@ -984,3 +999,123 @@ def make_spatial_8k_sharded_unique_renderer(
       check_rep=False,
   )
   return jax.jit(lambda oxp, oxm, cxp, cxm: sharded(dev_arrays, oxp, oxm, cxp, cxm)), mesh
+
+
+def make_geometry_sharded_unique_renderer(
+    spec_template: CompactWideBVHSceneSpec,
+    devices: Sequence[jax.Device],
+    n_local_meshes: int,
+    interpret: bool = False,
+):
+  """4-chip geometry-sharded renderer across 383 GiB HBM with exact pmin depth + psum shadow composite.
+
+  Inputs passed to returned jit fn:
+    dev_sharded: tuple of n_local_meshes tuples (l2_roots, l2, l0, leaf), each array having leading axis n_chips sharded P("geom")
+    rgba_sharded: (n_chips, n_local_meshes, 3) float32 sharded P("geom")
+    oxp_sharded: (n_chips, B, n_local_meshes, 3) float32 sharded P("geom")
+    oxm_sharded: (n_chips, B, n_local_meshes, 3, 3) float32 sharded P("geom")
+    cxp: (B, 3) replicated P()
+    cxm: (B, 3, 3) replicated P()
+  """
+  n_chips = len(devices)
+  mesh = Mesh(np.array(devices), ("geom",))
+  H, W = spec_template.height, spec_template.width
+
+  def _geom_fn(dev_s, rgba_s, oxp_s, oxm_s, cxp, cxm):
+    rgba_loc = rgba_s[0]  # (n_local_meshes, 3)
+    oxp_loc = oxp_s[0]    # (B, n_local_meshes, 3)
+    oxm_loc = oxm_s[0]    # (B, n_local_meshes, 3, 3)
+    ray_orig, ray_dir, neg_z = _compute_camera_rays_band(spec_template, cxp, cxm, H, W, jnp.int32(0), H)
+    B, R, _ = ray_orig.shape
+    max_dist = jnp.broadcast_to(((spec_template.zfar - spec_template.znear) / neg_z)[None, :], (B, R))
+
+    best_d = max_dist
+    best_hit = jnp.zeros((B, R), dtype=jnp.bool_)
+    best_nrm = jnp.zeros((B, R, 3), dtype=jnp.float32)
+    best_alb = jnp.zeros((B, R, 3), dtype=jnp.float32)
+
+    for m_idx in range(n_local_meshes):
+      l2_r, l2_a, l0_a, leaf_b = dev_s[m_idx]
+      l2_r, l2_a, l0_a, leaf_b = l2_r[0], l2_a[0], l0_a[0], leaf_b[0]
+      p = oxp_loc[:, m_idx, :]
+      rmat = oxm_loc[:, m_idx, :, :]
+      ro_loc = jnp.einsum("bji,brj->bri", rmat, ray_orig - p[:, None, :], precision=jax.lax.Precision.HIGHEST)
+      rd_loc = jnp.einsum("bji,brj->bri", rmat, ray_dir, precision=jax.lax.Precision.HIGHEST)
+      d_m, n_loc_m, _ = _pallas_compact_bvh_raycast(
+          l2_r, l2_a, l0_a, leaf_b, ro_loc, rd_loc, best_d, H, W,
+          any_hit=False, interpret=interpret, return_stats=False,
+      )
+      imp = d_m < best_d
+      n_w_m = jnp.einsum("bij,brj->bri", rmat, n_loc_m, precision=jax.lax.Precision.HIGHEST)
+      best_d = jnp.where(imp, d_m, best_d)
+      best_hit = best_hit | imp
+      best_nrm = jnp.where(imp[..., None], n_w_m, best_nrm)
+      best_alb = jnp.where(imp[..., None], rgba_loc[m_idx][None, None, :], best_alb)
+
+    # Exact multi-chip closest-hit depth composite via pmin + psum
+    global_d = jax.lax.pmin(best_d, "geom")
+    win = best_hit & (best_d <= global_d + 1e-6)
+    win_f = win.astype(jnp.float32)
+    win_sum = jnp.maximum(jax.lax.psum(win_f, "geom"), 1.0)
+    w_hit = jax.lax.psum(win.astype(jnp.int32), "geom") > 0
+    w_nrm = jax.lax.psum(jnp.where(win[..., None], best_nrm, 0.0), "geom") / win_sum[..., None]
+    w_alb = jax.lax.psum(jnp.where(win[..., None], best_alb, 0.0), "geom") / win_sum[..., None]
+
+    vdir = -ray_dir
+    w_nrm = jnp.where(w_hit[..., None], w_nrm, 0.0)
+    flip = jnp.sum(w_nrm * vdir, axis=-1, keepdims=True) < 0.0
+    w_nrm = jnp.where(flip, -w_nrm, w_nrm)
+
+    hit_pos = ray_orig + jnp.where(w_hit, global_d, 0.0)[..., None] * ray_dir
+    l_pos = jnp.asarray(spec_template.light_pos, dtype=jnp.float32)
+    delta_l = l_pos[None, None, :] - hit_pos
+    dist_l = jnp.linalg.norm(delta_l, axis=-1)
+    L = delta_l / jnp.maximum(dist_l[..., None], 1e-12)
+    ndotl = jnp.maximum(0.0, jnp.sum(w_nrm * L, axis=-1))
+
+    vis = jnp.ones((B, R), dtype=jnp.float32)
+    if spec_template.use_shadows:
+      sh_o = hit_pos + w_nrm * 2.0e-3
+      sh_lim = jnp.where(w_hit & (ndotl > 0.0), jnp.maximum(dist_l - 1e-3, 0.0), 0.0)
+      occ_loc = jnp.zeros((B, R), dtype=jnp.bool_)
+      for m_idx in range(n_local_meshes):
+        l2_r, l2_a, l0_a, leaf_b = dev_s[m_idx]
+        l2_r, l2_a, l0_a, leaf_b = l2_r[0], l2_a[0], l0_a[0], leaf_b[0]
+        p = oxp_loc[:, m_idx, :]
+        rmat = oxm_loc[:, m_idx, :, :]
+        ro_l = jnp.einsum("bji,brj->bri", rmat, sh_o - p[:, None, :], precision=jax.lax.Precision.HIGHEST)
+        rd_l = jnp.einsum("bji,brj->bri", rmat, L, precision=jax.lax.Precision.HIGHEST)
+        sh_lim_rem = jnp.where(occ_loc, 0.0, sh_lim)
+        d_sh, _, _ = _pallas_compact_bvh_raycast(
+            l2_r, l2_a, l0_a, leaf_b, ro_l, rd_l, sh_lim_rem, H, W,
+            any_hit=True, interpret=interpret, return_stats=False,
+        )
+        occ_loc = occ_loc | (d_sh < sh_lim_rem)
+      occ = jax.lax.psum(occ_loc.astype(jnp.int32), "geom") > 0
+      vis = jnp.where(occ, float(spec_template.shadow_light_fraction), 1.0)
+
+    l_amb = jnp.asarray(spec_template.light_ambient, dtype=jnp.float32)
+    l_diff = jnp.asarray(spec_template.light_diffuse, dtype=jnp.float32)
+    l_spec = jnp.asarray(spec_template.light_specular, dtype=jnp.float32)
+    H_vec = (L + vdir) / jnp.maximum(jnp.linalg.norm(L + vdir, axis=-1, keepdims=True), 1e-12)
+    spec_w = (jnp.maximum(0.0, jnp.sum(w_nrm * H_vec, axis=-1)) ** 32.0) * 0.25 * vis
+    direct_rgb = jnp.clip(
+        w_alb * (l_amb[None, None, :] + l_diff[None, None, :] * (ndotl * vis)[..., None]) + l_spec[None, None, :] * spec_w[..., None],
+        0.0, 1.0,
+    )
+    sky_t = jnp.clip(0.5 * (ray_dir[..., 2] + 1.0), 0.0, 1.0)[..., None]
+    sky_rgb = (
+        sky_t * jnp.asarray(spec_template.sky_rgb1, dtype=jnp.float32)[None, None, :]
+        + (1.0 - sky_t) * jnp.asarray(spec_template.sky_rgb2, dtype=jnp.float32)[None, None, :]
+    )
+    rgb = jnp.where(w_hit[..., None], direct_rgb, sky_rgb).reshape(B, H, W, 3)
+    return rgb
+
+  sharded = shard_map(
+      _geom_fn,
+      mesh=mesh,
+      in_specs=(P("geom"), P("geom"), P("geom"), P("geom"), P(), P()),
+      out_specs=P(),
+      check_rep=False,
+  )
+  return jax.jit(sharded), mesh

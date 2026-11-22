@@ -612,7 +612,6 @@ def main():
     if args.best_cfg_json:
       best = json.loads(args.best_cfg_json)
     else:
-      # Pick fastest config that passed ALL parity checks
       passed_keys = set()
       by_cfg: Dict[tuple, List[bool]] = {}
       for p in data.get("parity_checks", []):
@@ -642,22 +641,27 @@ def main():
           "fast_math": best_r["fast_math"],
       }
     print("4C BENCH BEST CONFIG:", best, flush=True)
-    runs = []
-    for B in (1024, 2048, 4096):
-      runs.append(benchmark_config_4c(B, 8, 512, "b_r", "none", "v2_128", "none", use_v2_baseline=True))
-      runs.append(benchmark_config_4c(
-          B,
-          best["block_b"],
-          best["block_r"],
-          best["grid_order"],
-          best["cull_mode"],
-          best["geom_pack"],
-          best["fast_math"],
-          use_v2_baseline=False,
-      ))
     data["best_config"] = best
-    data["best_4c_runs"] = runs
-    _save(args.out_json, data)
+    done_4c = _existing_keys(data.get("best_4c_runs", []), args.retry_errors)
+    for B in args.batches:
+      if ("v2_2_baseline", B, 4) not in done_4c:
+        r_base = benchmark_config_4c(B, 8, 512, "b_r", "none", "v2_128", "none", use_v2_baseline=True)
+        data["best_4c_runs"] = _merge_runs(data.get("best_4c_runs", []), [r_base])
+        _save(args.out_json, data)
+      v3_lbl = f"b{best['block_b']}_r{best['block_r']}_{best['grid_order']}_{best['cull_mode']}_{best['geom_pack']}_{best['fast_math']}"
+      if (v3_lbl, B, 4) not in done_4c:
+        r_v3 = benchmark_config_4c(
+            B,
+            best["block_b"],
+            best["block_r"],
+            best["grid_order"],
+            best["cull_mode"],
+            best["geom_pack"],
+            best["fast_math"],
+            use_v2_baseline=False,
+        )
+        data["best_4c_runs"] = _merge_runs(data.get("best_4c_runs", []), [r_v3])
+        _save(args.out_json, data)
 
 
 if __name__ == "__main__":

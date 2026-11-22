@@ -114,14 +114,14 @@ def build_warehouse_mjcf(n_target_prims: int = 200) -> str:
       prim_count += 1
     lines.append('    </body>')
 
-  # Active tabletop freejoint objects (6 objects colliding with bench_top)
+  # Active tabletop freejoint objects colliding with bench_top (MJX-supported collider types: box, capsule, sphere)
   active_objs = [
       ("cube_red", "box", "0.032 0.032 0.032", "-0.18 -0.08 0.44", palette[0]),
       ("cube_blue", "box", "0.030 0.030 0.035", "0.14 -0.10 0.44", palette[1]),
-      ("can_yellow", "cylinder", "0.028 0.045 0", "-0.02 0.06 0.45", palette[2]),
+      ("can_yellow", "capsule", "0.026 0.028 0", "-0.02 0.06 0.46", palette[2]),
       ("bottle_green", "capsule", "0.024 0.050 0", "0.28 0.05 0.48", palette[3]),
       ("orange_ball", "sphere", "0.032 0 0", "-0.30 0.08 0.44", palette[4]),
-      ("bowl_plum", "ellipsoid", "0.045 0.045 0.025", "0.04 -0.16 0.43", palette[5]),
+      ("crate_plum", "box", "0.040 0.035 0.024", "0.04 -0.16 0.43", palette[5]),
   ]
   for oname, otype, osize, opos, orgba in active_objs:
     lines.append(f'    <body name="{oname}" pos="{opos}">')

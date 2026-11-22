@@ -57,7 +57,7 @@ H_4K = 2160
 R_4K = W_4K * H_4K  # 8,294,400 = 16,200 * 512
 
 
-class _ResBlockDtype(nn.Module):
+class _ResBlock(nn.Module):
   features: int
   compute_dtype: Any = jnp.bfloat16
 
@@ -84,18 +84,18 @@ class SpatialRelighterDtype(nn.Module):
     w2 = self.base_width * 2
 
     h1 = nn.relu(nn.Conv(w1, (3, 3), padding="SAME", dtype=dt, param_dtype=jnp.float32)(x.astype(dt)))
-    h1 = _ResBlockDtype(w1, dt)(h1)
-    h1 = _ResBlockDtype(w1, dt)(h1)
+    h1 = _ResBlock(w1, dt)(h1)
+    h1 = _ResBlock(w1, dt)(h1)
 
     h2 = nn.relu(nn.Conv(w2, (3, 3), strides=(2, 2), padding="SAME", dtype=dt, param_dtype=jnp.float32)(h1))
-    h2 = _ResBlockDtype(w2, dt)(h2)
-    h2 = _ResBlockDtype(w2, dt)(h2)
+    h2 = _ResBlock(w2, dt)(h2)
+    h2 = _ResBlock(w2, dt)(h2)
 
     B, H, W, _ = x.shape
     h2_up = jax.image.resize(h2.astype(jnp.float32), (B, H, W, w2), method="bilinear").astype(dt)
     cat = jnp.concatenate([h1, h2_up], axis=-1)
     h_out = nn.relu(nn.Conv(w1, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(cat))
-    h_out = _ResBlockDtype(w1, dt)(h_out)
+    h_out = _ResBlock(w1, dt)(h_out)
     out_in = jnp.concatenate([h_out, x.astype(dt)], axis=-1)
     out_mid = nn.relu(nn.Conv(w1, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(out_in))
     out_mid = nn.relu(nn.Conv(w1, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(out_mid))
@@ -364,6 +364,8 @@ def run_4k_suite(
     neural_ckpt: str,
     out_json: str,
     export_dir: Optional[str] = None,
+    phase: str = "all",
+    s1_batches_override: Optional[List[int]] = None,
 ) -> Dict[str, Any]:
   pallas_interp = (jax.default_backend() == "cpu")
   devs = jax.devices()[:n_chips]
@@ -384,6 +386,10 @@ def run_4k_suite(
       "stage12_runs": [],
       "spatial_split_4c": None,
   }
+  os.makedirs(os.path.dirname(out_json) or ".", exist_ok=True)
+  def _save():
+    with open(out_json, "w") as f:
+      json.dump(results, f, indent=2)
 
   sm_kw = {"check_rep": False} if "check_rep" in inspect.signature(shard_map).parameters else {"check_vma": False}
   if n_chips > 1:
@@ -393,88 +399,100 @@ def run_4k_suite(
     rep_dp = jax.sharding.NamedSharding(mesh_dp, P())
 
   # --- 1. Stage 1 Native 4K ---
-  s1_batches = [1, 4, 8] if n_chips == 1 else [4, 8, 16, 32]
-  for B in s1_batches:
-    dx_b, ctrl = _make_batch(m, mx, B)
-    if n_chips > 1:
-      dx_b = jax.device_put(dx_b, sharding_dp)
-      ctrl = jax.device_put(ctrl, sharding_dp)
-      mx_d = jax.device_put(mx, rep_dp)
+  if phase in ("all", "s1"):
+    s1_batches = s1_batches_override if s1_batches_override else ([1, 4, 8] if n_chips == 1 else [4, 8, 16, 32])
+    for B in s1_batches:
+      dx_b, ctrl = _make_batch(m, mx, B)
+      if n_chips > 1:
+        dx_b = jax.device_put(dx_b, sharding_dp)
+        ctrl = jax.device_put(ctrl, sharding_dp)
+        mx_d = jax.device_put(mx, rep_dp)
 
-      _phys_sm = shard_map(
-          lambda d, u, mxl: jax.vmap(lambda x, c: mjx.step(mxl, x.replace(ctrl=c)))(d, u),
-          mesh=mesh_dp, in_specs=(P("dp"), P("dp"), P()), out_specs=P("dp"), **sm_kw,
-      )
-      _e2e_sm = shard_map(
-          lambda d, u, mxl: (
-              (dn := jax.vmap(lambda x, c: mjx.step(mxl, x.replace(ctrl=c)))(d, u)),
-              (gb := render_batch(spec_4k, dn, mode="pallas_v2", pallas_interpret=pallas_interp)).rgb,
-              gb.depth,
-          ),
-          mesh=mesh_dp, in_specs=(P("dp"), P("dp"), P()), out_specs=(P("dp"), P("dp"), P("dp")), **sm_kw,
-      )
-      phys_fn = jax.jit(lambda d, u: _phys_sm(d, u, mx_d))
-      e2e_fn = jax.jit(lambda d, u: _e2e_sm(d, u, mx_d))
-    else:
-      dx_b = jax.device_put(dx_b, devs[0])
-      ctrl = jax.device_put(ctrl, devs[0])
-      phys_fn = jax.jit(lambda d, u: jax.vmap(lambda x, c: mjx.step(mx, x.replace(ctrl=c)))(d, u))
+        _phys_sm = shard_map(
+            lambda d, u, mxl: jax.vmap(lambda x, c: mjx.step(mxl, x.replace(ctrl=c)))(d, u),
+            mesh=mesh_dp, in_specs=(P("dp"), P("dp"), P()), out_specs=P("dp"), **sm_kw,
+        )
+        _e2e_sm = shard_map(
+            lambda d, u, mxl: (
+                (dn := jax.vmap(lambda x, c: mjx.step(mxl, x.replace(ctrl=c)))(d, u)),
+                (gb := render_batch(spec_4k, dn, mode="pallas_v2", pallas_interpret=pallas_interp)).rgb,
+                gb.depth,
+            ),
+            mesh=mesh_dp, in_specs=(P("dp"), P("dp"), P()), out_specs=(P("dp"), P("dp"), P("dp")), **sm_kw,
+        )
+        phys_fn = jax.jit(lambda d, u: _phys_sm(d, u, mx_d))
+        e2e_fn = jax.jit(lambda d, u: _e2e_sm(d, u, mx_d))
+      else:
+        dx_b = jax.device_put(dx_b, devs[0])
+        ctrl = jax.device_put(ctrl, devs[0])
+        phys_fn = jax.jit(lambda d, u: jax.vmap(lambda x, c: mjx.step(mx, x.replace(ctrl=c)))(d, u))
 
-      @jax.jit
-      def e2e_fn(d, u):
-        dn = jax.vmap(lambda x, c: mjx.step(mx, x.replace(ctrl=c)))(d, u)
-        gb = render_batch(spec_4k, dn, mode="pallas_v2", pallas_interpret=pallas_interp)
-        return dn, gb.rgb, gb.depth
+        @jax.jit
+        def e2e_fn(d, u):
+          dn = jax.vmap(lambda x, c: mjx.step(mx, x.replace(ctrl=c)))(d, u)
+          gb = render_batch(spec_4k, dn, mode="pallas_v2", pallas_interpret=pallas_interp)
+          return dn, gb.rgb, gb.depth
 
-    hlo = _audit_hlo(e2e_fn.lower(dx_b, ctrl))
-    d_p = phys_fn(dx_b, ctrl)
-    jax.block_until_ready(d_p.qpos)
-    t0 = time.perf_counter()
-    for _ in range(5):
-      d_p = phys_fn(d_p, ctrl)
-    jax.block_until_ready(d_p.qpos)
-    dt_phys = (time.perf_counter() - t0) / 5
+      try:
+        hlo = _audit_hlo(e2e_fn.lower(dx_b, ctrl))
+        d_p = phys_fn(dx_b, ctrl)
+        jax.block_until_ready(d_p.qpos)
+        t0 = time.perf_counter()
+        for _ in range(5):
+          d_p = phys_fn(d_p, ctrl)
+        jax.block_until_ready(d_p.qpos)
+        dt_phys = (time.perf_counter() - t0) / 5
 
-    tc0 = time.perf_counter()
-    dc = dx_b
-    for _ in range(2):
-      dc, rgb, dep = e2e_fn(dc, ctrl)
-    jax.block_until_ready((rgb, dep))
-    warmup_s = time.perf_counter() - tc0
+        tc0 = time.perf_counter()
+        dc = dx_b
+        for _ in range(2):
+          dc, rgb, dep = e2e_fn(dc, ctrl)
+        jax.block_until_ready((rgb, dep))
+        warmup_s = time.perf_counter() - tc0
 
-    n_st = 4 if B <= 8 else 3
-    t1 = time.perf_counter()
-    for _ in range(n_st):
-      dc, rgb, dep = e2e_fn(dc, ctrl)
-    jax.block_until_ready((rgb, dep))
-    dt_e2e = (time.perf_counter() - t1) / n_st
-    dt_rend = max(dt_e2e - dt_phys, 0.0)
-    fps = float(B / max(dt_e2e, 1e-9))
-    rec = {
-        "stage": "stage1_pallas_v2",
-        "n_chips": n_chips,
-        "batch_size": B,
-        "resolution": f"{W_4K}x{H_4K}",
-        "dt_physics_ms": dt_phys * 1e3,
-        "dt_render_ms": dt_rend * 1e3,
-        "dt_e2e_ms": dt_e2e * 1e3,
-        "e2e_fps": fps,
-        "megapixels_per_s": fps * R_4K / 1e6,
-        "warmup_s": round(warmup_s, 3),
-        "host_callbacks": hlo["host_callbacks"],
-        "send_recv_ops": hlo["send_recv_ops"],
-        "hlo_zero_copy": True,
-    }
-    results["stage1_runs"].append(rec)
-    print(f"4K S1 {n_chips}c B={B}: e2e={rec['dt_e2e_ms']:.2f}ms fps={fps:.2f} ({rec['megapixels_per_s']:.1f} MPix/s)", flush=True)
-
-    # Save Stage 1 B=1 visual for crops
-    if export_dir and n_chips == 1 and B == 1:
-      os.makedirs(export_dir, exist_ok=True)
-      np.save(os.path.join(export_dir, "frame_4k_stage1_rgb.npy"), np.asarray(rgb[0], np.float32))
+        n_st = 4 if B <= 8 else 3
+        t1 = time.perf_counter()
+        for _ in range(n_st):
+          dc, rgb, dep = e2e_fn(dc, ctrl)
+        jax.block_until_ready((rgb, dep))
+        dt_e2e = (time.perf_counter() - t1) / n_st
+        dt_rend = max(dt_e2e - dt_phys, 0.0)
+        fps = float(B / max(dt_e2e, 1e-9))
+        rec = {
+            "status": "ok",
+            "stage": "stage1_pallas_v2",
+            "n_chips": n_chips,
+            "batch_size": B,
+            "resolution": f"{W_4K}x{H_4K}",
+            "dt_physics_ms": dt_phys * 1e3,
+            "dt_render_ms": dt_rend * 1e3,
+            "dt_e2e_ms": dt_e2e * 1e3,
+            "e2e_fps": fps,
+            "megapixels_per_s": fps * R_4K / 1e6,
+            "warmup_s": round(warmup_s, 3),
+            "host_callbacks": hlo["host_callbacks"],
+            "send_recv_ops": hlo["send_recv_ops"],
+            "hlo_zero_copy": True,
+        }
+        print(f"4K S1 {n_chips}c B={B}: e2e={rec['dt_e2e_ms']:.2f}ms fps={fps:.2f} ({rec['megapixels_per_s']:.1f} MPix/s)", flush=True)
+        if export_dir and n_chips == 1 and B == 1:
+          os.makedirs(export_dir, exist_ok=True)
+          np.save(os.path.join(export_dir, "frame_4k_stage1_rgb.npy"), np.asarray(rgb[0], np.float32))
+      except Exception as exc:
+        rec = {
+            "status": "error",
+            "stage": "stage1_pallas_v2",
+            "n_chips": n_chips,
+            "batch_size": B,
+            "resolution": f"{W_4K}x{H_4K}",
+            "error": f"{type(exc).__name__}: {str(exc)[:300]}",
+        }
+        print(f"4K S1 {n_chips}c B={B} ERROR: {rec['error']}", flush=True)
+      results["stage1_runs"].append(rec)
+      _save()
 
   # --- 2. 4-Chip Single-Frame Spatial Split (W=3840 -> 4x960, 4,050 blocks/chip) ---
-  if n_chips == 4:
+  if n_chips == 4 and phase in ("all", "spatial"):
     mesh_sp = jax.sharding.Mesh(np.array(devs), ("sp",))
     P = jax.sharding.PartitionSpec
     sh_sp = jax.sharding.NamedSharding(mesh_sp, P("sp", None, None))
@@ -571,8 +589,13 @@ def run_4k_suite(
     )
 
   # --- 3. Stage 1 + Stage 2 (M2_spatial_128) Native 4K in BF16 and FP32 (STRICTLY 1 frame/chip!) ---
+  s2_list = []
+  if phase in ("all", "s12_bf16"):
+    s2_list.append(("bf16", jnp.bfloat16))
+  if phase in ("all", "s12_fp32"):
+    s2_list.append(("fp32", jnp.float32))
   B_s2 = 1 if n_chips == 1 else 4
-  for dtype_name, dt_val in (("bf16", jnp.bfloat16), ("fp32", jnp.float32)):
+  for dtype_name, dt_val in s2_list:
     model_dt = SpatialRelighterDtype(base_width=64, compute_dtype=dt_val)
     dx_s2, ctrl_s2 = _make_batch(m, mx, B_s2)
 
@@ -676,10 +699,9 @@ def run_4k_suite(
       }
       print(f"4K S1+M2 ({dtype_name}) {n_chips}c ERROR: {rec_s2['error']}", flush=True)
     results["stage12_runs"].append(rec_s2)
+    _save()
 
-  os.makedirs(os.path.dirname(out_json) or ".", exist_ok=True)
-  with open(out_json, "w") as f:
-    json.dump(results, f, indent=2)
+  _save()
   print(f"Saved {out_json}", flush=True)
   return results
 
@@ -690,8 +712,34 @@ def main():
   ap.add_argument("--neural_ckpt", default="/dev/shm/zaychik-tpu-mjx/out/metrics/M2_spatial_128_params.pkl")
   ap.add_argument("--out_json", required=True)
   ap.add_argument("--export_dir", default=None)
+  ap.add_argument("--phase", default="all", choices=["all", "s1", "spatial", "s12_bf16", "s12_fp32", "merge"])
+  ap.add_argument("--s1_batches", type=int, nargs="*", default=None)
+  ap.add_argument("--merge_inputs", nargs="*", default=[])
   args = ap.parse_args()
-  run_4k_suite(args.n_chips, args.neural_ckpt, args.out_json, args.export_dir)
+  if args.phase == "merge":
+    merged: Dict[str, Any] = {
+        "experiment": "v3_w6_4k_bench",
+        "worker": "w6",
+        "resolution": f"{W_4K}x{H_4K}",
+        "pixels_per_frame": R_4K,
+        "pallas_blocks_per_frame": R_4K // BLOCK_R,
+        "stage1_runs": [],
+        "stage12_runs": [],
+        "spatial_split_4c": None,
+    }
+    for p in args.merge_inputs:
+      with open(p, "r") as f:
+        d = json.load(f)
+      merged["stage1_runs"].extend(d.get("stage1_runs", []))
+      merged["stage12_runs"].extend(d.get("stage12_runs", []))
+      if d.get("spatial_split_4c") is not None:
+        merged["spatial_split_4c"] = d["spatial_split_4c"]
+    os.makedirs(os.path.dirname(args.out_json) or ".", exist_ok=True)
+    with open(args.out_json, "w") as f:
+      json.dump(merged, f, indent=2)
+    print(f"Merged into {args.out_json}", flush=True)
+    return
+  run_4k_suite(args.n_chips, args.neural_ckpt, args.out_json, args.export_dir, phase=args.phase, s1_batches_override=args.s1_batches)
 
 
 if __name__ == "__main__":

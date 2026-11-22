@@ -158,6 +158,7 @@ def project_and_bucket_macro_tiles(
     cam_fovy: float = 42.0,
     znear: float = 0.05,
     k_macro: int = 4096,
+    macro_rep: int = 3,
 ) -> Tuple[jax.Array, jax.Array, jax.Array, int, int, int, int]:
   """Project N anisotropic 3D Gaussians, replicate across up to 3x3 macro-tiles (32x32), and bucket via uint32 sort + searchsorted."""
   N = mu.shape[0]
@@ -244,15 +245,16 @@ def project_and_bucket_macro_tiles(
     return (m_id << jnp.uint32(19)) | z_u32
 
   key_parts = []
-  for dy in (0, 1, 2):
-    for dx in (0, 1, 2):
+  rep_rng = tuple(range(macro_rep))
+  for dy in rep_rng:
+    for dx in rep_rng:
       vx = on_screen if dx == 0 else (on_screen & ((tx0 + dx) <= tx1))
       vy = vx if dy == 0 else (vx & ((ty0 + dy) <= ty1))
       key_parts.append(_make_key(vy, jnp.minimum(tx0 + dx, Mx - 1), jnp.minimum(ty0 + dy, My - 1)))
 
   keys = jnp.concatenate(key_parts, axis=0)
   idx_n = jnp.arange(N, dtype=jnp.int32)
-  g_ids = jnp.tile(idx_n, 9)
+  g_ids = jnp.tile(idx_n, macro_rep * macro_rep)
 
   keys_s, gids_s = jax.lax.sort_key_val(keys, g_ids, dimension=0)
   macro_s = keys_s >> jnp.uint32(19)
@@ -313,13 +315,16 @@ def render_macro_tiles_subset(
     tile_ox_m: jax.Array,   # (M_sub,) float32 (global pixel X origin of each 32x32 macro-tile)
     tile_oy_m: jax.Array,   # (M_sub,) float32 (global pixel Y origin of each 32x32 macro-tile)
     use_bf16_mxu: bool = False,
+    k_tile: int = 128,
+    return_alpha_depth: bool = False,
     interpret: bool = False,
-) -> jax.Array:
+) -> jax.Array | Tuple[jax.Array, jax.Array, jax.Array]:
   """Render a slice of 32x32 macro-tiles (`M_sub` tiles) using Wave 1 V3 Pallas kernel!
 
   Returns:
-    rgb_macro: (M_sub, 32, 32, 3) float32
+    rgb_macro: (M_sub, 32, 32, 3) float32 (or tuple (rgb, depth, alpha) if return_alpha_depth)
   """
+  assert k_tile % 128 == 0 and k_tile >= 128
   M_sub, k_macro = macro_gidx.shape
   K_pad = ((k_macro + 127) // 128) * 128
   safe_idx = jnp.maximum(macro_gidx, 0)
@@ -351,7 +356,7 @@ def render_macro_tiles_subset(
   )
 
   score = jnp.where(overlap, -zd[:, None, :], -1.0e9)
-  top_scores, top_idx = jax.lax.approx_max_k(score, 128, recall_target=1.0)
+  top_scores, top_idx = jax.lax.approx_max_k(score, k_tile, recall_target=1.0)
   neg_ts, top_idx = jax.lax.sort_key_val(-top_scores, top_idx, dimension=-1)
   top_scores = -neg_ts
   top_idx = jnp.where(top_scores > -1.0e8, top_idx, -1)
@@ -362,39 +367,74 @@ def render_macro_tiles_subset(
 
   t_ox_0 = np.tile(np.arange(4, dtype=np.float32) * 8.0, 4)
   t_oy_0 = np.repeat(np.arange(4, dtype=np.float32) * 8.0, 4)
-  rgb_t, _, _, alp_t = pallas_gs3d_v3_fused_rasterize(
-      splats_local,
-      top_idx,
-      t_ox_0,
-      t_oy_0,
-      tile_size=8,
-      use_bf16_mxu=use_bf16_mxu,
-      t_grp=16,
-      interpret=interpret,
-  )
+  if k_tile == 128:
+    rgb_t, dep_t, _, alp_t = pallas_gs3d_v3_fused_rasterize(
+        splats_local,
+        top_idx,
+        t_ox_0,
+        t_oy_0,
+        tile_size=8,
+        use_bf16_mxu=use_bf16_mxu,
+        t_grp=16,
+        interpret=interpret,
+    )
+  else:
+    rgb_t = jnp.zeros((M_sub, 16, 8, 8, 3), dtype=jnp.float32)
+    dep_t = jnp.zeros((M_sub, 16, 8, 8), dtype=jnp.float32)
+    t_acc = jnp.ones((M_sub, 16, 8, 8), dtype=jnp.float32)
+    for c in range(k_tile // 128):
+      rc, dc, _, ac = pallas_gs3d_v3_fused_rasterize(
+          splats_local,
+          top_idx[..., c * 128 : (c + 1) * 128],
+          t_ox_0,
+          t_oy_0,
+          tile_size=8,
+          use_bf16_mxu=use_bf16_mxu,
+          t_grp=16,
+          interpret=interpret,
+      )
+      rgb_t = rgb_t + t_acc[..., None] * rc
+      dep_t = dep_t + t_acc * dc
+      t_acc = t_acc * jnp.maximum(1.0 - ac, 0.0)
+    alp_t = 1.0 - t_acc
 
   rgb_m = rgb_t.reshape(M_sub, 4, 4, 8, 8, 3).transpose(0, 1, 3, 2, 4, 5).reshape(M_sub, 32, 32, 3)
   alp_m = alp_t.reshape(M_sub, 4, 4, 8, 8).transpose(0, 1, 3, 2, 4).reshape(M_sub, 32, 32)
   sky_bg = jnp.array([0.52, 0.72, 0.94], dtype=jnp.float32)[None, None, None, :]
-  return jnp.clip(rgb_m + (1.0 - alp_m[..., None]) * sky_bg, 0.0, 1.0)
+  rgb_comp = jnp.clip(rgb_m + (1.0 - alp_m[..., None]) * sky_bg, 0.0, 1.0)
+  if return_alpha_depth:
+    dep_m = dep_t.reshape(M_sub, 4, 4, 8, 8).transpose(0, 1, 3, 2, 4).reshape(M_sub, 32, 32)
+    z_m = jnp.where(alp_m > 0.05, dep_m / jnp.maximum(alp_m, 1e-4), -1.0)
+    return rgb_comp, z_m, alp_m
+  return rgb_comp
 
 
 def render_massive_scene_1c(
     mu, cov_in, rgb, opacity, cam_xpos, cam_xmat,
     height: int, width: int, nrm: jax.Array | None = None,
     cam_fovy: float = 42.0, znear: float = 0.05,
-    k_macro: int = 4096, use_bf16_mxu: bool = False, interpret: bool = False,
-) -> jax.Array:
+    k_macro: int = 4096, use_bf16_mxu: bool = False,
+    k_tile: int = 128, macro_rep: int = 3, return_alpha_depth: bool = False,
+    interpret: bool = False,
+) -> jax.Array | Tuple[jax.Array, jax.Array, jax.Array]:
   splats_n16, macro_gidx, _, H_pad, W_pad, My, Mx = project_and_bucket_macro_tiles(
       mu, cov_in, rgb, opacity, cam_xpos, cam_xmat,
-      height=height, width=width, nrm=nrm, cam_fovy=cam_fovy, znear=znear, k_macro=k_macro,
+      height=height, width=width, nrm=nrm, cam_fovy=cam_fovy, znear=znear,
+      k_macro=k_macro, macro_rep=macro_rep,
   )
   t_ox_m = jnp.asarray(np.tile(np.arange(Mx, dtype=np.float32) * 32.0, My), dtype=jnp.float32)
   t_oy_m = jnp.asarray(np.repeat(np.arange(My, dtype=np.float32) * 32.0, Mx), dtype=jnp.float32)
-  rgb_macros = render_macro_tiles_subset(
-      splats_n16, macro_gidx, t_ox_m, t_oy_m, use_bf16_mxu=use_bf16_mxu, interpret=interpret
+  out_sub = render_macro_tiles_subset(
+      splats_n16, macro_gidx, t_ox_m, t_oy_m, use_bf16_mxu=use_bf16_mxu,
+      k_tile=k_tile, return_alpha_depth=return_alpha_depth, interpret=interpret,
   )
-  img_pad = rgb_macros.reshape(My, Mx, 32, 32, 3).transpose(0, 2, 1, 3, 4).reshape(H_pad, W_pad, 3)
+  if return_alpha_depth:
+    rgb_macros, dep_macros, alp_macros = out_sub
+    img_pad = rgb_macros.reshape(My, Mx, 32, 32, 3).transpose(0, 2, 1, 3, 4).reshape(H_pad, W_pad, 3)
+    dep_pad = dep_macros.reshape(My, Mx, 32, 32).transpose(0, 2, 1, 3).reshape(H_pad, W_pad)
+    alp_pad = alp_macros.reshape(My, Mx, 32, 32).transpose(0, 2, 1, 3).reshape(H_pad, W_pad)
+    return img_pad[:height, :width, :], dep_pad[:height, :width], alp_pad[:height, :width]
+  img_pad = out_sub.reshape(My, Mx, 32, 32, 3).transpose(0, 2, 1, 3, 4).reshape(H_pad, W_pad, 3)
   return img_pad[:height, :width, :]
 
 
@@ -407,6 +447,9 @@ def make_massive_scene_4c_fn(
     k_macro: int = 4096,
     use_bf16_mxu: bool = False,
     has_nrm: bool = False,
+    k_tile: int = 128,
+    macro_rep: int = 3,
+    return_alpha_depth: bool = False,
 ):
   """4-chip shard_map massive-scene renderer: shards 32x32 macro-tiles across 4 TPU v5p chips!"""
   M_SIZE = 32
@@ -428,14 +471,15 @@ def make_massive_scene_4c_fn(
 
   def _render_macros_local(splats_n16, macro_gidx_sub, tox_sub, toy_sub):
     return render_macro_tiles_subset(
-        splats_n16, macro_gidx_sub, tox_sub, toy_sub, use_bf16_mxu=use_bf16_mxu, interpret=False
+        splats_n16, macro_gidx_sub, tox_sub, toy_sub,
+        use_bf16_mxu=use_bf16_mxu, k_tile=k_tile, return_alpha_depth=return_alpha_depth, interpret=False,
     )
 
   _sm_raster = shard_map(
       _render_macros_local,
       mesh=mesh,
       in_specs=(P(), P("dp"), P("dp"), P("dp")),
-      out_specs=P("dp"),
+      out_specs=(P("dp"), P("dp"), P("dp")) if return_alpha_depth else P("dp"),
       **sm_kw,
   )
 
@@ -446,11 +490,21 @@ def make_massive_scene_4c_fn(
   def _run_4c(mu, cov_in, rgb, opacity, cam_xpos, cam_xmat, nrm=None):
     splats_n16, macro_gidx, _, _, _, _, _ = project_and_bucket_macro_tiles(
         mu, cov_in, rgb, opacity, cam_xpos, cam_xmat,
-        height=height, width=width, nrm=nrm, cam_fovy=cam_fovy, znear=znear, k_macro=k_macro,
+        height=height, width=width, nrm=nrm, cam_fovy=cam_fovy, znear=znear,
+        k_macro=k_macro, macro_rep=macro_rep,
     )
     if M_pad > M_tiles:
       macro_gidx = jnp.pad(macro_gidx, ((0, M_pad - M_tiles), (0, 0)), constant_values=-1)
-    rgb_macros = _sm_raster(splats_n16, macro_gidx, t_ox_dev, t_oy_dev)[:M_tiles]
+    res = _sm_raster(splats_n16, macro_gidx, t_ox_dev, t_oy_dev)
+    if return_alpha_depth:
+      rgb_macros = res[0][:M_tiles]
+      dep_macros = res[1][:M_tiles]
+      alp_macros = res[2][:M_tiles]
+      img_pad = rgb_macros.reshape(My, Mx, 32, 32, 3).transpose(0, 2, 1, 3, 4).reshape(H_pad, W_pad, 3)
+      dep_pad = dep_macros.reshape(My, Mx, 32, 32).transpose(0, 2, 1, 3).reshape(H_pad, W_pad)
+      alp_pad = alp_macros.reshape(My, Mx, 32, 32).transpose(0, 2, 1, 3).reshape(H_pad, W_pad)
+      return img_pad[:height, :width, :], dep_pad[:height, :width], alp_pad[:height, :width]
+    rgb_macros = res[:M_tiles]
     img_pad = rgb_macros.reshape(My, Mx, 32, 32, 3).transpose(0, 2, 1, 3, 4).reshape(H_pad, W_pad, 3)
     return img_pad[:height, :width, :]
 

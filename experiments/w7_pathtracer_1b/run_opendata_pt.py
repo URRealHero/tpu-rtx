@@ -85,6 +85,36 @@ def compute_psnr(img_a: np.ndarray, img_b: np.ndarray) -> float:
   return float(10.0 * math.log10(1.0 / max(mse, 1e-10)))
 
 
+def compute_ssim(img_a: np.ndarray, img_b: np.ndarray, win: int = 7) -> float:
+  """Pure-NumPy structural similarity (SSIM) over 7x7 sliding window, averaged across RGB."""
+  a = img_a.astype(np.float32)
+  b = img_b.astype(np.float32)
+  c1 = 0.01 ** 2
+  c2 = 0.03 ** 2
+
+  def _box_mean(x: np.ndarray) -> np.ndarray:
+    pad = win // 2
+    xp = np.pad(x, ((pad, pad), (pad, pad), (0, 0)), mode="reflect")
+    cs = np.cumsum(xp, axis=0, dtype=np.float64)
+    cs = np.pad(cs, ((1, 0), (0, 0), (0, 0)), mode="constant")
+    vy = cs[win:, :, :] - cs[:-win, :, :]
+    csx = np.cumsum(vy, axis=1, dtype=np.float64)
+    csx = np.pad(csx, ((0, 0), (1, 0), (0, 0)), mode="constant")
+    return ((csx[:, win:, :] - csx[:, :-win, :]) / float(win * win)).astype(np.float32)
+
+  mu_a = _box_mean(a)
+  mu_b = _box_mean(b)
+  mu_a2 = mu_a * mu_a
+  mu_b2 = mu_b * mu_b
+  mu_ab = mu_a * mu_b
+  sig_a2 = np.maximum(_box_mean(a * a) - mu_a2, 0.0)
+  sig_b2 = np.maximum(_box_mean(b * b) - mu_b2, 0.0)
+  sig_ab = _box_mean(a * b) - mu_ab
+  num = (2.0 * mu_ab + c1) * (2.0 * sig_ab + c2)
+  den = (mu_a2 + mu_b2 + c1) * (sig_a2 + sig_b2 + c2)
+  return float(np.mean(num / np.maximum(den, 1e-12)))
+
+
 def bench_opendata_scene(
     scene_name: str,
     npz_path: str,
@@ -158,6 +188,7 @@ def bench_opendata_scene(
         img_cmp = img_np
 
       psnr_gt = compute_psnr(img_cmp, gt_np)
+      ssim_gt = compute_ssim(img_cmp, gt_np)
       ms = dt_s * 1e3
       fps = 1.0 / dt_s
       spm = fps * spp * 60.0
@@ -178,6 +209,7 @@ def bench_opendata_scene(
           "samples_per_min": round(spm, 1),
           "mrays_per_s": round(mrays, 2),
           "psnr_vs_cycles_5_3_db": round(psnr_gt, 2),
+          "ssim_vs_cycles_5_3": round(ssim_gt, 4),
       }
       if hlo_info is not None:
         rec["hlo_zero_copy"] = True
@@ -214,28 +246,34 @@ def main():
     pairs.append((sc, r_best, tpu_img, gt_img))
 
   if pairs:
-    # Build side-by-side Cycles 5.3.0 GT vs TPU Path Tracer hero comparison PNG
-    pw, ph = pairs[0][2].shape[1], pairs[0][2].shape[0]
+    # Build side-by-side Cycles 5.3.0 GT vs TPU Path Tracer hero comparison PNG (preserving each scene's aspect!)
+    max_w = max(p[2].shape[1] for p in pairs)
     pad, hdr = 14, 40
-    n_rows = len(pairs)
-    canvas = Image.new("RGB", (2 * pw + 3 * pad, n_rows * (ph + hdr) + (n_rows + 1) * pad), (15, 17, 21))
+    row_ys = []
+    cur_y = pad
+    for _sc, _rb, tpu_i, _gt_i in pairs:
+      row_ys.append(cur_y)
+      cur_y += tpu_i.shape[0] + hdr + pad
+    canvas = Image.new("RGB", (2 * max_w + 3 * pad, cur_y), (15, 17, 21))
     draw = ImageDraw.Draw(canvas)
     for r_i, (sc, r_b, tpu_i, gt_i) in enumerate(pairs):
-      y0 = pad + r_i * (ph + hdr + pad)
+      y0 = row_ys[r_i]
+      pw, ph = tpu_i.shape[1], tpu_i.shape[0]
+      x_off = (max_w - pw) // 2
       tpu_u8 = np.clip(tpu_i * 255.0 + 0.5, 0, 255).astype(np.uint8)
       gt_u8 = np.clip(gt_i * 255.0 + 0.5, 0, 255).astype(np.uint8)
       tpu_pil = Image.fromarray(tpu_u8).resize((pw, ph), Image.Resampling.BILINEAR)
       gt_pil = Image.fromarray(gt_u8).resize((pw, ph), Image.Resampling.BILINEAR)
-      canvas.paste(tpu_pil, (pad, y0 + hdr))
-      canvas.paste(gt_pil, (2 * pad + pw, y0 + hdr))
+      canvas.paste(tpu_pil, (pad + x_off, y0 + hdr))
+      canvas.paste(gt_pil, (2 * pad + max_w + x_off, y0 + hdr))
       draw.text(
           (pad, y0 + 12),
-          f"TPU v5p 4c ({sc}, {r_b['tris']:,} tris, 256 spp) | {r_b['samples_per_min']:,.0f} spm | {r_b['ms']:.0f}ms",
+          f"TPU v5p 4c ({sc}, {r_b['tris']:,} tris, {r_b['spp']} spp) | {r_b['samples_per_min']:,.0f} spm | {r_b['ms']:.0f}ms",
           fill=(238, 244, 250),
       )
       draw.text(
-          (2 * pad + pw, y0 + 12),
-          f"Blender 5.3.0 Cycles Reference GT ({sc}) | PSNR {r_b['psnr_vs_cycles_5_3_db']:.2f} dB",
+          (2 * pad + max_w, y0 + 12),
+          f"Blender 5.3.0 Cycles Reference GT ({sc}) | PSNR {r_b['psnr_vs_cycles_5_3_db']:.2f} dB | SSIM {r_b['ssim_vs_cycles_5_3']:.4f}",
           fill=(255, 220, 80),
       )
     os.makedirs(os.path.dirname(args.out_png) or ".", exist_ok=True)

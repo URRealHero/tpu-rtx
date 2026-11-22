@@ -365,6 +365,178 @@ class SpatialRelighter1RB(nn.Module):
     return delta
 
 
+class DemodSpatialRelighter(nn.Module):
+  """Albedo-demodulated 2-scale BF16 Relighter: delta = albedo * delta_irrad + delta_spec.
+
+  Separates smooth spatial irradiance/GI from sharp per-pixel GBuffer albedo discontinuities,
+  eliminating cross-object color bleed across 1-px box-finger contact boundaries.
+  """
+
+  base_width: int = 32
+  head_width: int = 64
+
+  @nn.compact
+  def __call__(self, x: jax.Array, train: bool = False) -> jax.Array:
+    del train
+    dt = jnp.bfloat16
+    w1 = self.base_width
+    w2 = self.base_width * 2
+    B, H, W, _ = x.shape
+    x_bf = x.astype(dt)
+    albedo = x_bf[..., 3:6]
+
+    h1 = nn.relu(nn.Conv(w1, (3, 3), padding="SAME", dtype=dt, param_dtype=jnp.float32)(x_bf))
+    h1 = _ResBlock(w1)(h1)
+    h1 = _ResBlock(w1)(h1)
+
+    h2 = nn.relu(nn.Conv(w2, (3, 3), strides=(2, 2), padding="SAME", dtype=dt, param_dtype=jnp.float32)(h1))
+    h2 = _ResBlock(w2)(h2)
+    h2 = _ResBlock(w2)(h2)
+
+    h2_up = jax.image.resize(h2.astype(jnp.float32), (B, H, W, w2), method="bilinear").astype(dt)
+    cat = jnp.concatenate([h1, h2_up], axis=-1)
+    h_out = nn.relu(nn.Conv(w1, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(cat))
+    h_out = _ResBlock(w1)(h_out)
+
+    out_in = jnp.concatenate([h_out, x_bf], axis=-1)
+    out_mid = nn.relu(nn.Conv(self.head_width, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(out_in))
+    out_mid = nn.relu(nn.Conv(self.head_width, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(out_mid))
+    irrad_spec = nn.Conv(6, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(out_mid)
+    delta_irrad = irrad_spec[..., :3]
+    delta_spec = irrad_spec[..., 3:6]
+    return (albedo * delta_irrad + delta_spec).astype(jnp.float32)
+
+
+class DemodCompactRelighter(nn.Module):
+  """Ultra-fast 2-scale (1 ResBlock/scale, 1x1 decoder) albedo-demodulated BF16 Relighter."""
+
+  w1: int = 32
+  w2: int = 64
+  head_width: int = 64
+
+  @nn.compact
+  def __call__(self, x: jax.Array, train: bool = False) -> jax.Array:
+    del train
+    dt = jnp.bfloat16
+    B, H, W, _ = x.shape
+    x_bf = x.astype(dt)
+    albedo = x_bf[..., 3:6]
+
+    h1 = nn.relu(nn.Conv(self.w1, (3, 3), padding="SAME", dtype=dt, param_dtype=jnp.float32)(x_bf))
+    h1 = _ResBlock(self.w1)(h1)
+
+    h2 = nn.relu(nn.Conv(self.w2, (3, 3), strides=(2, 2), padding="SAME", dtype=dt, param_dtype=jnp.float32)(h1))
+    h2 = _ResBlock(self.w2)(h2)
+
+    h2_up = jax.image.resize(h2.astype(jnp.float32), (B, H, W, self.w2), method="bilinear").astype(dt)
+    out_in = jnp.concatenate([h1, h2_up, x_bf], axis=-1)
+    out_mid = nn.relu(nn.Conv(self.head_width, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(out_in))
+    out_mid = nn.relu(nn.Conv(self.head_width, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(out_mid))
+    irrad_spec = nn.Conv(6, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(out_mid)
+    return (albedo * irrad_spec[..., :3] + irrad_spec[..., 3:6]).astype(jnp.float32)
+
+
+class DemodConvNeXtLiteRelighter(nn.Module):
+  """3-stage compact U-Net (32 -> 64 -> 128) with albedo-demodulated 1x1 BRDF head."""
+
+  c1: int = 32
+  c2: int = 64
+  c3: int = 128
+  head_width: int = 64
+
+  @nn.compact
+  def __call__(self, x: jax.Array, train: bool = False) -> jax.Array:
+    del train
+    dt = jnp.bfloat16
+    B, H, W, _ = x.shape
+    x_bf = x.astype(dt)
+    albedo = x_bf[..., 3:6]
+
+    h1 = nn.relu(nn.Conv(self.c1, (3, 3), padding="SAME", dtype=dt, param_dtype=jnp.float32)(x_bf))
+    h1 = _ResBlock(self.c1)(h1)
+
+    h2 = nn.relu(nn.Conv(self.c2, (3, 3), strides=(2, 2), padding="SAME", dtype=dt, param_dtype=jnp.float32)(h1))
+    h2 = _ResBlock(self.c2)(h2)
+
+    h3 = nn.relu(nn.Conv(self.c3, (3, 3), strides=(2, 2), padding="SAME", dtype=dt, param_dtype=jnp.float32)(h2))
+    h3 = _ResBlock(self.c3)(h3)
+
+    h3_up = jax.image.resize(h3.astype(jnp.float32), (B, H // 2, W // 2, self.c3), method="bilinear").astype(dt)
+    d2 = nn.relu(
+        nn.Conv(self.c2, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(
+            jnp.concatenate([h2, h3_up], axis=-1)
+        )
+    )
+    d2_up = jax.image.resize(d2.astype(jnp.float32), (B, H, W, self.c2), method="bilinear").astype(dt)
+
+    out_in = jnp.concatenate([h1, d2_up, x_bf], axis=-1)
+    out_mid = nn.relu(nn.Conv(self.head_width, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(out_in))
+    out_mid = nn.relu(nn.Conv(self.head_width, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(out_mid))
+    irrad_spec = nn.Conv(6, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(out_mid)
+    return (albedo * irrad_spec[..., :3] + irrad_spec[..., 3:6]).astype(jnp.float32)
+
+
+class DemodPixelShuffleMXURelighter(nn.Module):
+  """Albedo-demodulated SpaceToDepth(2) -> MXU U-Net -> DepthToSpace(2) + 1x1 BRDF head.
+
+  Combines 200K+ FPS SpaceToDepth(2) MXU throughput with albedo demodulation
+  (`delta = albedo * delta_irrad + delta_spec`) to prevent 1-px contact boundary bleed.
+  """
+
+  c_mid: int = 64
+  c_bot: int = 128
+  c_pix: int = 32
+  head_width: int = 64
+  fuse_resblock: bool = True
+
+  @nn.compact
+  def __call__(self, x: jax.Array, train: bool = False) -> jax.Array:
+    del train
+    dt = jnp.bfloat16
+    B, H, W, C = x.shape
+    x_bf = x.astype(dt)
+    albedo = x_bf[..., 3:6]
+
+    s2d = (
+        x_bf.reshape(B, H // 2, 2, W // 2, 2, C)
+        .transpose(0, 1, 3, 2, 4, 5)
+        .reshape(B, H // 2, W // 2, 4 * C)
+    )
+
+    h1 = nn.relu(nn.Conv(self.c_mid, (3, 3), padding="SAME", dtype=dt, param_dtype=jnp.float32)(s2d))
+    h1 = _ResBlock(self.c_mid)(h1)
+
+    h2 = nn.relu(
+        nn.Conv(self.c_bot, (3, 3), strides=(2, 2), padding="SAME", dtype=dt, param_dtype=jnp.float32)(h1)
+    )
+    h2 = _ResBlock(self.c_bot)(h2)
+
+    h2_up = jax.image.resize(h2.astype(jnp.float32), (B, H // 2, W // 2, self.c_bot), method="bilinear").astype(dt)
+    h_fuse = nn.relu(
+        nn.Conv(self.c_mid, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(
+            jnp.concatenate([h1, h2_up], axis=-1)
+        )
+    )
+    if self.fuse_resblock:
+      h_fuse = _ResBlock(self.c_mid)(h_fuse)
+
+    # Project to 4 * c_pix before DepthToSpace(2) so c_pix channels are rich without expensive 3x3s
+    h_exp = nn.relu(
+        nn.Conv(4 * self.c_pix, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(h_fuse)
+    )
+    h_pix = (
+        h_exp.reshape(B, H // 2, W // 2, 2, 2, self.c_pix)
+        .transpose(0, 1, 3, 2, 4, 5)
+        .reshape(B, H, W, self.c_pix)
+    )
+
+    out_in = jnp.concatenate([h_pix, x_bf], axis=-1)
+    out_mid = nn.relu(nn.Conv(self.head_width, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(out_in))
+    out_mid = nn.relu(nn.Conv(self.head_width, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(out_mid))
+    irrad_spec = nn.Conv(6, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(out_mid)
+    return (albedo * irrad_spec[..., :3] + irrad_spec[..., 3:6]).astype(jnp.float32)
+
+
 def make_candidate_model(arch: str) -> nn.Module:
   if arch == "M2_spatial_128":
     return SpatialRelighter(base_width=64)
@@ -390,6 +562,22 @@ def make_candidate_model(arch: str) -> nn.Module:
     return PixelShuffleMXURelighter(c_mid=128, c_bot=128, head_width=64)
   if arch == "M2_s2d_mxu_64":
     return PixelShuffleMXURelighter(c_mid=64, c_bot=128, head_width=64)
+  if arch == "M2_demod_64":
+    return DemodSpatialRelighter(base_width=32, head_width=64)
+  if arch == "M2_demod_96":
+    return DemodSpatialRelighter(base_width=48, head_width=64)
+  if arch == "M2_demod_fast_64":
+    return DemodCompactRelighter(w1=32, w2=64, head_width=64)
+  if arch == "M2_demod_convnext_lite":
+    return DemodConvNeXtLiteRelighter(c1=32, c2=64, c3=128, head_width=64)
+  if arch == "M2_demod_s2d_mxu_64":
+    return DemodPixelShuffleMXURelighter(c_mid=64, c_bot=128, c_pix=32, head_width=64, fuse_resblock=True)
+  if arch == "M2_demod_s2d_fast_64":
+    return DemodPixelShuffleMXURelighter(c_mid=64, c_bot=128, c_pix=32, head_width=64, fuse_resblock=False)
+  if arch == "M2_demod_s2d_mxu_96":
+    return DemodPixelShuffleMXURelighter(c_mid=96, c_bot=128, c_pix=32, head_width=64, fuse_resblock=True)
+  if arch == "M2_demod_s2d_mxu_128":
+    return DemodPixelShuffleMXURelighter(c_mid=128, c_bot=128, c_pix=32, head_width=64, fuse_resblock=True)
   if arch == "M2_edgegate_64":
     return EdgeGatedSpatialRelighter(base_width=32, head_width=64)
   if arch == "M2_convnext_edge":

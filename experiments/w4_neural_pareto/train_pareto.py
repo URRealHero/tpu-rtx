@@ -137,6 +137,8 @@ def train_one_candidate(
     ds,
     gt_rgb: np.ndarray,
     teacher_raw_train: np.ndarray,
+    extra_ds=None,
+    extra_gt_rgb: np.ndarray | None = None,
     epochs: int = 240,
     batch_size: int = 32,
     lr: float = 2.0e-3,
@@ -145,6 +147,7 @@ def train_one_candidate(
     bnd_weight: float = 6000.0,
     bnd_margin: float = 0.05,
     ema_decay: float = 0.995,
+    eval_every: int = 20,
     seeds: List[int] = (0, 1, 2),
 ) -> Dict[str, Any]:
   split = ds["split"]
@@ -166,6 +169,27 @@ def train_one_candidate(
       & dilate_mask(np.isin(gid_tr, [int(x) for x in ds["finger_geom_ids"]]), radius=1)
   ).astype(np.float32)[..., None]
 
+  if extra_ds is not None and extra_gt_rgb is not None:
+    ex_idx = np.where(extra_ds["split"] == 0)[0]
+    gb_ex = _gbuffer_from_npz(extra_ds, ex_idx)
+    x_ex = np.asarray(build_gbuffer_features(gb_ex), dtype=np.float32)
+    b_ex = extra_ds["s1_rgb"][ex_idx].astype(np.float32)
+    y_ex = extra_gt_rgb[ex_idx].astype(np.float32)
+    roi_ex = extra_ds["roi_mask"][ex_idx].astype(np.float32)[..., None]
+    gid_ex = extra_ds["s1_geom_id"][ex_idx]
+    bnd_ex = (
+        dilate_mask(gid_ex == int(extra_ds["box_geom_id"]), radius=1)
+        & dilate_mask(np.isin(gid_ex, [int(x) for x in extra_ds["finger_geom_ids"]]), radius=1)
+    ).astype(np.float32)[..., None]
+    x_train = np.concatenate([x_train, x_ex], axis=0)
+    b_train = np.concatenate([b_train, b_ex], axis=0)
+    y_train = np.concatenate([y_train, y_ex], axis=0)
+    roi_train = np.concatenate([roi_train, roi_ex], axis=0)
+    bnd_train = np.concatenate([bnd_train, bnd_ex], axis=0)
+
+  n_train = x_train.shape[0]
+  assert teacher_raw_train.shape[0] == n_train, (teacher_raw_train.shape[0], n_train)
+
   gb_calib = _gbuffer_from_npz(ds, calib_idx)
   x_calib = jnp.asarray(build_gbuffer_features(gb_calib), dtype=jnp.float32)
   b_calib = jnp.asarray(ds["s1_rgb"][calib_idx], dtype=jnp.float32)
@@ -183,7 +207,7 @@ def train_one_candidate(
   y_test = gt_rgb[test_idx].astype(np.float32)
 
   model = make_candidate_model(arch)
-  steps_per_epoch = max(1, len(train_idx) // batch_size)
+  steps_per_epoch = max(1, n_train // batch_size)
   total_steps = epochs * steps_per_epoch
   sched = optax.warmup_cosine_decay_schedule(
       init_value=lr * 0.1,
@@ -268,9 +292,10 @@ def train_one_candidate(
     cal_occ = float(np.mean(np.abs(luminance(pred_c_cal)[bnd_cal] - luminance(y_calib)[bnd_cal]) > 0.12)) if np.any(bnd_cal) else 0.0
     cal_roi_psnr = float(10.0 * np.log10(1.0 / max(float(np.mean((pred_c_cal[roi_cal] - y_calib[roi_cal]) ** 2)), 1e-12)))
     cal_psnr = float(10.0 * np.log10(1.0 / max(float(np.mean((pred_c_cal - y_calib) ** 2)), 1e-12)))
-    return (-cal_roi_psnr, -cal_psnr, cal_occ), c_scale
+    occ_tier = 0 if cal_occ <= 0.01 else 1
+    return (occ_tier, round(cal_occ, 5), -cal_roi_psnr, -cal_psnr, cal_occ), c_scale
 
-  best_score = (0.0, 0.0, 999.0)
+  best_score = (9, 999.0, 0.0, 0.0, 999.0)
   best_ema = None
   best_seed = seeds[0]
   best_ep = epochs
@@ -288,25 +313,28 @@ def train_one_candidate(
     np_rng = np.random.default_rng(seed)
 
     for ep in range(epochs):
-      perm = np_rng.permutation(len(train_idx))[:n_use].reshape(steps_per_epoch, batch_size)
+      perm = np_rng.permutation(n_train)[:n_use].reshape(steps_per_epoch, batch_size)
       params, ema_params, opt_state, ep_loss = train_epoch(params, ema_params, opt_state, jnp.asarray(perm))
+      do_eval = (eval_every > 0 and (ep + 1) >= (epochs // 2) and (ep + 1) % eval_every == 0) or (ep + 1 == epochs)
       if (ep + 1) % 80 == 0 or ep + 1 == epochs:
         jax.block_until_ready(ep_loss)
         print(
             f"[{arch} s={seed}] ep {ep+1}/{epochs} loss={float(ep_loss):.5f} ({time.time()-t0:.1f}s)",
             flush=True,
         )
-    sc, c_scale = _calib_score(ema_params)
-    print(
-        f"[{arch} s={seed}] FINAL calib: occ={sc[2]:.5f} roi_psnr={-sc[0]:.2f} psnr={-sc[1]:.2f} cal_scale={c_scale:.4f}",
-        flush=True,
-    )
-    if sc < best_score:
-      best_score = sc
-      best_ema = jax.tree_util.tree_map(np.asarray, ema_params)
-      best_seed = seed
-      best_ep = epochs
-      best_cal_scale = c_scale
+      if do_eval:
+        sc, c_scale = _calib_score(ema_params)
+        if sc < best_score:
+          best_score = sc
+          best_ema = jax.tree_util.tree_map(np.asarray, ema_params)
+          best_seed = seed
+          best_ep = ep + 1
+          best_cal_scale = c_scale
+        if ep + 1 == epochs:
+          print(
+              f"[{arch} s={seed}] FINAL calib: occ={sc[4]:.5f} roi_psnr={-sc[2]:.2f} psnr={-sc[3]:.2f} cal_scale={c_scale:.4f}",
+              flush=True,
+          )
   train_time_s = time.time() - t0
 
   best_ema_dev = jax.tree_util.tree_map(jnp.asarray, best_ema)
@@ -362,8 +390,8 @@ def train_one_candidate(
       "kd_weight": kd_weight,
       "best_seed": best_seed,
       "best_epoch": best_ep,
-      "best_calib_occ": best_score[2],
-      "best_calib_roi_psnr": -best_score[0],
+      "best_calib_occ": best_score[4],
+      "best_calib_roi_psnr": -best_score[2],
       "train_time_s": round(train_time_s, 2),
       "cal_scale": cal_scale,
       "gate_uncal": gate_uncal,
@@ -378,13 +406,16 @@ def main():
   ap = argparse.ArgumentParser()
   ap.add_argument("--dataset", default="/dev/shm/zaychik-tpu-mjx/out/data/panda_cycles_dataset.npz")
   ap.add_argument("--gt_rgb", default="/dev/shm/zaychik-tpu-mjx/out/data/panda_cycles_gt_rgb.npz")
+  ap.add_argument("--extra_train", default="")
+  ap.add_argument("--extra_train_gt", default="")
   ap.add_argument("--teacher_ckpt", default="/dev/shm/zaychik-tpu-mjx/out/metrics/M2_spatial_128_params.pkl")
   ap.add_argument(
       "--archs",
       nargs="+",
-      default=["M2_spatial_64", "M2_spatial_96", "M2_convnext_lite", "M2_unet_compact_64", "M2_convnext_dw"],
+      default=["M2_demod_64", "M2_demod_fast_64", "M2_demod_convnext_lite", "M2_demod_s2d_mxu_64"],
   )
-  ap.add_argument("--epochs", type=int, default=220)
+  ap.add_argument("--epochs", type=int, default=240)
+  ap.add_argument("--eval_every", type=int, default=20)
   ap.add_argument("--batch_size", type=int, default=32)
   ap.add_argument("--lr", type=float, default=2.0e-3)
   ap.add_argument("--kd_weight", type=float, default=0.25)
@@ -401,6 +432,8 @@ def main():
   os.makedirs(args.out_dir, exist_ok=True)
   ds = np.load(args.dataset)
   gt_rgb = np.load(args.gt_rgb)["rgb"].astype(np.float32)
+  extra_ds = np.load(args.extra_train) if args.extra_train else None
+  extra_gt_rgb = np.load(args.extra_train_gt).astype(np.float32) if args.extra_train_gt else None
 
   summary_path = args.out_json or os.path.join(args.out_dir, "v3_w4_train_summary.json")
   if args.merge_json and os.path.exists(summary_path):
@@ -450,8 +483,15 @@ def main():
 
   train_idx = np.where(ds["split"] == 0)[0]
   gb_train = _gbuffer_from_npz(ds, train_idx)
-  x_train_j = jnp.asarray(build_gbuffer_features(gb_train), dtype=jnp.float32)
-  b_train_j = jnp.asarray(ds["s1_rgb"][train_idx], dtype=jnp.float32)
+  x_train_np = np.asarray(build_gbuffer_features(gb_train), dtype=np.float32)
+  b_train_np = ds["s1_rgb"][train_idx].astype(np.float32)
+  if extra_ds is not None and extra_gt_rgb is not None:
+    ex_idx = np.where(extra_ds["split"] == 0)[0]
+    gb_ex = _gbuffer_from_npz(extra_ds, ex_idx)
+    x_train_np = np.concatenate([x_train_np, np.asarray(build_gbuffer_features(gb_ex), dtype=np.float32)], axis=0)
+    b_train_np = np.concatenate([b_train_np, extra_ds["s1_rgb"][ex_idx].astype(np.float32)], axis=0)
+  x_train_j = jnp.asarray(x_train_np, dtype=jnp.float32)
+  b_train_j = jnp.asarray(b_train_np, dtype=jnp.float32)
   teacher_model = make_candidate_model("M2_spatial_128")
   teacher_params = jax.tree_util.tree_map(jnp.asarray, teacher_ck["params"])
 
@@ -467,6 +507,8 @@ def main():
         ds=ds,
         gt_rgb=gt_rgb,
         teacher_raw_train=teacher_raw_train,
+        extra_ds=extra_ds,
+        extra_gt_rgb=extra_gt_rgb,
         epochs=args.epochs,
         batch_size=args.batch_size,
         lr=args.lr,
@@ -474,6 +516,7 @@ def main():
         w_bnd=args.w_bnd,
         bnd_weight=args.bnd_weight,
         bnd_margin=args.bnd_margin,
+        eval_every=args.eval_every,
         seeds=args.seeds,
     )
     ckpt_path = os.path.join(args.out_dir, f"v3_w4_{arch}_params.pkl")
