@@ -1,10 +1,13 @@
-"""Wave 3: Real-Time BF16 MXU Monte Carlo Path Tracer Denoiser (TPU v5p, up to Native 4K).
+"""Wave 3: Real-Time 4K BF16 MXU Monte Carlo Path Tracer Denoiser (TPU v5p).
 
-Uses w7's 5-bounce PBR + Glass + Area/Sun BVH Path Tracer (`bvh_pbr_pt.py` + `complex_scenes_pt.py`)
-to render multi-view 1-spp, 4-spp, and converged 256-spp GT datasets paired with exact primary-hit
-G-buffers (albedo, normal, depth, roughness, mat_code), trains an albedo-demodulated SpaceToDepth(2)
-BF16 MXU U-Net denoiser, verifies quality recovery on unseen camera views, and benchmarks 1-chip &
-4-chip `shard_map` throughput at 128x128, 512x512, and Native 4K (3840x2160) with zero host callbacks.
+Uses w7's multi-bounce PBR + Glass + Area/Sun BVH Path Tracer (`bvh_pbr_pt.py`,
+`complex_scenes_pt.py`, `physical_fx_pt.py`) to render multi-view 1-spp, 4-spp,
+and converged 256-spp GT datasets paired with exact primary-hit G-buffers
+(albedo, normal, depth, roughness, mat_code), trains an albedo-demodulated
+SpaceToDepth(2) BF16 MXU U-Net denoiser, verifies quality recovery on unseen
+camera views AND zero-shot on an unseen third scene (caustics_studio), and
+benchmarks 1-chip & 4-chip `shard_map` throughput at 128x128, 512x512, 1080p,
+and Native 4K UHD (3840x2160) with zero host callbacks, send/recv, or gathers.
 """
 
 from __future__ import annotations
@@ -15,7 +18,6 @@ import json
 import math
 import os
 import pickle
-import re
 import time
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
@@ -36,6 +38,7 @@ from bvh_pbr_pt import (
     _eval_pbr_brdf,
     _sample_cosine_hemisphere,
     _sample_ggx_half,
+    _smith_g1,
     audit_hlo_zero_copy,
     pbr_raycast_tpu,
 )
@@ -44,7 +47,14 @@ from complex_scenes_pt import (
     build_classroom_sunlit,
     build_cornell_workshop,
 )
-from gate import compute_psnr, compute_ssim_batch, luminance
+from gate import compute_msssim_batch, compute_psnr, compute_ssim_batch, luminance
+from physical_fx_pt import build_caustics_studio_scene
+
+
+def audit_hlo_strict(lowered: Any) -> Dict[str, Any]:
+  info = audit_hlo_zero_copy(lowered)
+  assert info.get("gather_ops", 0) == 0, f"HLO contains gather ops: {info}"
+  return info
 
 
 # ==============================================================================
@@ -63,81 +73,147 @@ class _DenoiseResBlock(nn.Module):
     return nn.relu(x + y)
 
 
-def build_denoiser_features(noisy_rgb: jax.Array, gbuf: jax.Array) -> jax.Array:
-  """Pack (B, H, W, 16) BF16-ready features from noisy RGB (3) + primary G-buffer (9).
+def compute_exposure_scale(noisy_rgb: jax.Array, axis_name: Optional[str] = None) -> jax.Array:
+  """Compute global scalar exposure scale so denoiser operates in unit-luminance space."""
+  lum = (
+      0.2126 * noisy_rgb[..., 0:1]
+      + 0.7152 * noisy_rgb[..., 1:2]
+      + 0.0722 * noisy_rgb[..., 2:3]
+  )
+  mu_l = jnp.mean(lum, axis=(1, 2, 3), keepdims=True)
+  if axis_name is not None:
+    mu_l = jax.lax.pmean(mu_l, axis_name=axis_name)
+  return jnp.clip(mu_l / 0.42, 0.12, 2.5)
+
+
+def build_denoiser_features(noisy_rgb: jax.Array, gbuf: jax.Array, l_scale: Optional[jax.Array] = None) -> jax.Array:
+  """Pack (B, H, W, 24) BF16-ready features from exposure-normalized noisy RGB + primary G-buffer.
 
   gbuf layout: [albedo(3), normal(3), depth_norm(1), roughness(1), mcode_norm(1)]
   """
-  albedo = gbuf[..., 0:3]
-  normal = gbuf[..., 3:6]
-  depth_norm = gbuf[..., 6:7]
-  roughness = gbuf[..., 7:8]
-  mcode_norm = gbuf[..., 8:9]
-  hit_mask = (depth_norm > 0.0).astype(jnp.float32)
+  dt = jnp.bfloat16
+  if l_scale is None:
+    l_scale = compute_exposure_scale(noisy_rgb)
+  noisy_norm = jnp.clip((noisy_rgb / l_scale).astype(dt), jnp.asarray(0.0, dt), jnp.asarray(6.0, dt))
+  albedo = gbuf[..., 0:3].astype(dt)
+  normal = gbuf[..., 3:6].astype(dt)
+  depth_norm = gbuf[..., 6:7].astype(dt)
+  roughness = gbuf[..., 7:8].astype(dt)
+  mcode_norm = gbuf[..., 8:9].astype(dt)
+
+  hit_mask = (depth_norm > jnp.asarray(0.0, dt)).astype(dt)
+  is_glass = (mcode_norm >= jnp.asarray(0.85, dt)).astype(dt)
+  noisy_demod = jnp.clip(
+      noisy_norm / jnp.maximum(albedo, jnp.asarray(0.08, dt)),
+      jnp.asarray(0.0, dt),
+      jnp.asarray(6.0, dt),
+  ) * jnp.asarray(0.25, dt)
+
   lum_noisy = (
-      0.2126 * noisy_rgb[..., 0:1] + 0.7152 * noisy_rgb[..., 1:2] + 0.0722 * noisy_rgb[..., 2:3]
+      jnp.asarray(0.2126, dt) * noisy_norm[..., 0:1]
+      + jnp.asarray(0.7152, dt) * noisy_norm[..., 1:2]
+      + jnp.asarray(0.0722, dt) * noisy_norm[..., 2:3]
   )
+
+  # 3x3 local pre-filter mean & noise std (zero-conv, zero-gather box filter in bf16)
+  inv9 = jnp.asarray(1.0 / 9.0, dt)
+  mu3 = jax.lax.reduce_window(
+      noisy_norm, jnp.asarray(0.0, dt), jax.lax.add, (1, 3, 3, 1), (1, 1, 1, 1), "SAME"
+  ) * inv9
+  mu3_l = jax.lax.reduce_window(
+      lum_noisy, jnp.asarray(0.0, dt), jax.lax.add, (1, 3, 3, 1), (1, 1, 1, 1), "SAME"
+  ) * inv9
+  mu3_l2 = jax.lax.reduce_window(
+      lum_noisy * lum_noisy, jnp.asarray(0.0, dt), jax.lax.add, (1, 3, 3, 1), (1, 1, 1, 1), "SAME"
+  ) * inv9
+  std3_lum = jnp.sqrt(jnp.maximum(mu3_l2 - mu3_l * mu3_l, jnp.asarray(1e-6, dt)))
 
   # 4-neighbor edge discontinuity detectors on normal & depth
   npad = jnp.pad(normal, ((0, 0), (1, 1), (1, 1), (0, 0)), mode="edge")
-  zpad = jnp.pad(jnp.where(hit_mask > 0.5, depth_norm, 2.0), ((0, 0), (1, 1), (1, 1), (0, 0)), mode="edge")
+  zpad = jnp.pad(
+      jnp.where(hit_mask > jnp.asarray(0.5, dt), depth_norm, jnp.asarray(2.0, dt)),
+      ((0, 0), (1, 1), (1, 1), (0, 0)),
+      mode="edge",
+  )
   H, W = noisy_rgb.shape[1], noisy_rgb.shape[2]
+  dn_y = npad[:, 2 : H + 2, 1 : W + 1] - npad[:, :H, 1 : W + 1]
+  dn_x = npad[:, 1 : H + 1, 2 : W + 2] - npad[:, 1 : H + 1, :W]
   n_edge = jnp.clip(
-      0.5 * (
-          jnp.linalg.norm(npad[:, 2 : H + 2, 1 : W + 1] - npad[:, :H, 1 : W + 1], axis=-1, keepdims=True)
-          + jnp.linalg.norm(npad[:, 1 : H + 1, 2 : W + 2] - npad[:, 1 : H + 1, :W], axis=-1, keepdims=True)
+      jnp.asarray(0.5, dt)
+      * (
+          jnp.sqrt(jnp.maximum(jnp.sum(dn_y * dn_y, axis=-1, keepdims=True), jnp.asarray(1e-6, dt)))
+          + jnp.sqrt(jnp.maximum(jnp.sum(dn_x * dn_x, axis=-1, keepdims=True), jnp.asarray(1e-6, dt)))
       ),
-      0.0,
-      2.0,
+      jnp.asarray(0.0, dt),
+      jnp.asarray(2.0, dt),
   )
   z_edge = jnp.clip(
       jnp.abs(zpad[:, 2 : H + 2, 1 : W + 1] - zpad[:, :H, 1 : W + 1])
       + jnp.abs(zpad[:, 1 : H + 1, 2 : W + 2] - zpad[:, 1 : H + 1, :W]),
-      0.0,
-      1.0,
+      jnp.asarray(0.0, dt),
+      jnp.asarray(1.0, dt),
   )
 
   return jnp.concatenate(
       [
-          noisy_rgb,   # 3
-          albedo,      # 3
-          normal,      # 3
-          depth_norm,  # 1
-          roughness,   # 1
-          mcode_norm,  # 1
-          hit_mask,    # 1
-          lum_noisy,   # 1
-          n_edge,      # 1
-          z_edge,      # 1
+          noisy_norm,   # 3
+          mu3,          # 3
+          albedo,       # 3
+          noisy_demod,  # 3
+          normal,       # 3
+          depth_norm,   # 1
+          roughness,    # 1
+          mcode_norm,   # 1
+          is_glass,     # 1
+          hit_mask,     # 1
+          lum_noisy,    # 1
+          std3_lum,     # 1
+          n_edge,       # 1
+          z_edge,       # 1
       ],
       axis=-1,
   )
 
 
-class MXUAlbedoDemodDenoiser(nn.Module):
-  """Ultra-fast SpaceToDepth(2) 3-scale BF16 MXU Albedo-Demodulated MC Denoiser.
+def apply_denoiser(
+    model: nn.Module,
+    params: Any,
+    noisy_rgb: jax.Array,
+    gbuf: jax.Array,
+    axis_name: Optional[str] = None,
+    train: bool = False,
+) -> jax.Array:
+  """Exposure-normalized BF16 MXU denoising with exact radiance scale restoration."""
+  l_scale = compute_exposure_scale(noisy_rgb, axis_name=axis_name)
+  feats = build_denoiser_features(noisy_rgb, gbuf, l_scale=l_scale)
+  pred_norm, blend_w = model.apply({"params": params}, feats, train=train)
+  pred = l_scale * pred_norm + blend_w * noisy_rgb
+  return jnp.clip(pred.astype(jnp.float32), 0.0, 1.0)
 
-  Operates spatial convolutions at H/2, H/4, H/8 for wide receptive field + 4K real-time speed,
-  then unpacks to H x W and predicts (irrad, spec_add, blend_w) per pixel via 1x1 BRDF head:
-    pred = clip(albedo * irrad + spec_add + blend_w * noisy_rgb, 0, 1)
+
+class MXUAlbedoDemodDenoiser(nn.Module):
+  """MXU-aligned SpaceToDepth(2) 3-scale BF16 Albedo-Demodulated MC Denoiser.
+
+  Operates spatial convolutions at H/2, H/4, H/8 using MXU-friendly channel widths
+  (64 -> 128 -> 128) in exposure-normalized space, unpacks to H x W, and outputs
+  (albedo * irrad_norm + spec_add_norm, blend_w) so global brightness scales equivariantly.
   """
 
-  c1: int = 48
-  c2: int = 96
+  c1: int = 64
+  c2: int = 128
   c3: int = 128
   c_pix: int = 24
-  head_width: int = 64
+  head_width: int = 48
 
   @nn.compact
-  def __call__(self, x: jax.Array, train: bool = False) -> jax.Array:
+  def __call__(self, x: jax.Array, train: bool = False) -> Tuple[jax.Array, jax.Array]:
     del train
     dt = jnp.bfloat16
     B, H, W, C = x.shape
     x_bf = x.astype(dt)
-    noisy_rgb = x_bf[..., 0:3]
-    albedo = x_bf[..., 3:6]
+    albedo = x_bf[..., 6:9]
 
-    # SpaceToDepth(2): (B, H, W, 16) -> (B, H/2, W/2, 64)
+    # SpaceToDepth(2): (B, H, W, 24) -> (B, H/2, W/2, 96)
     s2d = (
         x_bf.reshape(B, H // 2, 2, W // 2, 2, C)
         .transpose(0, 1, 3, 2, 4, 5)
@@ -155,13 +231,13 @@ class MXUAlbedoDemodDenoiser(nn.Module):
 
     h3_up = jax.image.resize(h3.astype(jnp.float32), (B, H // 4, W // 4, self.c3), method="bilinear").astype(dt)
     d2 = nn.relu(
-        nn.Conv(self.c2, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(
+        nn.Conv(self.c2, (3, 3), padding="SAME", dtype=dt, param_dtype=jnp.float32)(
             jnp.concatenate([h2, h3_up], axis=-1)
         )
     )
     d2_up = jax.image.resize(d2.astype(jnp.float32), (B, H // 2, W // 2, self.c2), method="bilinear").astype(dt)
     d1 = nn.relu(
-        nn.Conv(4 * self.c_pix, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(
+        nn.Conv(4 * self.c_pix, (3, 3), padding="SAME", dtype=dt, param_dtype=jnp.float32)(
             jnp.concatenate([h1, d2_up], axis=-1)
         )
     )
@@ -174,18 +250,17 @@ class MXUAlbedoDemodDenoiser(nn.Module):
 
     out_in = jnp.concatenate([h_pix, x_bf], axis=-1)
     out_mid = nn.relu(nn.Conv(self.head_width, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(out_in))
-    out_mid = nn.relu(nn.Conv(self.head_width, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(out_mid))
     raw_out = nn.Conv(9, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(out_mid)
 
-    irrad = raw_out[..., 0:3]
-    spec_add = raw_out[..., 3:6]
-    blend_w = jax.nn.sigmoid(raw_out[..., 6:9].astype(jnp.float32)).astype(dt) * jnp.asarray(0.5, dt)
-    pred = albedo * irrad + spec_add + blend_w * noisy_rgb
-    return jnp.clip(pred.astype(jnp.float32), 0.0, 1.0)
+    irrad_norm = raw_out[..., 0:3]
+    spec_add_norm = raw_out[..., 3:6]
+    blend_w = jax.nn.sigmoid(raw_out[..., 6:9].astype(jnp.float32)) * 0.35
+    pred_norm = (albedo * irrad_norm + spec_add_norm).astype(jnp.float32)
+    return pred_norm, blend_w
 
 
 # ==============================================================================
-# 2. TPU 5-Bounce PBR Path Tracer + Primary G-Buffer Extractor
+# 2. TPU Multi-Bounce PBR Path Tracer + Primary G-Buffer Extractor
 # ==============================================================================
 
 def build_pt_and_gbuf_fn(
@@ -198,11 +273,11 @@ def build_pt_and_gbuf_fn(
     zfar: float,
     light_rig: LightRig,
     spp: int,
-    max_bounces: int = 5,
+    max_bounces: int = 4,
     denoiser_model: Optional[nn.Module] = None,
     denoiser_params: Any = None,
 ):
-  """Compile 1-chip or N-chip spatially-sharded 5-bounce MC PT + G-buffer (+ optional MXU Denoiser)."""
+  """Compile 1-chip or N-chip spatially-sharded multi-bounce MC PT + G-buffer (+ optional MXU Denoiser)."""
   n_chips = len(devices)
   assert width % n_chips == 0 and (width // n_chips) % 16 == 0 and height % 8 == 0
   W_local = width // n_chips
@@ -444,8 +519,7 @@ def build_pt_and_gbuf_fn(
   if denoiser_model is not None and dn_params_rep is not None:
     def _render_e2e_local(l2r, l2, l0, lf, cxp, cxm, cid_arr, rng_in, dnp):
       rgb_noisy, gbuf_hw = _trace_core(l2r, l2, l0, lf, cxp, cxm, cid_arr[0], rng_in)
-      feats = build_denoiser_features(rgb_noisy[None, ...], gbuf_hw[None, ...])
-      rgb_dn = denoiser_model.apply({"params": dnp}, feats, train=False)[0]
+      rgb_dn = apply_denoiser(denoiser_model, dnp, rgb_noisy[None, ...], gbuf_hw[None, ...], axis_name="dp", train=False)[0]
       return rgb_dn[None, ...]
 
     sh_fn = shard_map(
@@ -488,16 +562,29 @@ def _stitch(arr_j: jax.Array) -> np.ndarray:
 
 
 # ==============================================================================
-# 3. Camera Pose Generator + Multi-View Dataset + Training + 4K Benchmarking
+# 3. Camera Pose Generator + Scene Dataset Rendering & Caching
 # ==============================================================================
 
-def _generate_views(scene_name: str, n_train: int = 16, n_test: int = 4) -> Tuple[List[Tuple[np.ndarray, np.ndarray]], List[Tuple[np.ndarray, np.ndarray]]]:
-  rng = np.random.default_rng(1234 if scene_name == "classroom" else 5678)
+def _build_scene(scene_name: str):
+  if scene_name == "classroom":
+    return build_classroom_sunlit()
+  elif scene_name == "cornell_workshop":
+    return build_cornell_workshop()
+  elif scene_name == "caustics_studio":
+    return build_caustics_studio_scene()
+  raise ValueError(f"Unknown scene: {scene_name}")
+
+
+def _generate_views(
+    scene_name: str, n_train: int = 16, n_test: int = 4
+) -> Tuple[List[Tuple[np.ndarray, np.ndarray]], List[Tuple[np.ndarray, np.ndarray]]]:
+  seed_map = {"classroom": 1234, "cornell_workshop": 5678, "caustics_studio": 9012}
+  rng = np.random.default_rng(seed_map[scene_name])
   views_tr, views_te = [], []
   for i in range(n_train + n_test):
     is_test = i >= n_train
     if scene_name == "classroom":
-      if i == n_train:  # Exact hero canonical camera
+      if i == n_train:
         pos = (1.65, -1.75, 1.38)
         tgt = (-0.35, 0.75, 0.92)
       else:
@@ -511,8 +598,8 @@ def _generate_views(scene_name: str, n_train: int = 16, n_test: int = 4) -> Tupl
             float(0.75 + rng.uniform(-0.45, 0.45)),
             float(0.92 + rng.uniform(-0.25, 0.25)),
         )
-    else:  # cornell_workshop
-      if i == n_train:  # Exact hero canonical camera
+    elif scene_name == "cornell_workshop":
+      if i == n_train:
         pos = (0.0, -2.55, 0.88)
         tgt = (0.0, 0.25, 0.62)
       else:
@@ -526,6 +613,21 @@ def _generate_views(scene_name: str, n_train: int = 16, n_test: int = 4) -> Tupl
             float(0.25 + rng.uniform(-0.25, 0.25)),
             float(0.62 + rng.uniform(-0.20, 0.20)),
         )
+    else:  # caustics_studio (held-out unseen scene)
+      if i == n_train:
+        pos = (0.0, -2.55, 1.15)
+        tgt = (0.04, 0.02, 0.24)
+      else:
+        pos = (
+            float(rng.uniform(-0.65, 0.65)),
+            float(-2.55 + rng.uniform(-0.20, 0.65)),
+            float(1.15 + rng.uniform(-0.25, 0.45)),
+        )
+        tgt = (
+            float(0.04 + rng.uniform(-0.20, 0.20)),
+            float(0.02 + rng.uniform(-0.20, 0.20)),
+            float(0.24 + rng.uniform(-0.10, 0.15)),
+        )
     cxp, cxm = _look_at_mat(pos, tgt)
     if is_test:
       views_te.append((cxp, cxm))
@@ -534,74 +636,78 @@ def _generate_views(scene_name: str, n_train: int = 16, n_test: int = 4) -> Tupl
   return views_tr, views_te
 
 
-def render_multiview_dataset(
+def render_and_cache_scene(
+    scene_name: str,
     devs_4c: Sequence[jax.Device],
+    out_npz: str,
     train_res: int = 256,
     test_res: int = 512,
     gt_spp: int = 256,
-    n_train_per_scene: int = 16,
-    n_test_per_scene: int = 4,
+    max_bounces: int = 4,
+    n_train: int = 16,
+    n_test: int = 4,
 ):
-  scenes = [
-      ("classroom", build_classroom_sunlit()),
-      ("cornell_workshop", build_cornell_workshop()),
-  ]
-  tr_noisy1, tr_noisy4, tr_gbuf, tr_gt = [], [], [], []
-  te_data: Dict[str, Any] = {}
+  bvh, _, _, fovy, zn, zf, rig = _build_scene(scene_name)
+  v_tr, v_te = _generate_views(scene_name, n_train=n_train, n_test=n_test)
+  print(f"[{scene_name}] tris={bvh.n_tris_orig:,} train={len(v_tr)}@{train_res} test={len(v_te)}@{test_res} gt_spp={gt_spp} b={max_bounces}", flush=True)
 
-  for sname, (bvh, _, _, fovy, zn, zf, rig) in scenes:
-    v_tr, v_te = _generate_views(sname, n_train=n_train_per_scene, n_test=n_test_per_scene)
-    print(f"Rendering {sname} ({bvh.n_tris_orig:,} tris): {len(v_tr)} train @{train_res} + {len(v_te)} test @{test_res} (GT={gt_spp} spp)...", flush=True)
-
-    # Train resolution renderers
-    fn1_tr, _, rep = build_pt_and_gbuf_fn(bvh, devs_4c, train_res, train_res, fovy, zn, zf, rig, spp=1, max_bounces=5)
-    fn4_tr, _, _ = build_pt_and_gbuf_fn(bvh, devs_4c, train_res, train_res, fovy, zn, zf, rig, spp=4, max_bounces=5)
-    fngt_tr, _, _ = build_pt_and_gbuf_fn(bvh, devs_4c, train_res, train_res, fovy, zn, zf, rig, spp=gt_spp, max_bounces=5)
-
+  tr_n1, tr_n4, tr_gb, tr_gt = [], [], [], []
+  if n_train > 0:
+    fn1_tr, _, rep = build_pt_and_gbuf_fn(bvh, devs_4c, train_res, train_res, fovy, zn, zf, rig, spp=1, max_bounces=max_bounces)
+    fn4_tr, _, _ = build_pt_and_gbuf_fn(bvh, devs_4c, train_res, train_res, fovy, zn, zf, rig, spp=4, max_bounces=max_bounces)
+    fngt_tr, _, _ = build_pt_and_gbuf_fn(bvh, devs_4c, train_res, train_res, fovy, zn, zf, rig, spp=gt_spp, max_bounces=max_bounces)
+    t0 = time.perf_counter()
     for idx, (cxp_n, cxm_n) in enumerate(v_tr):
       cxp_d, cxm_d = jax.device_put(cxp_n, rep), jax.device_put(cxm_n, rep)
       r1, gb = fn1_tr(cxp_d, cxm_d, jax.device_put(jax.random.PRNGKey(1000 + idx), rep))
       r4, _ = fn4_tr(cxp_d, cxm_d, jax.device_put(jax.random.PRNGKey(2000 + idx), rep))
       rgt, _ = fngt_tr(cxp_d, cxm_d, jax.device_put(jax.random.PRNGKey(3000 + idx), rep))
       jax.block_until_ready((r1, r4, rgt))
-      tr_noisy1.append(_stitch(r1))
-      tr_noisy4.append(_stitch(r4))
-      tr_gbuf.append(_stitch(gb))
+      tr_n1.append(_stitch(r1))
+      tr_n4.append(_stitch(r4))
+      tr_gb.append(_stitch(gb))
       tr_gt.append(_stitch(rgt))
+    print(f"[{scene_name}] train views rendered in {time.perf_counter()-t0:.1f}s", flush=True)
 
-    # Held-out unseen camera views at test_res (512x512)
-    fn1_te, _, rep_te = build_pt_and_gbuf_fn(bvh, devs_4c, test_res, test_res, fovy, zn, zf, rig, spp=1, max_bounces=5)
-    fn4_te, _, _ = build_pt_and_gbuf_fn(bvh, devs_4c, test_res, test_res, fovy, zn, zf, rig, spp=4, max_bounces=5)
-    fngt_te, _, _ = build_pt_and_gbuf_fn(bvh, devs_4c, test_res, test_res, fovy, zn, zf, rig, spp=gt_spp, max_bounces=5)
+  fn1_te, _, rep_te = build_pt_and_gbuf_fn(bvh, devs_4c, test_res, test_res, fovy, zn, zf, rig, spp=1, max_bounces=max_bounces)
+  fn4_te, _, _ = build_pt_and_gbuf_fn(bvh, devs_4c, test_res, test_res, fovy, zn, zf, rig, spp=4, max_bounces=max_bounces)
+  fngt_te, _, _ = build_pt_and_gbuf_fn(bvh, devs_4c, test_res, test_res, fovy, zn, zf, rig, spp=gt_spp, max_bounces=max_bounces)
 
-    s_n1, s_n4, s_gb, s_gt = [], [], [], []
-    for idx, (cxp_n, cxm_n) in enumerate(v_te):
-      cxp_d, cxm_d = jax.device_put(cxp_n, rep_te), jax.device_put(cxm_n, rep_te)
-      r1, gb = fn1_te(cxp_d, cxm_d, jax.device_put(jax.random.PRNGKey(4000 + idx), rep_te))
-      r4, _ = fn4_te(cxp_d, cxm_d, jax.device_put(jax.random.PRNGKey(5000 + idx), rep_te))
-      rgt, _ = fngt_te(cxp_d, cxm_d, jax.device_put(jax.random.PRNGKey(6000 + idx), rep_te))
-      jax.block_until_ready((r1, r4, rgt))
-      s_n1.append(_stitch(r1))
-      s_n4.append(_stitch(r4))
-      s_gb.append(_stitch(gb))
-      s_gt.append(_stitch(rgt))
-    te_data[sname] = {
-        "noisy1": np.stack(s_n1, axis=0),
-        "noisy4": np.stack(s_n4, axis=0),
-        "gbuf": np.stack(s_gb, axis=0),
-        "gt": np.stack(s_gt, axis=0),
-        "hero_cam": v_te[0],
-        "scene_obj": (bvh, fovy, zn, zf, rig),
-    }
+  s_n1, s_n4, s_gb, s_gt = [], [], [], []
+  t1 = time.perf_counter()
+  for idx, (cxp_n, cxm_n) in enumerate(v_te):
+    cxp_d, cxm_d = jax.device_put(cxp_n, rep_te), jax.device_put(cxm_n, rep_te)
+    r1, gb = fn1_te(cxp_d, cxm_d, jax.device_put(jax.random.PRNGKey(4000 + idx), rep_te))
+    r4, _ = fn4_te(cxp_d, cxm_d, jax.device_put(jax.random.PRNGKey(5000 + idx), rep_te))
+    rgt, _ = fngt_te(cxp_d, cxm_d, jax.device_put(jax.random.PRNGKey(6000 + idx), rep_te))
+    jax.block_until_ready((r1, r4, rgt))
+    s_n1.append(_stitch(r1))
+    s_n4.append(_stitch(r4))
+    s_gb.append(_stitch(gb))
+    s_gt.append(_stitch(rgt))
+  print(f"[{scene_name}] test views rendered in {time.perf_counter()-t1:.1f}s", flush=True)
 
-  return (
-      np.stack(tr_noisy1, axis=0),
-      np.stack(tr_noisy4, axis=0),
-      np.stack(tr_gbuf, axis=0),
-      np.stack(tr_gt, axis=0),
-      te_data,
+  os.makedirs(os.path.dirname(out_npz) or ".", exist_ok=True)
+  np.savez(
+      out_npz,
+      scene=np.array(scene_name),
+      tr_noisy1=np.stack(tr_n1, axis=0) if tr_n1 else np.zeros((0, train_res, train_res, 3), np.float32),
+      tr_noisy4=np.stack(tr_n4, axis=0) if tr_n4 else np.zeros((0, train_res, train_res, 3), np.float32),
+      tr_gbuf=np.stack(tr_gb, axis=0) if tr_gb else np.zeros((0, train_res, train_res, 9), np.float32),
+      tr_gt=np.stack(tr_gt, axis=0) if tr_gt else np.zeros((0, train_res, train_res, 3), np.float32),
+      te_noisy1=np.stack(s_n1, axis=0),
+      te_noisy4=np.stack(s_n4, axis=0),
+      te_gbuf=np.stack(s_gb, axis=0),
+      te_gt=np.stack(s_gt, axis=0),
+      hero_cxp=v_te[0][0],
+      hero_cxm=v_te[0][1],
   )
+  print(f"[{scene_name}] saved cache -> {out_npz}", flush=True)
 
+
+# ==============================================================================
+# 4. Training, Evaluation & 4K Scaling Benchmark
+# ==============================================================================
 
 def _ssim_loss(pred: jax.Array, target: jax.Array) -> jax.Array:
   c1, c2 = 0.01 ** 2, 0.03 ** 2
@@ -621,34 +727,32 @@ def train_denoiser(
     tr_n4: np.ndarray,
     tr_gb: np.ndarray,
     tr_gt: np.ndarray,
-    epochs: int = 180,
+    epochs: int = 360,
     batch_size: int = 16,
     patch_size: int = 128,
     lr: float = 2.0e-3,
 ):
-  """Train unified BF16 MXU Albedo-Demodulated Denoiser on random 128x128 crops of 1-spp & 4-spp."""
+  """Train unified BF16 MXU Albedo-Demodulated Denoiser with exposure/tint augmentation."""
   dev = jax.devices()[0]
-  # Combine both 1-spp and 4-spp noisy inputs -> 2x dataset for unified 1-spp & 4-spp denoising
-  n_all = np.concatenate([tr_n1, tr_n4], axis=0)
-  gb_all = np.concatenate([tr_gb, tr_gb], axis=0)
-  gt_all = np.concatenate([tr_gt, tr_gt], axis=0)
+  n_all = np.concatenate([tr_n1, tr_n4], axis=0).astype(np.float32)
+  gb_all = np.concatenate([tr_gb, tr_gb], axis=0).astype(np.float32)
+  gt_all = np.concatenate([tr_gt, tr_gt], axis=0).astype(np.float32)
 
-  # Precompute 16-ch features once on device
-  @jax.jit
-  def _make_feats(n_b, gb_b):
-    return build_denoiser_features(n_b, gb_b)
+  n_dev = jax.device_put(n_all, dev)
+  gb_dev = jax.device_put(gb_all, dev)
+  y_dev = jax.device_put(gt_all, dev)
+  N, H, W, _ = n_all.shape
 
-  x_all = np.asarray(_make_feats(jnp.asarray(n_all), jnp.asarray(gb_all)), dtype=np.float32)
-  x_dev = jax.device_put(x_all, dev)
-  y_dev = jax.device_put(gt_all.astype(np.float32), dev)
-  N, H, W, _ = x_all.shape
-
+  dummy_feats = build_denoiser_features(
+      jnp.zeros((1, patch_size, patch_size, 3), dtype=jnp.float32),
+      jnp.zeros((1, patch_size, patch_size, 9), dtype=jnp.float32),
+  )
   rng = jax.random.PRNGKey(2026)
-  params = model.init(rng, jnp.zeros((1, patch_size, patch_size, 16), dtype=jnp.float32))["params"]
+  params = model.init(rng, dummy_feats)["params"]
   ema_params = params
   n_params = int(sum(p.size for p in jax.tree_util.tree_leaves(params)))
 
-  steps_per_ep = 16
+  steps_per_ep = 20
   total_steps = epochs * steps_per_ep
   sched = optax.warmup_cosine_decay_schedule(lr * 0.1, lr, max(20, total_steps // 15), total_steps, lr * 0.02)
   tx = optax.chain(optax.clip_by_global_norm(1.0), optax.adamw(sched, weight_decay=2e-5))
@@ -659,25 +763,37 @@ def train_denoiser(
     def _scan_step(carry, s_idx):
       cp, cema, cost = carry
       k = jax.random.fold_in(step_rng, s_idx)
-      k_idx, k_y, k_x = jax.random.split(k, 3)
+      k_idx, k_y, k_x, k_exp = jax.random.split(k, 4)
       b_idx = jax.random.randint(k_idx, (batch_size,), 0, N)
       y0 = jax.random.randint(k_y, (), 0, H - patch_size + 1)
       x0 = jax.random.randint(k_x, (), 0, W - patch_size + 1)
-      xb = jax.lax.dynamic_slice(x_dev[b_idx], (0, y0, x0, 0), (batch_size, patch_size, patch_size, 16))
+      nb = jax.lax.dynamic_slice(n_dev[b_idx], (0, y0, x0, 0), (batch_size, patch_size, patch_size, 3))
+      gbb = jax.lax.dynamic_slice(gb_dev[b_idx], (0, y0, x0, 0), (batch_size, patch_size, patch_size, 9))
       yb = jax.lax.dynamic_slice(y_dev[b_idx], (0, y0, x0, 0), (batch_size, patch_size, patch_size, 3))
 
+      # Mild scalar exposure jitter (no color tint distortion)
+      log_s = jax.random.uniform(k_exp, (batch_size, 1, 1, 1), minval=math.log(0.50), maxval=math.log(1.15))
+      light_scale = jnp.exp(log_s)
+      nb_aug = jnp.clip(nb * light_scale, 0.0, 1.0)
+      yb_aug = jnp.clip(yb * light_scale, 0.0, 1.0)
+      l_scale = compute_exposure_scale(nb_aug, axis_name=None)
+      xb = build_denoiser_features(nb_aug, gbb, l_scale=l_scale)
+
       def loss_fn(pr):
-        pred = model.apply({"params": pr}, xb, train=True)
-        l2 = jnp.mean((pred - yb) ** 2)
-        l1 = jnp.mean(jnp.abs(pred - yb))
-        ls = _ssim_loss(pred, yb)
-        # Edge-preserving gradient loss
+        pred_norm, blend_w = model.apply({"params": pr}, xb, train=True)
+        pred = jnp.clip((l_scale * pred_norm + blend_w * nb_aug).astype(jnp.float32), 0.0, 1.0)
+        l2 = jnp.mean((pred - yb_aug) ** 2)
+        l1 = jnp.mean(jnp.abs(pred - yb_aug))
+        ls = _ssim_loss(pred, yb_aug)
         gx_p = pred[:, :, 1:, :] - pred[:, :, :-1, :]
-        gx_y = yb[:, :, 1:, :] - yb[:, :, :-1, :]
+        gx_y = yb_aug[:, :, 1:, :] - yb_aug[:, :, :-1, :]
         gy_p = pred[:, 1:, :, :] - pred[:, :-1, :, :]
-        gy_y = yb[:, 1:, :, :] - yb[:, :-1, :, :]
+        gy_y = yb_aug[:, 1:, :, :] - yb_aug[:, :-1, :, :]
         lgrad = jnp.mean(jnp.abs(gx_p - gx_y)) + jnp.mean(jnp.abs(gy_p - gy_y))
-        return 0.50 * l2 + 0.30 * l1 + 0.15 * ls + 0.10 * lgrad
+        lum_p = 0.2126 * pred[..., 0] + 0.7152 * pred[..., 1] + 0.0722 * pred[..., 2]
+        lum_y = 0.2126 * yb_aug[..., 0] + 0.7152 * yb_aug[..., 1] + 0.0722 * yb_aug[..., 2]
+        llum = jnp.abs(jnp.mean(lum_p) - jnp.mean(lum_y))
+        return 0.45 * l2 + 0.30 * l1 + 0.15 * ls + 0.10 * lgrad + 0.04 * llum
 
       loss, grads = jax.value_and_grad(loss_fn)(cp)
       upd, n_ost = tx.update(grads, cost, cp)
@@ -693,7 +809,7 @@ def train_denoiser(
     params, ema_params, opt_state, ep_loss = train_epoch(
         params, ema_params, opt_state, jax.random.PRNGKey(ep + 10000)
     )
-    if (ep + 1) % 30 == 0 or ep + 1 == epochs:
+    if (ep + 1) % 60 == 0 or ep + 1 == epochs:
       jax.block_until_ready(ep_loss)
       print(f"[MC-DENOISER] ep {ep+1}/{epochs} loss={float(ep_loss):.5f} ({time.time()-t0:.1f}s)", flush=True)
 
@@ -704,28 +820,27 @@ def benchmark_denoiser_scaling(
     model: MXUAlbedoDemodDenoiser,
     params: Any,
     devs_all: Sequence[jax.Device],
-    resolutions: List[Tuple[int, int]] = [(128, 128), (512, 512), (2160, 3840)],
+    resolutions: List[Tuple[int, int]] = [(128, 128), (512, 512), (1080, 1920), (2160, 3840)],
 ) -> List[Dict[str, Any]]:
-  """Benchmark pure BF16 MXU Denoiser on 1-chip and 4-chip shard_map (128x128, 512x512, 4K)."""
+  """Benchmark pure BF16 MXU Denoiser on 1-chip and 4-chip shard_map (128x128, 512x512, 1080p, 4K)."""
   recs = []
   sm_kw = {"check_rep": False} if "check_rep" in inspect.signature(shard_map).parameters else {"check_vma": False}
 
   for H, W in resolutions:
     for n_chips in [1, 4]:
       devs = list(devs_all[:n_chips])
-      n_steps = 20 if H <= 512 else 15
+      n_steps = 25 if H <= 512 else 15
       if n_chips == 1:
         dev = devs[0]
         p_d = jax.device_put(jax.tree_util.tree_map(jnp.asarray, params), dev)
-        n_d = jax.device_put(jnp.ones((1, H, W, 3), dtype=jnp.float32) * 0.4, dev)
-        gb_d = jax.device_put(jnp.ones((1, H, W, 9), dtype=jnp.float32) * 0.5, dev)
+        n_d = jax.device_put(np.full((1, H, W, 3), 0.4, dtype=np.float32), dev)
+        gb_d = jax.device_put(np.full((1, H, W, 9), 0.5, dtype=np.float32), dev)
 
         @jax.jit
         def dn_1c(p, n_in, g_in):
-          feats = build_denoiser_features(n_in, g_in)
-          return model.apply({"params": p}, feats, train=False)
+          return apply_denoiser(model, p, n_in, g_in, axis_name=None, train=False)
 
-        hlo_info = audit_hlo_zero_copy(dn_1c.lower(p_d, n_d, gb_d))
+        hlo_info = audit_hlo_strict(dn_1c.lower(p_d, n_d, gb_d))
         for _ in range(3):
           y = dn_1c(p_d, n_d, gb_d)
         jax.block_until_ready(y)
@@ -735,7 +850,6 @@ def benchmark_denoiser_scaling(
         jax.block_until_ready(y)
         ms = (time.perf_counter() - t0) * 1e3 / n_steps
       else:
-        # 4-chip spatial shard_map along W (zero inter-chip send/recv; each chip processes (1, H, W/4, C))
         mesh = Mesh(np.array(devs), ("dp",))
         rep = NamedSharding(mesh, P())
         sh_w = NamedSharding(mesh, P(None, None, "dp", None))
@@ -744,8 +858,7 @@ def benchmark_denoiser_scaling(
         gb_d = jax.device_put(np.full((1, H, W, 9), 0.5, dtype=np.float32), sh_w)
 
         def _dn_local(p_l, n_l, g_l):
-          feats = build_denoiser_features(n_l, g_l)
-          return model.apply({"params": p_l}, feats, train=False)
+          return apply_denoiser(model, p_l, n_l, g_l, axis_name="dp", train=False)
 
         sh_fn = shard_map(
             _dn_local,
@@ -759,7 +872,7 @@ def benchmark_denoiser_scaling(
         def dn_4c(p, n_in, g_in):
           return sh_fn(p, n_in, g_in)
 
-        hlo_info = audit_hlo_zero_copy(dn_4c.lower(p_d, n_d, gb_d))
+        hlo_info = audit_hlo_strict(dn_4c.lower(p_d, n_d, gb_d))
         for _ in range(3):
           y = dn_4c(p_d, n_d, gb_d)
         jax.block_until_ready(y)
@@ -786,37 +899,67 @@ def benchmark_denoiser_scaling(
   return recs
 
 
-def main():
-  ap = argparse.ArgumentParser()
-  ap.add_argument("--train_res", type=int, default=256)
-  ap.add_argument("--test_res", type=int, default=512)
-  ap.add_argument("--gt_spp", type=int, default=256)
-  ap.add_argument("--epochs", type=int, default=180)
-  ap.add_argument("--out_json", default="out/metrics/v3_w4_wave3_mc_denoiser_4k.json")
-  ap.add_argument("--out_png", default="out/figures/v3_w4_mc_denoiser.png")
-  ap.add_argument("--ckpt", default="/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_mc_denoiser_params.pkl")
-  args = ap.parse_args()
-
+def _eval_and_bench_all(
+    caches: List[str],
+    train_scenes: Sequence[str],
+    epochs: int,
+    max_bounces: int,
+    out_json: str,
+    out_png: str,
+    ckpt_path: str,
+    skip_train: bool = False,
+):
   devs = jax.devices()
   assert len(devs) == 4, f"Expected 4 TPU chips on w4, found {len(devs)}"
 
-  tr_n1, tr_n4, tr_gb, tr_gt, te_data = render_multiview_dataset(
-      devs, train_res=args.train_res, test_res=args.test_res, gt_spp=args.gt_spp
-  )
+  tr_n1_l, tr_n4_l, tr_gb_l, tr_gt_l = [], [], [], []
+  te_data: Dict[str, Any] = {}
 
-  model = MXUAlbedoDemodDenoiser(c1=48, c2=96, c3=128, c_pix=24, head_width=64)
-  ema_params, n_params, train_s = train_denoiser(
-      model, tr_n1, tr_n4, tr_gb, tr_gt, epochs=args.epochs
-  )
-  os.makedirs(os.path.dirname(args.ckpt) or ".", exist_ok=True)
-  with open(args.ckpt, "wb") as f:
-    pickle.dump({"params": jax.tree_util.tree_map(np.asarray, ema_params), "n_params": n_params}, f)
+  for cp in caches:
+    d = np.load(cp, allow_pickle=False)
+    sname = str(d["scene"])
+    if sname in train_scenes and d["tr_gt"].shape[0] > 0:
+      tr_n1_l.append(d["tr_noisy1"])
+      tr_n4_l.append(d["tr_noisy4"])
+      tr_gb_l.append(d["tr_gbuf"])
+      tr_gt_l.append(d["tr_gt"])
+    te_data[sname] = {
+        "noisy1": d["te_noisy1"],
+        "noisy4": d["te_noisy4"],
+        "gbuf": d["te_gbuf"],
+        "gt": d["te_gt"],
+        "hero_cam": (d["hero_cxp"], d["hero_cxm"]),
+        "split": "heldout_views" if sname in train_scenes else "zero_shot_unseen_scene",
+    }
 
-  # Evaluate quality recovery on unseen 512x512 camera views
+  model = MXUAlbedoDemodDenoiser(c1=64, c2=128, c3=128, c_pix=24, head_width=48)
+
+  if skip_train and os.path.exists(ckpt_path):
+    with open(ckpt_path, "rb") as f:
+      ck = pickle.load(f)
+    ema_params = ck["params"]
+    n_params = int(ck["n_params"])
+    train_s = float(ck.get("train_s", 0.0))
+    print(f"Loaded checkpoint {ckpt_path} ({n_params:,} params)", flush=True)
+  else:
+    tr_n1 = np.concatenate(tr_n1_l, axis=0)
+    tr_n4 = np.concatenate(tr_n4_l, axis=0)
+    tr_gb = np.concatenate(tr_gb_l, axis=0)
+    tr_gt = np.concatenate(tr_gt_l, axis=0)
+    print(f"Training on {tr_gt.shape[0]} views x 2 spp levels = {2*tr_gt.shape[0]} frames @ {tr_gt.shape[1]}x{tr_gt.shape[2]}", flush=True)
+    ema_params, n_params, train_s = train_denoiser(
+        model, tr_n1, tr_n4, tr_gb, tr_gt, epochs=epochs
+    )
+    os.makedirs(os.path.dirname(ckpt_path) or ".", exist_ok=True)
+    with open(ckpt_path, "wb") as f:
+      pickle.dump(
+          {"params": jax.tree_util.tree_map(np.asarray, ema_params), "n_params": n_params, "train_s": train_s},
+          f,
+      )
+
   @jax.jit
   def _infer_dn(p, n_b, gb_b):
-    feats = build_denoiser_features(n_b, gb_b)
-    return model.apply({"params": p}, feats, train=False)
+    return apply_denoiser(model, p, n_b, gb_b, axis_name=None, train=False)
 
   p_dev = jax.device_put(jax.tree_util.tree_map(jnp.asarray, ema_params), devs[0])
   quality_eval: Dict[str, Any] = {}
@@ -834,8 +977,15 @@ def main():
     def _metrics(pred, ref):
       psnr = compute_psnr(pred, ref)
       ssim = compute_ssim_batch(pred, ref)
+      msssim = compute_msssim_batch(pred, ref)
       lum_rel = float(np.mean(luminance(pred)) / max(float(np.mean(luminance(ref))), 1e-6) - 1.0)
-      return {"psnr_db": round(psnr, 3), "ssim": round(ssim, 4), "lum_rel": round(lum_rel, 6)}
+      return {
+          "psnr_db": round(psnr, 3),
+          "ssim": round(ssim, 4),
+          "msssim": round(msssim, 4),
+          "lum_rel": round(lum_rel, 6),
+          "lum_bias_pct": round(abs(lum_rel) * 100.0, 4),
+      }
 
     m_n1 = _metrics(n1, gt)
     m_dn1 = _metrics(dn1, gt)
@@ -843,47 +993,49 @@ def main():
     m_dn4 = _metrics(dn4, gt)
 
     quality_eval[sname] = {
+        "eval_split": sdict["split"],
         "n_unseen_views": int(gt.shape[0]),
-        "resolution": f"{args.test_res}x{args.test_res}",
+        "resolution": f"{gt.shape[2]}x{gt.shape[1]}",
         "noisy_1spp": m_n1,
         "denoised_1spp": {**m_dn1, "psnr_gain_db": round(m_dn1["psnr_db"] - m_n1["psnr_db"], 3)},
         "noisy_4spp": m_n4,
         "denoised_4spp": {**m_dn4, "psnr_gain_db": round(m_dn4["psnr_db"] - m_n4["psnr_db"], 3)},
     }
-    print(f"QUALITY [{sname}]:", json.dumps(quality_eval[sname]), flush=True)
+    print(f"QUALITY [{sname}] ({sdict['split']}):", json.dumps(quality_eval[sname]), flush=True)
 
-    # Save hero view 0 for side-by-side PNG: 1-spp Noisy | 4-spp Noisy | TPU MXU AI Denoised (1-spp) | 256-spp GT | Error Map (5x)
     err_vis = np.clip(np.abs(dn1[0] - gt[0]) * 5.0, 0.0, 1.0)
-    hero_panels.append((sname, n1[0], n4[0], dn1[0], gt[0], err_vis, quality_eval[sname]))
+    hero_panels.append((sname, sdict["split"], n1[0], n4[0], dn1[0], gt[0], err_vis, quality_eval[sname]))
 
-  # Throughput benchmarks: Pure BF16 MXU Denoiser (1-chip & 4-chip at 128x128, 512x512, 3840x2160)
-  denoiser_bench = benchmark_denoiser_scaling(model, ema_params, devs)
+  # Throughput benchmarks: Pure BF16 MXU Denoiser (1-chip & 4-chip at 128x128, 512x512, 1080p, 4K)
+  denoiser_bench = benchmark_denoiser_scaling(
+      model, ema_params, devs, resolutions=[(128, 128), (512, 512), (1080, 1920), (2160, 3840)]
+  )
 
-  # E2E 4-chip shard_map benchmark: 1-spp 5-bounce MC PT + BF16 MXU Denoiser at 128x128, 512x512, 3840x2160
-  bvh_cls, fovy_cls, zn_cls, zf_cls, rig_cls = te_data["classroom"]["scene_obj"]
+  # E2E 4-chip shard_map benchmark: 1-spp multi-bounce MC PT + BF16 MXU Denoiser
+  bvh_cls, _, _, fovy_cls, zn_cls, zf_cls, rig_cls = _build_scene("classroom")
   cxp_hero, cxm_hero = te_data["classroom"]["hero_cam"]
   e2e_bench = []
-  for H_e, W_e in [(128, 128), (512, 512), (2160, 3840)]:
+  for H_e, W_e in [(128, 128), (512, 512), (1080, 1920), (2160, 3840)]:
     fn_e2e, _, rep_e2e = build_pt_and_gbuf_fn(
         bvh_cls, devs, H_e, W_e, fovy_cls, zn_cls, zf_cls, rig_cls,
-        spp=1, max_bounces=5, denoiser_model=model, denoiser_params=ema_params,
+        spp=1, max_bounces=max_bounces, denoiser_model=model, denoiser_params=ema_params,
     )
     cxp_d = jax.device_put(cxp_hero, rep_e2e)
     cxm_d = jax.device_put(cxm_hero, rep_e2e)
     rng_d = jax.device_put(jax.random.PRNGKey(99), rep_e2e)
-    hlo_e2e = audit_hlo_zero_copy(fn_e2e.lower(cxp_d, cxm_d, rng_d))
+    hlo_e2e = audit_hlo_strict(fn_e2e.lower(cxp_d, cxm_d, rng_d))
     y = fn_e2e(cxp_d, cxm_d, rng_d)
     jax.block_until_ready(y)
     y = fn_e2e(cxp_d, cxm_d, rng_d)
     jax.block_until_ready(y)
-    n_st = 10 if H_e <= 512 else 3
+    n_st = 10 if H_e <= 512 else (5 if H_e == 1080 else 3)
     t0 = time.perf_counter()
     for it in range(n_st):
       y = fn_e2e(cxp_d, cxm_d, jax.device_put(jax.random.PRNGKey(200 + it), rep_e2e))
     jax.block_until_ready(y)
     ms_e2e = (time.perf_counter() - t0) * 1e3 / n_st
     rec_e2e = {
-        "stage": "e2e_1spp_5bounce_pt_plus_denoiser",
+        "stage": f"e2e_1spp_{max_bounces}bounce_pt_plus_denoiser",
         "scene": bvh_cls.name,
         "resolution": f"{W_e}x{H_e}",
         "n_chips": 4,
@@ -896,22 +1048,22 @@ def main():
     e2e_bench.append(rec_e2e)
     if H_e == 2160 and W_e == 3840:
       img_4k_dn = _stitch(y)
-      # Save downsampled 4K verification crop/preview inside npz/png check
       print("Verified 4K E2E output shape:", img_4k_dn.shape, "mean:", float(img_4k_dn.mean()), flush=True)
 
-  # Build hero figure PNG: 2 rows (Classroom, Cornell-Workshop) x 5 columns
-  tile_w, tile_h = args.test_res, args.test_res
+  # Build hero figure PNG: N_scenes rows x 5 columns (native test_res tiles)
+  tile_h, tile_w = hero_panels[0][2].shape[0], hero_panels[0][2].shape[1]
   pad, hdr = 10, 34
   n_cols, n_rows = 5, len(hero_panels)
   canvas = Image.new("RGB", (n_cols * tile_w + (n_cols + 1) * pad, n_rows * (tile_h + hdr) + (n_rows + 1) * pad), (15, 17, 21))
   draw = ImageDraw.Draw(canvas)
-  for r_idx, (sname, i1, i4, idn, igt, ierr, qm) in enumerate(hero_panels):
+  for r_idx, (sname, split_lbl, i1, i4, idn, igt, ierr, qm) in enumerate(hero_panels):
+    tag = "Zero-Shot" if "zero_shot" in split_lbl else "Unseen View"
     titles = [
-        f"{sname}: 1-spp Noisy ({qm['noisy_1spp']['psnr_db']:.2f} dB)",
+        f"{sname} ({tag}): 1-spp ({qm['noisy_1spp']['psnr_db']:.2f} dB)",
         f"4-spp Noisy ({qm['noisy_4spp']['psnr_db']:.2f} dB)",
-        f"TPU MXU Denoised ({qm['denoised_1spp']['psnr_db']:.2f} dB, SSIM {qm['denoised_1spp']['ssim']:.3f})",
-        f"{args.gt_spp}-spp 5-Bounce MC GT",
-        "Error |Denoised - GT| x5",
+        f"TPU MXU Denoised ({qm['denoised_1spp']['psnr_db']:.2f} dB, MS-SSIM {qm['denoised_1spp']['msssim']:.3f})",
+        f"256-spp {max_bounces}-Bounce MC GT",
+        f"Error |Denoised - GT| x5 (LumBias {qm['denoised_1spp']['lum_bias_pct']:.2f}%)",
     ]
     imgs = [i1, i4, idn, igt, ierr]
     for c_idx, (ttl, arr) in enumerate(zip(titles, imgs)):
@@ -921,9 +1073,9 @@ def main():
       canvas.paste(Image.fromarray(u8), (x0, y0 + hdr))
       draw.text((x0 + 4, y0 + 10), ttl, fill=(238, 242, 248))
 
-  os.makedirs(os.path.dirname(args.out_png) or ".", exist_ok=True)
-  canvas.save(args.out_png)
-  print("Saved Wave 3 Hero PNG ->", args.out_png, flush=True)
+  os.makedirs(os.path.dirname(out_png) or ".", exist_ok=True)
+  canvas.save(out_png)
+  print("Saved Wave 3 Hero PNG ->", out_png, canvas.size, flush=True)
 
   payload = {
       "experiment": "v3_w4_wave3_mc_denoiser_4k",
@@ -931,21 +1083,68 @@ def main():
       "device_kind": devs[0].device_kind,
       "n_chips_total": len(devs),
       "model": {
-          "arch": "MXUAlbedoDemodDenoiser_s2d_48_96_128",
+          "arch": "MXUAlbedoDemodDenoiser_s2d_64_128_128_p24_hw48_expnorm",
           "n_params": n_params,
           "train_time_s": train_s,
-          "train_res": f"{args.train_res}x{args.train_res}",
-          "test_res": f"{args.test_res}x{args.test_res}",
-          "gt_spp": args.gt_spp,
+          "train_scenes": list(train_scenes),
+          "max_bounces": max_bounces,
       },
       "quality_eval": quality_eval,
       "denoiser_throughput": denoiser_bench,
       "e2e_pt_plus_denoiser_4c": e2e_bench,
   }
-  os.makedirs(os.path.dirname(args.out_json) or ".", exist_ok=True)
-  with open(args.out_json, "w") as f:
+  os.makedirs(os.path.dirname(out_json) or ".", exist_ok=True)
+  with open(out_json, "w") as f:
     json.dump(payload, f, indent=2)
-  print("Saved Wave 3 JSON ->", args.out_json, flush=True)
+  print("Saved Wave 3 JSON ->", out_json, flush=True)
+
+
+def main():
+  ap = argparse.ArgumentParser()
+  ap.add_argument("--mode", choices=["render_scene", "train_eval_bench"], required=True)
+  ap.add_argument("--scene", default="classroom")
+  ap.add_argument("--out_cache", default="/dev/shm/zaychik-tpu-mjx-w4/out/ds_classroom.npz")
+  ap.add_argument("--caches", nargs="+", default=[])
+  ap.add_argument("--train_scenes", nargs="+", default=["classroom", "cornell_workshop"])
+  ap.add_argument("--train_res", type=int, default=256)
+  ap.add_argument("--test_res", type=int, default=512)
+  ap.add_argument("--gt_spp", type=int, default=256)
+  ap.add_argument("--max_bounces", type=int, default=4)
+  ap.add_argument("--n_train", type=int, default=16)
+  ap.add_argument("--n_test", type=int, default=4)
+  ap.add_argument("--epochs", type=int, default=280)
+  ap.add_argument("--skip_train", action="store_true")
+  ap.add_argument("--out_json", default="/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_wave3_mc_denoiser_4k.json")
+  ap.add_argument("--out_png", default="/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_mc_denoiser.png")
+  ap.add_argument("--ckpt", default="/dev/shm/zaychik-tpu-mjx-w4/out/v3_w4_mc_denoiser_params.pkl")
+  args = ap.parse_args()
+
+  devs = jax.devices()
+  assert len(devs) == 4, f"Expected 4 TPU chips on w4, found {len(devs)}"
+
+  if args.mode == "render_scene":
+    render_and_cache_scene(
+        args.scene,
+        devs,
+        args.out_cache,
+        train_res=args.train_res,
+        test_res=args.test_res,
+        gt_spp=args.gt_spp,
+        max_bounces=args.max_bounces,
+        n_train=args.n_train,
+        n_test=args.n_test,
+    )
+  else:
+    _eval_and_bench_all(
+        args.caches,
+        args.train_scenes,
+        args.epochs,
+        args.max_bounces,
+        args.out_json,
+        args.out_png,
+        args.ckpt,
+        skip_train=args.skip_train,
+    )
 
 
 if __name__ == "__main__":

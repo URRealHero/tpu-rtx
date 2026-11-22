@@ -1,0 +1,355 @@
+{
+  "experiment": "v3_w4_wave3_mc_denoiser_4k",
+  "backend": "tpu",
+  "device_kind": "TPU v5",
+  "n_chips_total": 4,
+  "model": {
+    "arch": "MXUAlbedoDemodDenoiser_s2d_64_128_128_p24_hw48_expnorm",
+    "n_params": 1404809,
+    "train_time_s": 67.39,
+    "train_scenes": [
+      "classroom",
+      "cornell_workshop"
+    ],
+    "max_bounces": 4
+  },
+  "quality_eval": {
+    "classroom": {
+      "eval_split": "heldout_views",
+      "n_unseen_views": 4,
+      "resolution": "512x512",
+      "noisy_1spp": {
+        "psnr_db": 9.704,
+        "ssim": 0.1173,
+        "msssim": 0.2141,
+        "lum_rel": -0.291043,
+        "lum_bias_pct": 29.1043
+      },
+      "denoised_1spp": {
+        "psnr_db": 24.92,
+        "ssim": 0.6207,
+        "msssim": 0.7409,
+        "lum_rel": 0.002379,
+        "lum_bias_pct": 0.2379,
+        "psnr_gain_db": 15.216
+      },
+      "noisy_4spp": {
+        "psnr_db": 12.996,
+        "ssim": 0.2183,
+        "msssim": 0.3453,
+        "lum_rel": -0.1417,
+        "lum_bias_pct": 14.17
+      },
+      "denoised_4spp": {
+        "psnr_db": 25.037,
+        "ssim": 0.629,
+        "msssim": 0.751,
+        "lum_rel": 0.015468,
+        "lum_bias_pct": 1.5468,
+        "psnr_gain_db": 12.041
+      }
+    },
+    "cornell_workshop": {
+      "eval_split": "heldout_views",
+      "n_unseen_views": 4,
+      "resolution": "512x512",
+      "noisy_1spp": {
+        "psnr_db": 11.979,
+        "ssim": 0.0888,
+        "msssim": 0.2014,
+        "lum_rel": -0.248338,
+        "lum_bias_pct": 24.8338
+      },
+      "denoised_1spp": {
+        "psnr_db": 23.292,
+        "ssim": 0.5347,
+        "msssim": 0.6803,
+        "lum_rel": -0.015529,
+        "lum_bias_pct": 1.5529,
+        "psnr_gain_db": 11.313
+      },
+      "noisy_4spp": {
+        "psnr_db": 14.436,
+        "ssim": 0.1173,
+        "msssim": 0.2504,
+        "lum_rel": -0.157357,
+        "lum_bias_pct": 15.7357
+      },
+      "denoised_4spp": {
+        "psnr_db": 23.864,
+        "ssim": 0.5432,
+        "msssim": 0.6921,
+        "lum_rel": 0.02474,
+        "lum_bias_pct": 2.474,
+        "psnr_gain_db": 9.428
+      }
+    },
+    "caustics_studio": {
+      "eval_split": "zero_shot_unseen_scene",
+      "n_unseen_views": 4,
+      "resolution": "512x512",
+      "noisy_1spp": {
+        "psnr_db": 22.696,
+        "ssim": 0.2817,
+        "msssim": 0.4723,
+        "lum_rel": -0.062761,
+        "lum_bias_pct": 6.2761
+      },
+      "denoised_1spp": {
+        "psnr_db": 26.035,
+        "ssim": 0.7141,
+        "msssim": 0.7948,
+        "lum_rel": 0.134869,
+        "lum_bias_pct": 13.4869,
+        "psnr_gain_db": 3.339
+      },
+      "noisy_4spp": {
+        "psnr_db": 24.537,
+        "ssim": 0.4376,
+        "msssim": 0.6171,
+        "lum_rel": -0.038212,
+        "lum_bias_pct": 3.8212
+      },
+      "denoised_4spp": {
+        "psnr_db": 26.846,
+        "ssim": 0.7221,
+        "msssim": 0.8032,
+        "lum_rel": 0.114201,
+        "lum_bias_pct": 11.4201,
+        "psnr_gain_db": 2.309
+      }
+    }
+  },
+  "denoiser_throughput": [
+    {
+      "stage": "denoiser_only",
+      "resolution": "128x128",
+      "n_chips": 1,
+      "ms": 0.27,
+      "fps": 3702.08,
+      "mpixels_per_s": 60.65,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 13,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 704,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "stage": "denoiser_only",
+      "resolution": "128x128",
+      "n_chips": 4,
+      "ms": 0.209,
+      "fps": 4774.91,
+      "mpixels_per_s": 78.23,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 13,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 741,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "stage": "denoiser_only",
+      "resolution": "512x512",
+      "n_chips": 1,
+      "ms": 1.882,
+      "fps": 531.33,
+      "mpixels_per_s": 139.29,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 13,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 704,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "stage": "denoiser_only",
+      "resolution": "512x512",
+      "n_chips": 4,
+      "ms": 0.663,
+      "fps": 1509.43,
+      "mpixels_per_s": 395.69,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 13,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 741,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "stage": "denoiser_only",
+      "resolution": "1920x1080",
+      "n_chips": 1,
+      "ms": 22.782,
+      "fps": 43.89,
+      "mpixels_per_s": 91.02,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 13,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 730,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "stage": "denoiser_only",
+      "resolution": "1920x1080",
+      "n_chips": 4,
+      "ms": 4.196,
+      "fps": 238.33,
+      "mpixels_per_s": 494.21,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 13,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 741,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "stage": "denoiser_only",
+      "resolution": "3840x2160",
+      "n_chips": 1,
+      "ms": 73.283,
+      "fps": 13.65,
+      "mpixels_per_s": 113.18,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 13,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 730,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "stage": "denoiser_only",
+      "resolution": "3840x2160",
+      "n_chips": 4,
+      "ms": 11.393,
+      "fps": 87.78,
+      "mpixels_per_s": 728.06,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 13,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 741,
+        "send_recv_ops": 0
+      }
+    }
+  ],
+  "e2e_pt_plus_denoiser_4c": [
+    {
+      "stage": "e2e_1spp_4bounce_pt_plus_denoiser",
+      "scene": "classroom_sunlit",
+      "resolution": "128x128",
+      "n_chips": 4,
+      "ms": 8.79,
+      "fps": 113.82,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 13,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 3749,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "stage": "e2e_1spp_4bounce_pt_plus_denoiser",
+      "scene": "classroom_sunlit",
+      "resolution": "512x512",
+      "n_chips": 4,
+      "ms": 117.86,
+      "fps": 8.48,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 13,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 3749,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "stage": "e2e_1spp_4bounce_pt_plus_denoiser",
+      "scene": "classroom_sunlit",
+      "resolution": "1920x1080",
+      "n_chips": 4,
+      "ms": 909.79,
+      "fps": 1.1,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 13,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 3749,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "stage": "e2e_1spp_4bounce_pt_plus_denoiser",
+      "scene": "classroom_sunlit",
+      "resolution": "3840x2160",
+      "n_chips": 4,
+      "ms": 3614.39,
+      "fps": 0.28,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 13,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 3749,
+        "send_recv_ops": 0
+      }
+    }
+  ]
+}
