@@ -1,0 +1,175 @@
+{
+  "experiment": "v3_w7_barbershop_cinema",
+  "device_kind": "TPU v5",
+  "n_devices": 4,
+  "scene_meta": {
+    "scene_name": "barbershop_interior",
+    "verts": 4386264,
+    "tris": 8550982,
+    "n_materials": 249,
+    "n_textures": 141,
+    "tex_res": "512x512",
+    "n_lights": 15,
+    "n_blas_meshes": 407,
+    "n_instances": 1111,
+    "cam_fovy": 43.707,
+    "native_res": "2048x858@100%"
+  },
+  "parity": {
+    "hero_z_mae_m": 0.06159932166337967,
+    "hero_z_median_m": 0.013769149780273438,
+    "hero_fg_match": 0.9997535988136574,
+    "hlo": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 0,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 1467,
+      "send_recv_ops": 0
+    }
+  },
+  "neural_relighting": {
+    "arch": "IrradianceNRC3S_Demod_W128",
+    "n_params": 8077062,
+    "epochs": 360,
+    "train_time_s": 92.64,
+    "cal_scale": 0.999357,
+    "orbit_test": {
+      "res": "512x216",
+      "n_views": 4,
+      "stage1_psnr_db": 11.2022,
+      "neural_psnr_db": 31.0025,
+      "psnr_gain_db": 19.8003,
+      "neural_ssim": 0.92848,
+      "neural_msssim": 0.94659,
+      "lum_rel": -0.000933
+    },
+    "hero_official_plus_orbit": {
+      "res": "1024x432",
+      "n_views": 4,
+      "view0_stage1_psnr_db": 11.1667,
+      "view0_neural_psnr_db": 26.9839,
+      "view0_ssim": 0.81993,
+      "view0_msssim": 0.85998,
+      "view0_lum_rel": 0.013188,
+      "all_hero_neural_psnr_db": 26.7974,
+      "all_hero_ssim": 0.81375,
+      "all_hero_msssim": 0.85432,
+      "all_hero_lum_rel": 0.013431
+    }
+  },
+  "benchmarks": [
+    {
+      "resolution": "512x512",
+      "batch_size": 1,
+      "n_chips": 1,
+      "stage2": false,
+      "dt_ms": 162.381,
+      "img_per_sec": 6.158,
+      "mpix_per_sec": 1.61,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "512x512",
+      "batch_size": 1,
+      "n_chips": 1,
+      "stage2": true,
+      "dt_ms": 169.675,
+      "img_per_sec": 5.894,
+      "mpix_per_sec": 1.54,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "512x512",
+      "batch_size": 4,
+      "n_chips": 4,
+      "stage2": false,
+      "dt_ms": 167.332,
+      "img_per_sec": 23.905,
+      "mpix_per_sec": 6.27,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "512x512",
+      "batch_size": 4,
+      "n_chips": 4,
+      "stage2": true,
+      "dt_ms": 174.646,
+      "img_per_sec": 22.903,
+      "mpix_per_sec": 6.0,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "1024x768",
+      "batch_size": 4,
+      "n_chips": 4,
+      "stage2": false,
+      "dt_ms": 407.314,
+      "img_per_sec": 9.82,
+      "mpix_per_sec": 7.72,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "1024x768",
+      "batch_size": 4,
+      "n_chips": 4,
+      "stage2": true,
+      "dt_ms": 430.137,
+      "img_per_sec": 9.299,
+      "mpix_per_sec": 7.31,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "1920x1080",
+      "batch_size": 4,
+      "n_chips": 4,
+      "stage2": false,
+      "dt_ms": 907.895,
+      "img_per_sec": 4.406,
+      "mpix_per_sec": 9.14,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "1920x1080",
+      "batch_size": 4,
+      "n_chips": 4,
+      "stage2": true,
+      "dt_ms": 993.501,
+      "img_per_sec": 4.026,
+      "mpix_per_sec": 8.35,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "3840x2160",
+      "batch_size": 4,
+      "n_chips": 4,
+      "stage2": false,
+      "dt_ms": 3153.386,
+      "img_per_sec": 1.268,
+      "mpix_per_sec": 10.52,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "resolution": "3840x2160",
+      "batch_size": 4,
+      "n_chips": 4,
+      "stage2": true,
+      "dt_ms": 3441.613,
+      "img_per_sec": 1.162,
+      "mpix_per_sec": 9.64,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    }
+  ]
+}
