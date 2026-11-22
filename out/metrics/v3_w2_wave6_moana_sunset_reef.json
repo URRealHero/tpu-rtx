@@ -1,0 +1,60 @@
+{
+  "name": "Wave6_Moana_GoldenHour_Sunset_And_Underwater_Coral_Reef_4K",
+  "stage_path": "/dev/shm/zaychik-moana/island/usd/island.usda",
+  "hbm_gb": 4.653,
+  "unique_tris": 45510052,
+  "inst_blas_tris": 13995552,
+  "inst_effective_tris": 22301254382,
+  "sunset_4k": {
+    "camera": "shotCam",
+    "res": "2160x3840",
+    "pixels": 8294400,
+    "n_chips": 4,
+    "sun_az_deg": 8.0,
+    "sun_el_deg": 10.0,
+    "xla_compile_s": 123.65,
+    "ms": 5601.3,
+    "fps": 0.179,
+    "mrays_per_s": 2.96,
+    "hlo": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 1,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 36565,
+      "send_recv_ops": 0
+    }
+  },
+  "underwater_reef_4k": {
+    "camera": "reefCam_fg",
+    "cam_pos": [
+      -23.0,
+      -33.8,
+      -0.92
+    ],
+    "res": "2160x3840",
+    "pixels": 8294400,
+    "n_chips": 4,
+    "vol_march_steps": 16,
+    "vol_shadow_taps": 4,
+    "xla_compile_s": 204.64,
+    "ms": 8722.75,
+    "fps": 0.115,
+    "mrays_per_s": 5.71,
+    "hlo": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 2,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 100888,
+      "send_recv_ops": 0
+    }
+  },
+  "artifacts": {
+    "showcase_4k_png": "out/figures/v3_w2_moana_sunset_reef_4k.png"
+  }
+}
