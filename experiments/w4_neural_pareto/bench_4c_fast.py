@@ -177,8 +177,8 @@ def main():
   }]
   print("E2E_4C:", json.dumps(e2e_4c[0]), flush=True)
 
-  # Run E2E on first 4 checkpoints (teacher + top 3 Pareto models)
-  for arch, model, params_rep, cal_scale in loaded[:4]:
+  # Run E2E on first 2 checkpoints (teacher + fastest demod) so total compile stays < 200s
+  for arch, model, params_rep, cal_scale in loaded[:2]:
     def _e2e_loc(d_b, u_b, mx_l, p_l, _m=model, _cs=cal_scale):
       d_next = jax.vmap(lambda d, u: mjx.step(mx_l, d.replace(ctrl=u)))(d_b, u_b)
       gb = render_batch(spec, d_next, mode="pallas_v2", pallas_interpret=False)

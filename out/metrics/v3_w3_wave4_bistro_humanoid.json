@@ -1,0 +1,67 @@
+{
+  "backend": "tpu",
+  "device_kind": "TPU v5",
+  "jax_version": "0.10.2",
+  "hlo_checks": {
+    "bistro_hybrid_10m_1080p_k512": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 2,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 11062,
+      "send_recv_ops": 0,
+      "zero_copy_verified": true
+    },
+    "bistro_hybrid_10m_4K_k512": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 2,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 11062,
+      "send_recv_ops": 0,
+      "zero_copy_verified": true
+    }
+  },
+  "bistro_humanoid_hybrid": [
+    {
+      "scene": "Amazon_Lumberyard_Bistro_Humanoid_MobilePanda",
+      "n_chips": 4,
+      "res_label": "1080p",
+      "res": "1920x1080",
+      "n_gaussians": 10000000,
+      "k_macro": 4096,
+      "k_tile": 512,
+      "bake_s": 11.14,
+      "mjx_pallas_ms": 1.62,
+      "total_hybrid_ms": 182.09,
+      "fps": 5.49,
+      "speedup_vs_wave3_4k": null,
+      "compile_s": 35.47,
+      "mjx_robot_pixels": 31078,
+      "mjx_pixels_occluded_by_3dgs_fg": 1487,
+      "cast_shadow_pixels_on_street": 12135
+    },
+    {
+      "scene": "Amazon_Lumberyard_Bistro_Humanoid_MobilePanda",
+      "n_chips": 4,
+      "res_label": "4K",
+      "res": "3840x2160",
+      "n_gaussians": 10000000,
+      "k_macro": 4096,
+      "k_tile": 512,
+      "bake_s": 11.14,
+      "mjx_pallas_ms": 4.64,
+      "total_hybrid_ms": 439.27,
+      "fps": 2.28,
+      "speedup_vs_wave3_4k": 5.24,
+      "compile_s": 46.9,
+      "mjx_robot_pixels": 124367,
+      "mjx_pixels_occluded_by_3dgs_fg": 5908,
+      "cast_shadow_pixels_on_street": 48540
+    }
+  ]
+}

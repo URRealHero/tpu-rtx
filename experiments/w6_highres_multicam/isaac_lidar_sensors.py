@@ -549,6 +549,7 @@ def run_bench_suite(
       phys_fn = jax.jit(lambda d, u: jax.vmap(lambda x, c: mjx.step(mx, x.replace(ctrl=c)))(d, u))
 
     dp = phys_fn(dx_b, ctrl)
+    dp = phys_fn(dp, ctrl)
     jax.block_until_ready(dp.qpos)
     t0 = time.perf_counter()
     for _ in range(5):

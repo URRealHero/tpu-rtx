@@ -570,8 +570,9 @@ def render_multi_embodiment_gallery(
     dx = mjx.forward(mx, dx)
     floor_gid = int(mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "floor"))
 
-    ao_s = n_ao if m.ngeom <= 32 else min(n_ao, 6)
-    sh_s = n_shadow if m.ngeom <= 32 else min(n_shadow, 6)
+    ao_s = n_ao if m.ngeom <= 32 else min(n_ao, 4)
+    sh_s = n_shadow if m.ngeom <= 32 else min(n_shadow, 4)
+    block_r_use = 512 if m.ngeom <= 32 else 256
     sc = tpu_rtx.compile(
         m,
         shader="fused_ao_ggx",
@@ -581,7 +582,7 @@ def render_multi_embodiment_gallery(
         dtype="float32",
         outputs=("rgb", "depth", "normal", "seg_id"),
         block_b=8,
-        block_r=512,
+        block_r=block_r_use,
         n_ao_samples=ao_s,
         n_shadow_samples=sh_s,
         ao_radius=0.35,

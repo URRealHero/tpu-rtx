@@ -965,6 +965,60 @@
         "hlo_lines": 21243,
         "send_recv_ops": 0
       }
+    },
+    {
+      "n_chips": 4,
+      "n_target_prims": 1000,
+      "n_enabled_geoms": 1004,
+      "nq": 54,
+      "nv": 48,
+      "batch_size": 1024,
+      "resolution": "64x64",
+      "mode": "cluster1",
+      "status": "ok",
+      "dt_physics_ms": 10.078,
+      "dt_render_ms": 62.209,
+      "dt_e2e_ms": 72.288,
+      "e2e_fps": 14165.6,
+      "mrays_per_sec": 67.42,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 21243,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "n_chips": 4,
+      "n_target_prims": 1000,
+      "n_enabled_geoms": 1004,
+      "nq": 54,
+      "nv": 48,
+      "batch_size": 64,
+      "resolution": "256x256",
+      "mode": "cluster1",
+      "status": "ok",
+      "dt_physics_ms": 2.873,
+      "dt_render_ms": 48.083,
+      "dt_e2e_ms": 50.956,
+      "e2e_fps": 1256.0,
+      "mrays_per_sec": 87.23,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 21243,
+        "send_recv_ops": 0
+      }
     }
   ]
 }
