@@ -73,6 +73,16 @@
       "custom_calls": 0,
       "hlo_lines": 2340,
       "send_recv_ops": 0
+    },
+    "hlo_sponza_109m_4k_4c": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 0,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 1072,
+      "send_recv_ops": 0
     }
   },
   "track_3a_compact_unique": [
@@ -302,5 +312,36 @@
       "mrays_per_s": 13.21
     }
   ],
-  "track_3c_sponza_megascene": []
+  "track_3c_sponza_megascene": [
+    {
+      "scene": "Sponza_HighOcclusion_Colonnade_Plus_Sculpture",
+      "total_tris": 8226736,
+      "n_meshes": 9,
+      "bvh_hbm_gb": 0.4943,
+      "bvh_build_s": 7.48,
+      "n_chips": 4,
+      "sharding": "spatial_4band",
+      "res": "2160x3840",
+      "B": 1,
+      "compile_s": 92.71,
+      "ms": 918.43,
+      "fps": 1.089,
+      "mrays_per_s": 18.06
+    },
+    {
+      "scene": "Sponza_HighOcclusion_Colonnade_Plus_Sculpture",
+      "total_tris": 8226736,
+      "n_meshes": 9,
+      "bvh_hbm_gb": 0.4943,
+      "bvh_build_s": 7.48,
+      "n_chips": 4,
+      "sharding": "spatial_4band",
+      "res": "4320x7680",
+      "B": 1,
+      "compile_s": 96.28,
+      "ms": 3337.24,
+      "fps": 0.3,
+      "mrays_per_s": 19.88
+    }
+  ]
 }

@@ -482,8 +482,8 @@ def run_w3_tlas_1b_10b_4c(out_path: str, png_8k_path: str, png_crop_path: str, c
       print("3B TLAS2 4C:", rec, flush=True)
 
 
-def run_w3_sponza_megascene(out_path: str, png_4k_path: str):
-  """Complex High-Occlusion Architectural Megascene: Sponza Colonnade subdivided to 105M+ tris."""
+def run_w3_sponza_megascene(out_path: str, png_4k_path: str, sponza_k: int = 8):
+  """Complex High-Occlusion Architectural Megascene: Sponza Colonnade subdivided to 20M-109M tris."""
   ds, base_meshes = load_base_scene()
   devs = jax.devices()
   assert len(devs) == 4
@@ -529,11 +529,11 @@ def run_w3_sponza_megascene(out_path: str, png_4k_path: str):
     bucket_faces[b].append(f + bucket_voff[b])
     bucket_voff[b] += vz.shape[0]
 
-  # Subdivide Sponza architectural buckets by k=20 (262,267 * 400 = 104,906,800 unique tris!) in parallel
+  # Subdivide Sponza architectural buckets by sponza_k in parallel
   def _build_sponza_bucket(b_idx: int):
     vb = np.vstack(bucket_verts[b_idx])
     fb = np.vstack(bucket_faces[b_idx])
-    nv, nf, nn = subdivide_mesh_barycentric(vb, fb, 20)
+    nv, nf, nn = subdivide_mesh_barycentric(vb, fb, sponza_k)
     del vb, fb
     it = build_compact_bvh_mesh_item(b_idx, {"name": f"sponza_b{b_idx}", "verts": nv, "faces": nf, "vert_normals": nn, "rgba": arch_palette[b_idx]}, "spatial_l1_morton")
     del nv, nf, nn
@@ -754,6 +754,7 @@ def main():
   ap.add_argument("--png8k", default="/dev/shm/zaychik-tpu-mjx-w2/v3_w2_100b_8k_hero.png")
   ap.add_argument("--pngcrop", default="/dev/shm/zaychik-tpu-mjx-w2/v3_w2_100b_8k_crop.png")
   ap.add_argument("--pngsponza", default="/dev/shm/zaychik-tpu-mjx-w2/v3_w2_complex_megascene_4k.png")
+  ap.add_argument("--sponza-k", type=int, default=8)
   args = ap.parse_args()
   if args.phase == "w3_parity_250m":
     run_w3_parity_and_250m(args.out)
@@ -766,7 +767,7 @@ def main():
   elif args.phase == "w3_tlas_100b_4c":
     run_w3_tlas_1b_10b_4c(args.out, args.png8k, args.pngcrop, configs=[(9600, 64, 4)])
   elif args.phase == "w3_sponza_megascene":
-    run_w3_sponza_megascene(args.out, args.pngsponza)
+    run_w3_sponza_megascene(args.out, args.pngsponza, sponza_k=args.sponza_k)
 
 
 if __name__ == "__main__":
