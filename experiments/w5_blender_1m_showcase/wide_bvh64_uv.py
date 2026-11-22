@@ -981,7 +981,7 @@ def render_wide_bvh64_uv_stage1(
   sky_h = jnp.asarray(spec.sky_horizon, dtype=jnp.float32)
   sky_g = jnp.asarray(spec.sky_ground, dtype=jnp.float32)
   amb_col = up_w[..., None] * sky_h + (1.0 - up_w[..., None]) * sky_g
-  rad = alb_lin * (0.30 * amb_col)
+  rad = alb_lin * (0.45 * amb_col + 0.06)
 
   ndotv = jnp.maximum(jnp.sum(nrm * vdir, axis=-1), 1e-4)
   f0 = 0.04 * (1.0 - metallic[..., None]) + alb_lin * metallic[..., None]
@@ -1016,7 +1016,7 @@ def render_wide_bvh64_uv_stage1(
   rad = rad + jnp.where(is_emit[..., None], alb_lin * emit_pow[..., None], 0.0)
   # Brighten dielectric glass panes / lamp shades with Fresnel sky glow
   glass_fres = 0.04 + 0.96 * ((1.0 - ndotv) ** 4)
-  rad = jnp.where(is_glass[..., None], alb_lin * (0.45 * sky_h[None, None, :] + 0.65 * glass_fres[..., None]), rad)
+  rad = jnp.where(is_glass[..., None], alb_lin * (0.85 * jnp.maximum(sky_h[None, None, :], 0.65) + 0.85 * glass_fres[..., None]), rad)
   rad_tm = rad / (1.0 + 0.25 * rad)
   direct_srgb = jnp.clip(_linear_to_srgb_jnp(rad_tm), 0.0, 1.0)
   alb_srgb = jnp.clip(_linear_to_srgb_jnp(alb_lin), 0.0, 1.0)
@@ -1065,7 +1065,7 @@ def build_scene_gbuffer_features(
   sh = gb.direct_shadow[..., None]
   g_edge, z_edge = _local_edges(gb.geom_id, gb.z_depth)
   ndotv_raw = jnp.sum(gb.view_dir * gb.normal, axis=-1, keepdims=True)
-  ndotv = jnp.clip(-ndotv_raw, 0.0, 1.0)
+  ndotv = jnp.clip(jnp.abs(ndotv_raw), 0.0, 1.0)
   refl = gb.view_dir - 2.0 * ndotv_raw * gb.normal
   return jnp.concatenate(
       [

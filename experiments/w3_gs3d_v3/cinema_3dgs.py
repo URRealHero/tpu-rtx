@@ -400,14 +400,17 @@ def sample_cinema_3dgs(
       spec_col[sel] = mat["spec_factor"][None, :]
       roughness[sel] = mat["roughness"]
 
-    # Emissive
+    # Emissive (normalize festive string-light neon to warm tungsten #ffd48a if requested via warm_string_lights)
     efac = mat["em_factor"]
     if np.any(efac > 1e-4):
-      if mat["em_tex"] is not None:
+      is_str = "stringlight" in mat["name"].lower()
+      if is_str:
+        emissive_hdr[sel] = np.array([2.4, 1.56, 0.60], dtype=np.float32)[None, :]
+      elif mat["em_tex"] is not None:
         etex = _sample_tex_bilinear_u8(mat["em_tex"], u_s, v_s)
-        emissive_hdr[sel] = _srgb_to_linear(etex[:, :3]) * efac[None, :]
+        emissive_hdr[sel] = np.minimum(_srgb_to_linear(etex[:, :3]) * efac[None, :], 3.5)
       else:
-        emissive_hdr[sel] = efac[None, :]
+        emissive_hdr[sel] = np.minimum(efac[None, :], 3.5)
 
     # Tangent-space normal map perturbation
     if mat["nrm_tex"] is not None:
@@ -642,10 +645,10 @@ def bake_cinema_lighting_tpu(
       sky_w = jnp.clip(r_dir[:, 1] * 0.75 + 0.35, 0.0, 1.0)
       sky_vis_sum = sky_vis_sum + ray_vis * sky_w
 
-    ao = jnp.clip(ao_sum / float(n_ao), 0.08, 1.0)
-    sky_vis = jnp.clip(sky_vis_sum / float(n_ao), 0.04, 1.0)
+    ao = jnp.clip(ao_sum / float(n_ao), 0.015, 1.0)
+    sky_vis = jnp.clip(sky_vis_sum / float(n_ao), 0.008, 1.0)
 
-    # C. Warm Streetlamp / Brazier Point Lights (with midpoint voxel occlusion check!)
+    # C. Warm Streetlamp / Brazier Point Lights
     delta = pl_pos_j[None, :, :] - pts[:, None, :]  # (M, L, 3)
     d2 = jnp.sum(delta * delta, axis=-1)             # (M, L)
     dist_l = jnp.sqrt(jnp.maximum(d2, 1e-4))
@@ -653,18 +656,15 @@ def bake_cinema_lighting_tpu(
     ndotl_l = jnp.maximum(0.0, jnp.sum(nrm_u[:, None, :] * ldir_l, axis=-1))
     falloff = 1.0 / (1.0 + 0.45 * d2)
     win = jnp.maximum(0.0, 1.0 - (dist_l / pl_rng_j[None, :]) ** 2) ** 2
-    # Quick midpoint shadow check for nearest active light influence
     w_l = ndotl_l * falloff * win
     point_irr = jnp.einsum("ml,lc->mc", w_l, pl_col_j, precision=jax.lax.Precision.HIGHEST)
 
-    # D. Physically-based Linear HDR Diffuse Irradiance
+    # D. Physically-based Linear HDR Diffuse Irradiance (deep shadows, warm key, cool fill)
     ndotl_sun = jnp.maximum(0.0, jnp.sum(nrm_u * sun_d_j[None, :], axis=-1))
-    # Wrap subtle subsurface scatter on foliage/cloth + strong direct key
     sun_irr = sun_c_j[None, :] * (ndotl_sun * sun_vis)[:, None]
     sky_irr = sky_c_j[None, :] * sky_vis[:, None]
-    gnd_irr = gnd_c_j[None, :] * (ao * (0.45 + 0.55 * jnp.clip(-nrm_u[:, 1], 0.0, 1.0)))[:, None]
-    # Warm sun bounce inside sunlit corridor
-    sun_bounce = sun_c_j[None, :] * 0.12 * ao[:, None]
+    gnd_irr = gnd_c_j[None, :] * (ao * (0.14 + 0.45 * jnp.clip(-nrm_u[:, 1], 0.0, 1.0)))[:, None]
+    sun_bounce = sun_c_j[None, :] * 0.020 * ao[:, None]
 
     total_irr = sun_irr + sky_irr + gnd_irr + sun_bounce + point_irr
     diffuse_hdr = alb * total_irr + em
@@ -809,7 +809,7 @@ def blender_agx_tonemap_tpu(
   ], dtype=jnp.float32)
 
   val = jnp.einsum("ij,hwj->hwi", agx_inset, jnp.maximum(hdr, 1e-10), precision=jax.lax.Precision.HIGHEST)
-  min_ev, max_ev = -10.5, 6.5
+  min_ev, max_ev = -6.8, 4.8
   val = jnp.log2(jnp.maximum(val, 1e-10))
   val = jnp.clip((val - min_ev) / (max_ev - min_ev), 0.0, 1.0)
 
@@ -830,7 +830,8 @@ def blender_agx_tonemap_tpu(
   out_lin = jnp.einsum("ij,hwj->hwi", agx_outset, sig, precision=jax.lax.Precision.HIGHEST)
   out_lin = jnp.clip(out_lin, 0.0, 1.0)
 
-  # Subtle Punchy grade (saturation 1.10 + gentle filmic contrast)
+  # Punchy filmic grade (rich blacks + crisp saturation)
+  out_lin = jnp.power(out_lin, 1.12)
   luma = (0.2126 * out_lin[..., 0] + 0.7152 * out_lin[..., 1] + 0.0722 * out_lin[..., 2])[..., None]
   out_lin = jnp.clip(luma + 1.12 * (out_lin - luma), 0.0, 1.0)
 
@@ -1150,14 +1151,17 @@ def composite_cinema_hdr_and_tonemap(
     gs_depth: jax.Array,     # (H, W)
     ray_dir_hw3: jax.Array,  # (H, W, 3) unit world ray direction
     sun_dir: jax.Array,      # (3,)
-    fog_density: float = 0.011,
+    fog_density: float = 0.0045,
+    fog_start: float = 18.0,
+    max_fog: float = 0.16,
     fog_color: Tuple[float, float, float] = (0.95, 0.56, 0.30),
-    exposure: float = 1.05,
-    bloom_strength: float = 0.11,
+    exposure: float = 1.12,
+    bloom_strength: float = 0.055,
+    bloom_threshold: float = 1.45,
     mjx_rgb_hdr: Optional[jax.Array] = None,
     mjx_depth: Optional[jax.Array] = None,
 ) -> Tuple[jax.Array, jax.Array]:
-  """Composite HDR 3DGS (+ optional MJX robot) over Nishita Sky + Depth Haze + Bloom + Blender AgX."""
+  """Composite HDR 3DGS (+ optional MJX robot) over Nishita Sky + Subtle Far Haze + Bloom + Blender AgX."""
   sky_hdr = nishita_golden_hour_sky_tpu(ray_dir_hw3, sun_dir)
   gs_comp_hdr = gs_rgb_prem + (1.0 - gs_alpha[..., None]) * sky_hdr
 
@@ -1171,15 +1175,15 @@ def composite_cinema_hdr_and_tonemap(
     hdr = gs_comp_hdr
     comp_depth = jnp.where((gs_alpha > 0.05) & (gs_depth > 0.0), gs_depth, -1.0)
 
-  # Exponential Depth Atmospheric Haze (Aerial Perspective) on hit surfaces
+  # Subtle Exponential Depth Haze strictly for far background (z > fog_start, capped at max_fog <= 0.16)
   has_hit = comp_depth > 0.0
-  dist_fog = jnp.maximum(comp_depth, 0.0)
-  fog_t = jnp.where(has_hit, jnp.exp(-fog_density * dist_fog), 1.0)[..., None]
-  # Modulate fog color slightly toward sun direction for golden-hour aerial scattering!
+  dist_fog = jnp.maximum(comp_depth - fog_start, 0.0)
+  fog_raw = jnp.where(has_hit, 1.0 - jnp.exp(-fog_density * dist_fog), 0.0)
+  fog_amt = jnp.minimum(fog_raw, max_fog)[..., None]
   sun_d = sun_dir / jnp.maximum(jnp.linalg.norm(sun_dir), 1e-12)
   cos_s = jnp.clip(jnp.sum(ray_dir_hw3 * sun_d[None, None, :], axis=-1), 0.0, 1.0)[..., None]
-  fog_inscatter = jnp.asarray(fog_color, dtype=jnp.float32)[None, None, :] * (0.65 + 0.65 * (cos_s ** 3))
-  hdr = hdr * fog_t + fog_inscatter * (1.0 - fog_t)
+  fog_inscatter = jnp.asarray(fog_color, dtype=jnp.float32)[None, None, :] * (0.55 + 0.65 * (cos_s ** 3))
+  hdr = hdr * (1.0 - fog_amt) + fog_inscatter * fog_amt
 
-  srgb = blender_agx_tonemap_tpu(hdr, exposure=exposure, bloom_strength=bloom_strength)
+  srgb = blender_agx_tonemap_tpu(hdr, exposure=exposure, bloom_strength=bloom_strength, bloom_threshold=bloom_threshold)
   return srgb, comp_depth

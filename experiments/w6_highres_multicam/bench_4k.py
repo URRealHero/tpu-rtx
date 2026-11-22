@@ -202,7 +202,7 @@ def _pallas_raycast_strip(
   plane_fx = tuple(float(spec_full.geom_size[g, 0]) > 0.0 for g in gids)
   plane_fy = tuple(float(spec_full.geom_size[g, 1]) > 0.0 for g in gids)
   znear_f = float(spec_full.znear)
-  do_in_vmem_shadow = shadow_l_idx >= 0
+  do_in_vmem_shadow = (shadow_l_idx >= 0) and (G <= 36)
 
   def _strip_kernel(
       cam_ref, lray_ref, gf_ref, light_ref,

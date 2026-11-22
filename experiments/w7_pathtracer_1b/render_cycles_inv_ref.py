@@ -118,7 +118,7 @@ def main():
   scene.cycles.device = "CPU"
   scene.cycles.samples = spp
   scene.cycles.max_bounces = 4
-  scene.cycles.use_denoising = False
+  scene.cycles.use_denoising = True
   scene.render.resolution_x = res
   scene.render.resolution_y = res
   scene.render.resolution_percentage = 100
@@ -141,19 +141,38 @@ def main():
       continue
     me = obj.to_mesh(preserve_all_data_layers=True, depsgraph=depsgraph)
     me.calc_loop_triangles()
-    nv = len(me.vertices)
     nt_cnt = len(me.loop_triangles)
-    v_loc = np.empty((nv, 3), np.float32)
+    nv_orig = len(me.vertices)
+    v_loc = np.empty((nv_orig, 3), np.float32)
     me.vertices.foreach_get("co", v_loc.ravel())
     mw = np.array(inst.matrix_world, np.float32)
-    v_w = v_loc @ mw[:3, :3].T + mw[:3, 3][None, :]
-    n_loc = np.empty((nv, 3), np.float32)
+    v_w_orig = v_loc @ mw[:3, :3].T + mw[:3, 3][None, :]
+    n_loc = np.empty((nv_orig, 3), np.float32)
     me.vertices.foreach_get("normal", n_loc.ravel())
-    n_w = n_loc @ np.linalg.inv(mw[:3, :3]).T
-    n_w = n_w / np.maximum(np.linalg.norm(n_w, axis=-1, keepdims=True), 1e-12)
-    f_arr = np.empty((nt_cnt * 3,), np.int32)
-    me.loop_triangles.foreach_get("vertices", f_arr)
-    f_arr = f_arr.reshape(nt_cnt, 3)
+    n_w_orig = n_loc @ np.linalg.inv(mw[:3, :3]).T
+    n_w_orig = n_w_orig / np.maximum(np.linalg.norm(n_w_orig, axis=-1, keepdims=True), 1e-12)
+    f_arr_orig = np.empty((nt_cnt * 3,), np.int32)
+    me.loop_triangles.foreach_get("vertices", f_arr_orig)
+    f_arr_orig = f_arr_orig.reshape(nt_cnt, 3)
+
+    tri_smooth = np.empty((nt_cnt,), dtype=bool)
+    me.loop_triangles.foreach_get("use_smooth", tri_smooth)
+
+    if np.all(tri_smooth):
+      v_w = v_w_orig
+      n_w = n_w_orig
+      f_arr = f_arr_orig
+      nv = nv_orig
+    else:
+      # Unshare flat-shaded triangle vertices so flat boxes never pillow-shade across 90-deg edges!
+      v_w = v_w_orig[f_arr_orig.ravel()]
+      e1 = v_w[1::3] - v_w[0::3]
+      e2 = v_w[2::3] - v_w[0::3]
+      fn = np.cross(e1, e2)
+      fn = fn / np.maximum(np.linalg.norm(fn, axis=-1, keepdims=True), 1e-12)
+      n_w = np.repeat(fn, 3, axis=0).astype(np.float32)
+      nv = nt_cnt * 3
+      f_arr = np.arange(nv, dtype=np.int32).reshape(nt_cnt, 3)
 
     if obj.name == "HeroSphere":
       alb = np.broadcast_to(np.array(hero_albedo_gt, np.float32), (nt_cnt, 3)).copy()

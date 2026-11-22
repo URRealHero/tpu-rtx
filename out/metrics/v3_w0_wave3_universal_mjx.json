@@ -1,0 +1,1005 @@
+{
+  "parity_and_sdk": {
+    "panda_pick_cube": {
+      "nq": 16,
+      "nv": 15,
+      "nu": 8,
+      "ngeom": 22,
+      "fast_fused": {
+        "depth_mae_m": 0.00024464877787977457,
+        "depth_mae_same_geom_m": 8.734865275528136e-08,
+        "normal_deg": 0.04194297641515732,
+        "geom_match": 0.9994392395019531,
+        "hlo": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 0,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 684,
+          "send_recv_ops": 0,
+          "zero_copy_verified": true
+        },
+        "stage1_gate_passed": false,
+        "flow_mean_abs_px": 0.05024195834994316,
+        "flow_hlo_zero_copy": true
+      },
+      "fused_ao_ggx": {
+        "depth_mae_m": 0.00024464877787977457,
+        "depth_mae_same_geom_m": 8.734865275528136e-08,
+        "normal_deg": 0.04194297641515732,
+        "geom_match": 0.9994392395019531,
+        "hlo": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 0,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 684,
+          "send_recv_ops": 0,
+          "zero_copy_verified": true
+        },
+        "stage1_gate_passed": false,
+        "flow_mean_abs_px": 0.05024195834994316,
+        "flow_hlo_zero_copy": true
+      },
+      "mjx_model_compile_shape": [
+        64,
+        64,
+        3
+      ],
+      "multi_cam_shape": [
+        16,
+        2,
+        64,
+        64,
+        3
+      ],
+      "multi_cam_hlo_zero_copy": true
+    },
+    "cartpole": {
+      "nq": 2,
+      "nv": 2,
+      "nu": 1,
+      "ngeom": 5,
+      "fast_fused": {
+        "depth_mae_m": 1.6450104567411472e-06,
+        "depth_mae_same_geom_m": 1.6450104567411472e-06,
+        "normal_deg": 0.0021971925161778927,
+        "geom_match": 0.9999961853027344,
+        "hlo": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 0,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 361,
+          "send_recv_ops": 0,
+          "zero_copy_verified": true
+        },
+        "stage1_gate_passed": true,
+        "flow_mean_abs_px": 0.0010315274121239781,
+        "flow_hlo_zero_copy": true
+      },
+      "fused_ao_ggx": {
+        "depth_mae_m": 1.6450104567411472e-06,
+        "depth_mae_same_geom_m": 1.6450104567411472e-06,
+        "normal_deg": 0.0021971925161778927,
+        "geom_match": 0.9999961853027344,
+        "hlo": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 0,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 361,
+          "send_recv_ops": 0,
+          "zero_copy_verified": true
+        },
+        "stage1_gate_passed": true,
+        "flow_mean_abs_px": 0.0010315274121239781,
+        "flow_hlo_zero_copy": true
+      },
+      "mjx_model_compile_shape": [
+        64,
+        64,
+        3
+      ],
+      "multi_cam_shape": [
+        16,
+        2,
+        64,
+        64,
+        3
+      ],
+      "multi_cam_hlo_zero_copy": true
+    },
+    "humanoid_21dof": {
+      "nq": 28,
+      "nv": 27,
+      "nu": 21,
+      "ngeom": 21,
+      "fast_fused": {
+        "depth_mae_m": 5.9336371123208664e-06,
+        "depth_mae_same_geom_m": 1.3605513231595978e-06,
+        "normal_deg": 0.002406883053481579,
+        "geom_match": 0.9999923706054688,
+        "hlo": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 0,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 646,
+          "send_recv_ops": 0,
+          "zero_copy_verified": true
+        },
+        "flow_mean_abs_px": 0.014566728845238686,
+        "flow_hlo_zero_copy": true
+      },
+      "fused_ao_ggx": {
+        "depth_mae_m": 5.9336371123208664e-06,
+        "depth_mae_same_geom_m": 1.3605513231595978e-06,
+        "normal_deg": 0.002406883053481579,
+        "geom_match": 0.9999923706054688,
+        "hlo": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 0,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 646,
+          "send_recv_ops": 0,
+          "zero_copy_verified": true
+        },
+        "flow_mean_abs_px": 0.014566728845238686,
+        "flow_hlo_zero_copy": true
+      },
+      "mjx_model_compile_shape": [
+        64,
+        64,
+        3
+      ],
+      "multi_cam_shape": [
+        16,
+        2,
+        64,
+        64,
+        3
+      ],
+      "multi_cam_hlo_zero_copy": true
+    },
+    "all_primitives": {
+      "nq": 0,
+      "nv": 0,
+      "nu": 0,
+      "ngeom": 6,
+      "fast_fused": {
+        "depth_mae_m": 9.006676577882899e-07,
+        "depth_mae_same_geom_m": 9.006676577882899e-07,
+        "normal_deg": 0.0015293650794774294,
+        "geom_match": 1.0,
+        "hlo": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 0,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 279,
+          "send_recv_ops": 0,
+          "zero_copy_verified": true
+        },
+        "flow_mean_abs_px": 6.984919309616089e-09,
+        "flow_hlo_zero_copy": true
+      },
+      "fused_ao_ggx": {
+        "depth_mae_m": 9.006676577882899e-07,
+        "depth_mae_same_geom_m": 9.006676577882899e-07,
+        "normal_deg": 0.0015293650794774294,
+        "geom_match": 1.0,
+        "hlo": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 0,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 279,
+          "send_recv_ops": 0,
+          "zero_copy_verified": true
+        },
+        "flow_mean_abs_px": 6.984919309616089e-09,
+        "flow_hlo_zero_copy": true
+      },
+      "mjx_model_compile_shape": [
+        64,
+        64,
+        3
+      ]
+    },
+    "static_mesh_octa": {
+      "n_mesh_geoms": 1,
+      "rgb_shape": [
+        8,
+        64,
+        64,
+        3
+      ],
+      "hlo": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 678,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      }
+    }
+  },
+  "render_push": [
+    {
+      "label": "1c_64x64_fast_fused_b16_r512_bfloat16_B2048_2out",
+      "scene": "panda_pick_cube",
+      "shader": "fast_fused",
+      "n_chips": 1,
+      "batch_size": 2048,
+      "res": "64x64",
+      "block_b": 16,
+      "block_r": 512,
+      "dtype": "bfloat16",
+      "outputs": [
+        "rgb",
+        "depth"
+      ],
+      "dt_render_loop_ms": 6.852309450914618,
+      "render_loop_fps": 298877.3368556263,
+      "dt_render_scan_ms": 6.856941249861848,
+      "render_scan_fps": 298675.44804197684,
+      "roofline": {
+        "hardware": "TPU v5p (1 chip / 2 TC)",
+        "n_chips": 1,
+        "hbm_tb_s_per_chip": 2.765,
+        "vpu_fp32_tflops_per_chip": 28.0,
+        "vmem_mib_capacity": 64.0,
+        "vmem_tile_mib": 0.296875,
+        "vmem_utilization_pct": 0.4638671875,
+        "vpu_gflops_total": 22.90089984,
+        "hbm_gb_total": 0.089391104,
+        "arithmetic_intensity_flop_per_byte": 256.1876832844575,
+        "ridge_point_vpu": 10.126582278481013,
+        "bound": "VPU",
+        "t_vpu_roof_ms": 0.8178892799999999,
+        "t_hbm_roof_ms": 0.032329513200723324,
+        "t_roofline_ms": 0.8178892799999999,
+        "theoretical_peak_render_fps": 2504006.4102564105,
+        "measured_render_ms": 6.856941249861848,
+        "measured_render_fps": 298675.44804197684,
+        "achieved_vpu_tflops_total": 3.339812754041229,
+        "achieved_vpu_pct": 11.927902693004388,
+        "achieved_hbm_tb_s_total": 0.013036585956136207,
+        "achieved_hbm_pct": 0.4714859296975119,
+        "roofline_efficiency_pct": 11.927902693004388
+      },
+      "hlo": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 113,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      }
+    },
+    {
+      "label": "4c_64x64_fast_fused_b16_r512_bfloat16_B8192_2out",
+      "scene": "panda_pick_cube",
+      "shader": "fast_fused",
+      "n_chips": 4,
+      "batch_size": 8192,
+      "res": "64x64",
+      "block_b": 16,
+      "block_r": 512,
+      "dtype": "bfloat16",
+      "outputs": [
+        "rgb",
+        "depth"
+      ],
+      "dt_render_loop_ms": 6.874264900397975,
+      "render_loop_fps": 1191691.0562358072,
+      "dt_render_scan_ms": 6.856404150312301,
+      "render_scan_fps": 1194795.3796782624,
+      "roofline": {
+        "hardware": "TPU v5p (1 chip / 2 TC)",
+        "n_chips": 4,
+        "hbm_tb_s_per_chip": 2.765,
+        "vpu_fp32_tflops_per_chip": 28.0,
+        "vmem_mib_capacity": 64.0,
+        "vmem_tile_mib": 0.296875,
+        "vmem_utilization_pct": 0.4638671875,
+        "vpu_gflops_total": 91.60359936,
+        "hbm_gb_total": 0.356777984,
+        "arithmetic_intensity_flop_per_byte": 256.75238795003673,
+        "ridge_point_vpu": 10.126582278481013,
+        "bound": "VPU",
+        "t_vpu_roof_ms": 0.8178892799999999,
+        "t_hbm_roof_ms": 0.032258407233273056,
+        "t_roofline_ms": 0.8178892799999999,
+        "theoretical_peak_render_fps": 10016025.641025642,
+        "measured_render_ms": 6.856404150312301,
+        "measured_render_fps": 1194795.3796782624,
+        "achieved_vpu_tflops_total": 13.360297519192706,
+        "achieved_vpu_pct": 11.928837070707772,
+        "achieved_hbm_tb_s_total": 0.052035728375747686,
+        "achieved_hbm_pct": 0.4704857900158019,
+        "roofline_efficiency_pct": 11.928837070707772
+      },
+      "hlo": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 116,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      }
+    },
+    {
+      "label": "4c_64x64_fast_fused_b8_r1024_bfloat16_B8192_2out",
+      "scene": "panda_pick_cube",
+      "shader": "fast_fused",
+      "n_chips": 4,
+      "batch_size": 8192,
+      "res": "64x64",
+      "block_b": 8,
+      "block_r": 1024,
+      "dtype": "bfloat16",
+      "outputs": [
+        "rgb",
+        "depth"
+      ],
+      "dt_render_loop_ms": 7.014028749836143,
+      "render_loop_fps": 1167945.0273412946,
+      "dt_render_scan_ms": 7.017224900482688,
+      "render_scan_fps": 1167413.0608862918,
+      "roofline": {
+        "hardware": "TPU v5p (1 chip / 2 TC)",
+        "n_chips": 4,
+        "hbm_tb_s_per_chip": 2.765,
+        "vpu_fp32_tflops_per_chip": 28.0,
+        "vmem_mib_capacity": 64.0,
+        "vmem_tile_mib": 0.2578125,
+        "vmem_utilization_pct": 0.40283203125,
+        "vpu_gflops_total": 91.60359936,
+        "hbm_gb_total": 0.312737792,
+        "arithmetic_intensity_flop_per_byte": 292.9086336965633,
+        "ridge_point_vpu": 10.126582278481013,
+        "bound": "VPU",
+        "t_vpu_roof_ms": 0.8178892799999999,
+        "t_hbm_roof_ms": 0.028276473056057867,
+        "t_roofline_ms": 0.8178892799999999,
+        "theoretical_peak_render_fps": 10016025.641025642,
+        "measured_render_ms": 7.017224900482688,
+        "measured_render_fps": 1167413.0608862918,
+        "achieved_vpu_tflops_total": 13.054106239875388,
+        "achieved_vpu_pct": 11.655451999888738,
+        "achieved_hbm_tb_s_total": 0.04456716101239507,
+        "achieved_hbm_pct": 0.40295805616993746,
+        "roofline_efficiency_pct": 11.655451999888738
+      },
+      "hlo": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 116,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      }
+    },
+    {
+      "label": "4c_64x64_fast_fused_b8_r2048_bfloat16_B8192_2out",
+      "scene": "panda_pick_cube",
+      "shader": "fast_fused",
+      "n_chips": 4,
+      "batch_size": 8192,
+      "res": "64x64",
+      "block_b": 8,
+      "block_r": 2048,
+      "dtype": "bfloat16",
+      "outputs": [
+        "rgb",
+        "depth"
+      ],
+      "dt_render_loop_ms": 8.022252150112763,
+      "render_loop_fps": 1021159.6253409775,
+      "dt_render_scan_ms": 7.983112349756993,
+      "render_scan_fps": 1026166.1919676434,
+      "roofline": {
+        "hardware": "TPU v5p (1 chip / 2 TC)",
+        "n_chips": 4,
+        "hbm_tb_s_per_chip": 2.765,
+        "vpu_fp32_tflops_per_chip": 28.0,
+        "vmem_mib_capacity": 64.0,
+        "vmem_tile_mib": 0.4453125,
+        "vmem_utilization_pct": 0.69580078125,
+        "vpu_gflops_total": 91.60359936,
+        "hbm_gb_total": 0.290717696,
+        "arithmetic_intensity_flop_per_byte": 315.0946798917944,
+        "ridge_point_vpu": 10.126582278481013,
+        "bound": "VPU",
+        "t_vpu_roof_ms": 0.8178892799999999,
+        "t_hbm_roof_ms": 0.026285505967450273,
+        "t_roofline_ms": 0.8178892799999999,
+        "theoretical_peak_render_fps": 10016025.641025642,
+        "measured_render_ms": 7.983112349756993,
+        "measured_render_fps": 1026166.1919676434,
+        "achieved_vpu_tflops_total": 11.474672451877549,
+        "achieved_vpu_pct": 10.245243260604951,
+        "achieved_hbm_tb_s_total": 0.036416585820547735,
+        "achieved_hbm_pct": 0.3292638862617336,
+        "roofline_efficiency_pct": 10.245243260604951
+      },
+      "hlo": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 116,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      }
+    },
+    {
+      "label": "4c_64x64_fast_fused_b16_r512_bfloat16_B16384_2out",
+      "scene": "panda_pick_cube",
+      "shader": "fast_fused",
+      "n_chips": 4,
+      "batch_size": 16384,
+      "res": "64x64",
+      "block_b": 16,
+      "block_r": 512,
+      "dtype": "bfloat16",
+      "outputs": [
+        "rgb",
+        "depth"
+      ],
+      "dt_render_loop_ms": 13.680437950824853,
+      "render_loop_fps": 1197622.4780882937,
+      "dt_render_scan_ms": 13.688615850696806,
+      "render_scan_fps": 1196906.9903562227,
+      "roofline": {
+        "hardware": "TPU v5p (1 chip / 2 TC)",
+        "n_chips": 4,
+        "hbm_tb_s_per_chip": 2.765,
+        "vpu_fp32_tflops_per_chip": 28.0,
+        "vmem_mib_capacity": 64.0,
+        "vmem_tile_mib": 0.296875,
+        "vmem_utilization_pct": 0.4638671875,
+        "vpu_gflops_total": 183.20719872,
+        "hbm_gb_total": 0.713293824,
+        "arithmetic_intensity_flop_per_byte": 256.84674751929435,
+        "ridge_point_vpu": 10.126582278481013,
+        "bound": "VPU",
+        "t_vpu_roof_ms": 1.6357785599999999,
+        "t_hbm_roof_ms": 0.06449311247739602,
+        "t_roofline_ms": 1.6357785599999999,
+        "theoretical_peak_render_fps": 10016025.641025642,
+        "measured_render_ms": 13.688615850696806,
+        "measured_render_fps": 1196906.9903562227,
+        "achieved_vpu_tflops_total": 13.383909718722512,
+        "achieved_vpu_pct": 11.949919391716527,
+        "achieved_hbm_tb_s_total": 0.052108542732148516,
+        "achieved_hbm_pct": 0.47114414766861223,
+        "roofline_efficiency_pct": 11.949919391716527
+      },
+      "hlo": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 116,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      }
+    },
+    {
+      "label": "4c_64x64_fast_fused_b8_r1024_bfloat16_B16384_2out",
+      "scene": "panda_pick_cube",
+      "shader": "fast_fused",
+      "n_chips": 4,
+      "batch_size": 16384,
+      "res": "64x64",
+      "block_b": 8,
+      "block_r": 1024,
+      "dtype": "bfloat16",
+      "outputs": [
+        "rgb",
+        "depth"
+      ],
+      "dt_render_loop_ms": 13.988305600651074,
+      "render_loop_fps": 1171264.0878561747,
+      "dt_render_scan_ms": 13.997711049159989,
+      "render_scan_fps": 1170477.0831787682,
+      "roofline": {
+        "hardware": "TPU v5p (1 chip / 2 TC)",
+        "n_chips": 4,
+        "hbm_tb_s_per_chip": 2.765,
+        "vpu_fp32_tflops_per_chip": 28.0,
+        "vmem_mib_capacity": 64.0,
+        "vmem_tile_mib": 0.2578125,
+        "vmem_utilization_pct": 0.40283203125,
+        "vpu_gflops_total": 183.20719872,
+        "hbm_gb_total": 0.62521344,
+        "arithmetic_intensity_flop_per_byte": 293.0314465408805,
+        "ridge_point_vpu": 10.126582278481013,
+        "bound": "VPU",
+        "t_vpu_roof_ms": 1.6357785599999999,
+        "t_hbm_roof_ms": 0.056529244122965644,
+        "t_roofline_ms": 1.6357785599999999,
+        "theoretical_peak_render_fps": 10016025.641025642,
+        "measured_render_ms": 13.997711049159989,
+        "measured_render_fps": 1170477.0831787682,
+        "achieved_vpu_tflops_total": 13.088368382271641,
+        "achieved_vpu_pct": 11.686043198456822,
+        "achieved_hbm_tb_s_total": 0.04466540549410179,
+        "achieved_hbm_pct": 0.4038463426229819,
+        "roofline_efficiency_pct": 11.686043198456822
+      },
+      "hlo": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 116,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      }
+    },
+    {
+      "label": "4c_64x64_fast_fused_b16_r512_bfloat16_B8192_5out",
+      "scene": "panda_pick_cube",
+      "shader": "fast_fused",
+      "n_chips": 4,
+      "batch_size": 8192,
+      "res": "64x64",
+      "block_b": 16,
+      "block_r": 512,
+      "dtype": "bfloat16",
+      "outputs": [
+        "rgb",
+        "depth",
+        "normal",
+        "seg_id",
+        "flow"
+      ],
+      "dt_render_loop_ms": 11.15703429968562,
+      "render_loop_fps": 734245.300315231,
+      "dt_render_scan_ms": 11.158885300392285,
+      "render_scan_fps": 734123.5060200873,
+      "roofline": {
+        "hardware": "TPU v5p (1 chip / 2 TC)",
+        "n_chips": 4,
+        "hbm_tb_s_per_chip": 2.765,
+        "vpu_fp32_tflops_per_chip": 28.0,
+        "vmem_mib_capacity": 64.0,
+        "vmem_tile_mib": 0.421875,
+        "vmem_utilization_pct": 0.6591796875,
+        "vpu_gflops_total": 91.60359936,
+        "hbm_gb_total": 0.826540032,
+        "arithmetic_intensity_flop_per_byte": 110.82778306374881,
+        "ridge_point_vpu": 10.126582278481013,
+        "bound": "VPU",
+        "t_vpu_roof_ms": 0.8178892799999999,
+        "t_hbm_roof_ms": 0.07473237179023508,
+        "t_roofline_ms": 0.8178892799999999,
+        "theoretical_peak_render_fps": 10016025.641025642,
+        "measured_render_ms": 11.158885300392285,
+        "measured_render_fps": 734123.5060200873,
+        "achieved_vpu_tflops_total": 8.209027774197098,
+        "achieved_vpu_pct": 7.329489084104552,
+        "achieved_hbm_tb_s_total": 0.07407012526340273,
+        "achieved_hbm_pct": 0.6697118016582526,
+        "roofline_efficiency_pct": 7.329489084104552
+      },
+      "hlo": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 678,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      }
+    },
+    {
+      "label": "4c_128x128_fused_ao_ggx_b8_r512_bfloat16_B4096_5out",
+      "scene": "panda_pick_cube",
+      "shader": "fused_ao_ggx",
+      "n_chips": 4,
+      "batch_size": 4096,
+      "res": "128x128",
+      "block_b": 8,
+      "block_r": 512,
+      "dtype": "bfloat16",
+      "outputs": [
+        "rgb",
+        "depth",
+        "normal",
+        "seg_id",
+        "flow"
+      ],
+      "dt_render_loop_ms": 55.52412635006476,
+      "render_loop_fps": 73769.73343399976,
+      "dt_render_scan_ms": 54.731007500959095,
+      "render_scan_fps": 74838.74657210032,
+      "roofline": {
+        "hardware": "TPU v5p (1 chip / 2 TC)",
+        "n_chips": 4,
+        "hbm_tb_s_per_chip": 2.765,
+        "vpu_fp32_tflops_per_chip": 28.0,
+        "vmem_mib_capacity": 64.0,
+        "vmem_tile_mib": 0.2265625,
+        "vmem_utilization_pct": 0.35400390625,
+        "vpu_gflops_total": 862.483120128,
+        "hbm_gb_total": 1.653604352,
+        "arithmetic_intensity_flop_per_byte": 521.577679137603,
+        "ridge_point_vpu": 10.126582278481013,
+        "bound": "VPU",
+        "t_vpu_roof_ms": 7.700742144,
+        "t_hbm_roof_ms": 0.14951214755877035,
+        "t_roofline_ms": 7.700742144,
+        "theoretical_peak_render_fps": 531896.7864923747,
+        "measured_render_ms": 54.731007500959095,
+        "measured_render_fps": 74838.74657210032,
+        "achieved_vpu_tflops_total": 15.758582922356872,
+        "achieved_vpu_pct": 14.070163323532926,
+        "achieved_hbm_tb_s_total": 0.030213300056115767,
+        "achieved_hbm_pct": 0.2731763115381173,
+        "roofline_efficiency_pct": 14.070163323532926
+      },
+      "hlo": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 678,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      }
+    }
+  ],
+  "solver_parity": {
+    "it2_ls4_qpos_mae": 2.0691018676188833e-07,
+    "it2_ls4_qpos_max": 4.067271947860718e-05,
+    "it2_ls4_bf16_qpos_mae": 2.0691018676188833e-07
+  },
+  "e2e_push": [
+    {
+      "label": "panda_1c_64x64_std_B2048",
+      "scene": "panda_pick_cube",
+      "shader": "fast_fused",
+      "n_chips": 1,
+      "batch_size": 2048,
+      "res": "64x64",
+      "iterations": 5,
+      "ls_iterations": 8,
+      "substeps": 1,
+      "bf16_matmul": false,
+      "dt_physics_ms": 26.582457398762926,
+      "dt_render_ms": 6.802993200835772,
+      "dt_e2e_ms": 33.3854505995987,
+      "e2e_fps": 61344.087415870235,
+      "e2e_phys_steps_per_sec": 61344.087415870235,
+      "render_only_equiv_fps": 301043.95808427327,
+      "physics_share_pct": 79.62288039054489,
+      "roofline": {
+        "hardware": "TPU v5p (1 chip / 2 TC)",
+        "n_chips": 1,
+        "hbm_tb_s_per_chip": 2.765,
+        "vpu_fp32_tflops_per_chip": 28.0,
+        "vmem_mib_capacity": 64.0,
+        "vmem_tile_mib": 0.296875,
+        "vmem_utilization_pct": 0.4638671875,
+        "vpu_gflops_total": 22.90089984,
+        "hbm_gb_total": 0.089391104,
+        "arithmetic_intensity_flop_per_byte": 256.1876832844575,
+        "ridge_point_vpu": 10.126582278481013,
+        "bound": "VPU",
+        "t_vpu_roof_ms": 0.8178892799999999,
+        "t_hbm_roof_ms": 0.032329513200723324,
+        "t_roofline_ms": 0.8178892799999999,
+        "theoretical_peak_render_fps": 2504006.4102564105,
+        "measured_render_ms": 6.802993200835772,
+        "measured_render_fps": 301043.95808427327,
+        "achieved_vpu_tflops_total": 3.3662976228149906,
+        "achieved_vpu_pct": 12.022491510053536,
+        "achieved_hbm_tb_s_total": 0.013139966682462359,
+        "achieved_hbm_pct": 0.4752248348087652,
+        "roofline_efficiency_pct": 12.022491510053536
+      },
+      "hlo": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 3,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 19347,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      }
+    },
+    {
+      "label": "panda_4c_64x64_std_scan_B8192",
+      "scene": "panda_pick_cube",
+      "shader": "fast_fused",
+      "n_chips": 4,
+      "batch_size": 8192,
+      "res": "64x64",
+      "iterations": 5,
+      "ls_iterations": 8,
+      "substeps": 1,
+      "bf16_matmul": false,
+      "dt_physics_ms": 26.500738400500268,
+      "dt_render_ms": 6.815548299346119,
+      "dt_e2e_ms": 33.31628669984639,
+      "e2e_fps": 245885.74572561146,
+      "e2e_phys_steps_per_sec": 245885.74572561146,
+      "render_only_equiv_fps": 1201957.58876596,
+      "physics_share_pct": 79.54289335798775,
+      "roofline": {
+        "hardware": "TPU v5p (1 chip / 2 TC)",
+        "n_chips": 4,
+        "hbm_tb_s_per_chip": 2.765,
+        "vpu_fp32_tflops_per_chip": 28.0,
+        "vmem_mib_capacity": 64.0,
+        "vmem_tile_mib": 0.296875,
+        "vmem_utilization_pct": 0.4638671875,
+        "vpu_gflops_total": 91.60359936,
+        "hbm_gb_total": 0.356777984,
+        "arithmetic_intensity_flop_per_byte": 256.75238795003673,
+        "ridge_point_vpu": 10.126582278481013,
+        "bound": "VPU",
+        "t_vpu_roof_ms": 0.8178892799999999,
+        "t_hbm_roof_ms": 0.032258407233273056,
+        "t_roofline_ms": 0.8178892799999999,
+        "theoretical_peak_render_fps": 10016025.641025642,
+        "measured_render_ms": 6.815548299346119,
+        "measured_render_fps": 1201957.58876596,
+        "achieved_vpu_tflops_total": 13.440385914188067,
+        "achieved_vpu_pct": 12.000344566239344,
+        "achieved_hbm_tb_s_total": 0.05234765690593508,
+        "achieved_hbm_pct": 0.47330612030682717,
+        "roofline_efficiency_pct": 12.000344566239344
+      },
+      "hlo": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 3,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 19350,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      }
+    },
+    {
+      "label": "panda_4c_64x64_it2ls4_B8192",
+      "scene": "panda_pick_cube",
+      "shader": "fast_fused",
+      "n_chips": 4,
+      "batch_size": 8192,
+      "res": "64x64",
+      "iterations": 2,
+      "ls_iterations": 4,
+      "substeps": 1,
+      "bf16_matmul": false,
+      "dt_physics_ms": 20.96222070103977,
+      "dt_render_ms": 6.828347296686843,
+      "dt_e2e_ms": 27.790567997726612,
+      "e2e_fps": 294776.270879751,
+      "e2e_phys_steps_per_sec": 294776.270879751,
+      "render_only_equiv_fps": 1199704.6494654438,
+      "physics_share_pct": 75.42926327649931,
+      "roofline": {
+        "hardware": "TPU v5p (1 chip / 2 TC)",
+        "n_chips": 4,
+        "hbm_tb_s_per_chip": 2.765,
+        "vpu_fp32_tflops_per_chip": 28.0,
+        "vmem_mib_capacity": 64.0,
+        "vmem_tile_mib": 0.296875,
+        "vmem_utilization_pct": 0.4638671875,
+        "vpu_gflops_total": 91.60359936,
+        "hbm_gb_total": 0.356777984,
+        "arithmetic_intensity_flop_per_byte": 256.75238795003673,
+        "ridge_point_vpu": 10.126582278481013,
+        "bound": "VPU",
+        "t_vpu_roof_ms": 0.8178892799999999,
+        "t_hbm_roof_ms": 0.032258407233273056,
+        "t_roofline_ms": 0.8178892799999999,
+        "theoretical_peak_render_fps": 10016025.641025642,
+        "measured_render_ms": 6.828347296686843,
+        "measured_render_fps": 1199704.6494654438,
+        "achieved_vpu_tflops_total": 13.41519336669455,
+        "achieved_vpu_pct": 11.977851220262991,
+        "achieved_hbm_tb_s_total": 0.05224953689351901,
+        "achieved_hbm_pct": 0.47241895925424054,
+        "roofline_efficiency_pct": 11.977851220262991
+      },
+      "hlo": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 3,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 19350,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      }
+    },
+    {
+      "label": "cartpole_4c_64x64_B16384",
+      "scene": "cartpole",
+      "shader": "fast_fused",
+      "n_chips": 4,
+      "batch_size": 16384,
+      "res": "64x64",
+      "iterations": 1,
+      "ls_iterations": 4,
+      "substeps": 1,
+      "bf16_matmul": false,
+      "dt_physics_ms": 2.6800172025104985,
+      "dt_render_ms": 4.211763697094284,
+      "dt_e2e_ms": 6.8917808996047825,
+      "e2e_fps": 2377324.56075897,
+      "e2e_phys_steps_per_sec": 2377324.56075897,
+      "render_only_equiv_fps": 3890056.797655433,
+      "physics_share_pct": 38.88715038320773,
+      "roofline": {
+        "hardware": "TPU v5p (1 chip / 2 TC)",
+        "n_chips": 4,
+        "hbm_tb_s_per_chip": 2.765,
+        "vpu_fp32_tflops_per_chip": 28.0,
+        "vmem_mib_capacity": 64.0,
+        "vmem_tile_mib": 0.296875,
+        "vmem_utilization_pct": 0.4638671875,
+        "vpu_gflops_total": 43.6207616,
+        "hbm_gb_total": 0.579076096,
+        "arithmetic_intensity_flop_per_byte": 75.32820280669986,
+        "ridge_point_vpu": 10.126582278481013,
+        "bound": "VPU",
+        "t_vpu_roof_ms": 0.38947108571428574,
+        "t_hbm_roof_ms": 0.05235769403254973,
+        "t_roofline_ms": 0.38947108571428574,
+        "theoretical_peak_render_fps": 42067307.69230769,
+        "measured_render_ms": 4.211763697094284,
+        "measured_render_fps": 3890056.797655433,
+        "achieved_vpu_tflops_total": 10.356887218077825,
+        "achieved_vpu_pct": 9.247220730426632,
+        "achieved_hbm_tb_s_total": 0.13749016745633363,
+        "achieved_hbm_pct": 1.2431299046684778,
+        "roofline_efficiency_pct": 9.247220730426632
+      },
+      "hlo": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 6205,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      }
+    }
+  ],
+  "pod_scaling": [
+    {
+      "n_chips": 1,
+      "mesh_axes": [
+        "data"
+      ],
+      "mesh_shape": [
+        1
+      ],
+      "partition_spec": [
+        "data"
+      ],
+      "global_batch": 4096,
+      "cross_chip_comm_ops": 0,
+      "spmd_scaling_efficiency": 1.0,
+      "projected_render_fps": 298675.44804197684
+    },
+    {
+      "n_chips": 4,
+      "mesh_axes": [
+        "data"
+      ],
+      "mesh_shape": [
+        4
+      ],
+      "partition_spec": [
+        "data"
+      ],
+      "global_batch": 16384,
+      "cross_chip_comm_ops": 0,
+      "spmd_scaling_efficiency": 1.0,
+      "projected_render_fps": 1194701.7921679073
+    },
+    {
+      "n_chips": 32,
+      "mesh_axes": [
+        "data"
+      ],
+      "mesh_shape": [
+        32
+      ],
+      "partition_spec": [
+        "data"
+      ],
+      "global_batch": 131072,
+      "cross_chip_comm_ops": 0,
+      "spmd_scaling_efficiency": 1.0,
+      "projected_render_fps": 9557614.337343259
+    },
+    {
+      "n_chips": 64,
+      "mesh_axes": [
+        "data"
+      ],
+      "mesh_shape": [
+        64
+      ],
+      "partition_spec": [
+        "data"
+      ],
+      "global_batch": 262144,
+      "cross_chip_comm_ops": 0,
+      "spmd_scaling_efficiency": 1.0,
+      "projected_render_fps": 19115228.674686518
+    },
+    {
+      "n_chips": 1000,
+      "mesh_axes": [
+        "data"
+      ],
+      "mesh_shape": [
+        1000
+      ],
+      "partition_spec": [
+        "data"
+      ],
+      "global_batch": 4096000,
+      "cross_chip_comm_ops": 0,
+      "spmd_scaling_efficiency": 1.0,
+      "projected_render_fps": 298675448.0419768
+    }
+  ]
+}

@@ -240,8 +240,7 @@ def train_one_candidate(
       ls_gt = _ssim_loss(pred, yb)
       yp_lum = 0.2126 * raw[..., 0] + 0.7152 * raw[..., 1] + 0.0722 * raw[..., 2]
       yg_lum = 0.2126 * yb[..., 0] + 0.7152 * yb[..., 1] + 0.0722 * yb[..., 2]
-      bnd_cnt = jnp.maximum(jnp.sum(bndb[..., 0]), 1.0)
-      bnd_excess_gt = jnp.sum(bndb[..., 0] * jnp.maximum(jnp.abs(yp_lum - yg_lum) - bnd_margin, 0.0) ** 2) / bnd_cnt
+      bnd_excess_gt = jnp.mean(bndb[..., 0] * jnp.maximum(jnp.abs(yp_lum - yg_lum) - bnd_margin, 0.0) ** 2)
       loss_gt = 0.6 * l2_gt + 0.25 * l1_gt + 0.15 * ls_gt + bnd_weight * bnd_excess_gt
 
       if kd_weight > 0.0:

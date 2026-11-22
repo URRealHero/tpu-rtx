@@ -48,13 +48,13 @@ SCENE_RESOLUTIONS = {
 
 
 class IrradianceNRC3Scale(nn.Module):
-  """Albedo-factorized 3-scale TPU MXU BF16 Neural Radiance Cache / Relighter.
+  """Albedo-factorized 4-scale TPU MXU BF16 Neural Radiance Cache / Relighter.
 
-  Predicts (irrad_delta, spec_delta) and composes `alb * irrad_delta + spec_delta`
-  so 100% of fine UV texture & geometric edge sharpness from Stage 1 is preserved.
+  1x -> 1/2x -> 1/4x -> 1/8x U-Net with 1x1 pixel BRDF skip preserves 100% of
+  Stage 1 UV texture & edge sharpness while capturing room-scale indirect GI.
   """
 
-  base_width: int = 96
+  base_width: int = 64
 
   @nn.compact
   def __call__(self, x: jax.Array, train: bool = False) -> jax.Array:
@@ -62,7 +62,8 @@ class IrradianceNRC3Scale(nn.Module):
     dt = jnp.bfloat16
     w1 = self.base_width
     w2 = self.base_width * 2
-    w3 = self.base_width * 2
+    w3 = self.base_width * 3
+    w4 = self.base_width * 3
 
     h1 = nn.relu(nn.Conv(w1, (3, 3), padding="SAME", dtype=dt, param_dtype=jnp.float32)(x.astype(dt)))
     h1 = _ResBlock3S(w1)(h1)
@@ -70,14 +71,20 @@ class IrradianceNRC3Scale(nn.Module):
 
     h2 = nn.relu(nn.Conv(w2, (3, 3), strides=(2, 2), padding="SAME", dtype=dt, param_dtype=jnp.float32)(h1))
     h2 = _ResBlock3S(w2)(h2)
-    h2 = _ResBlock3S(w2)(h2)
 
     h3 = nn.relu(nn.Conv(w3, (3, 3), strides=(2, 2), padding="SAME", dtype=dt, param_dtype=jnp.float32)(h2))
     h3 = _ResBlock3S(w3)(h3)
-    h3 = _ResBlock3S(w3)(h3)
+
+    h4 = nn.relu(nn.Conv(w4, (3, 3), strides=(2, 2), padding="SAME", dtype=dt, param_dtype=jnp.float32)(h3))
+    h4 = _ResBlock3S(w4)(h4)
+    h4 = _ResBlock3S(w4)(h4)
 
     B, H, W, _ = x.shape
-    h3_up = jax.image.resize(h3.astype(jnp.float32), (B, H // 2, W // 2, w3), method="bilinear").astype(dt)
+    h4_up = jax.image.resize(h4.astype(jnp.float32), (B, H // 4, W // 4, w4), method="bilinear").astype(dt)
+    h3_m = nn.relu(nn.Conv(w3, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(jnp.concatenate([h3, h4_up], axis=-1)))
+    h3_m = _ResBlock3S(w3)(h3_m)
+
+    h3_up = jax.image.resize(h3_m.astype(jnp.float32), (B, H // 2, W // 2, w3), method="bilinear").astype(dt)
     h2_m = nn.relu(nn.Conv(w2, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(jnp.concatenate([h2, h3_up], axis=-1)))
     h2_m = _ResBlock3S(w2)(h2_m)
 
@@ -91,7 +98,15 @@ class IrradianceNRC3Scale(nn.Module):
     out_mid = nn.relu(nn.Conv(w1, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(out_mid))
     irrad_spec = nn.Conv(6, (1, 1), padding="SAME", dtype=dt, param_dtype=jnp.float32)(out_mid).astype(jnp.float32)
     alb = x[..., 3:6]
-    return alb * irrad_spec[..., :3] + irrad_spec[..., 3:6]
+    return alb * irrad_spec[..., :3] + 0.30 * jnp.tanh(irrad_spec[..., 3:6])
+
+
+def _grad_loss(pred: jax.Array, target: jax.Array) -> jax.Array:
+  dx_p = pred[:, :, 1:, :] - pred[:, :, :-1, :]
+  dx_t = target[:, :, 1:, :] - target[:, :, :-1, :]
+  dy_p = pred[:, 1:, :, :] - pred[:, :-1, :, :]
+  dy_t = target[:, 1:, :, :] - target[:, :-1, :, :]
+  return 0.5 * (jnp.mean(jnp.abs(dx_p - dx_t)) + jnp.mean(jnp.abs(dy_p - dy_t)))
 
 
 def _train_relighter_26ch(
@@ -105,12 +120,12 @@ def _train_relighter_26ch(
     feats_hero: np.ndarray,
     s1_hero: np.ndarray,
     gt_hero: np.ndarray,
-    epochs: int = 240,
+    epochs: int = 400,
     batch_size: int = 3,
-    lr: float = 2.5e-3,
+    lr: float = 3.5e-3,
 ):
   _, H, W, C = feats_tr.shape
-  model = IrradianceNRC3Scale(base_width=96)
+  model = IrradianceNRC3Scale(base_width=64)
   rng = jax.random.PRNGKey(0)
   params = model.init(rng, jnp.asarray(feats_tr[:1]))["params"]
   ema_params = params
@@ -124,7 +139,7 @@ def _train_relighter_26ch(
       decay_steps=total_steps,
       end_value=lr * 0.03,
   )
-  tx = optax.chain(optax.clip_by_global_norm(1.0), optax.adamw(sched, weight_decay=2e-5))
+  tx = optax.chain(optax.clip_by_global_norm(2.0), optax.adamw(sched, weight_decay=2e-5))
   opt_state = tx.init(params)
 
   x_tr = jnp.asarray(feats_tr[tr_idx])
@@ -155,7 +170,7 @@ def _train_relighter_26ch(
     def loss_fn(pr):
       raw = bb + model.apply({"params": pr}, xb, train=True)
       pred = jnp.clip(raw, 0.0, 1.0)
-      return 0.60 * jnp.mean((raw - yb) ** 2) + 0.25 * jnp.mean(jnp.abs(raw - yb)) + 0.15 * _ssim_loss(pred, yb)
+      return 0.55 * jnp.mean((raw - yb) ** 2) + 0.22 * jnp.mean(jnp.abs(raw - yb)) + 0.13 * _ssim_loss(pred, yb) + 0.10 * _grad_loss(pred, yb)
 
     loss, grads = jax.value_and_grad(loss_fn)(p)
     ups, opt_st = tx.update(grads, opt_st, p)
@@ -178,7 +193,7 @@ def _train_relighter_26ch(
     el = 0.0
     for s in range(steps_per_epoch):
       sl = perm[s * batch_size : (s + 1) * batch_size]
-      up2x = (step_i % 3 == 1)
+      up2x = (step_i % 4 == 1)
       params, ema_params, opt_state, loss = train_step(
           params, ema_params, opt_state, jnp.asarray(sl), jax.random.PRNGKey(step_i + 100), jnp.bool_(up2x)
       )
@@ -198,7 +213,7 @@ def _train_relighter_26ch(
   pred_hero = np.clip(np.asarray(infer_fn(ema_params, jnp.asarray(feats_hero), jnp.asarray(s1_hero))) * cal_scale, 0.0, 1.0)
 
   metrics = {
-      "arch": "IrradianceNRC3S_W96_MS",
+      "arch": "IrradianceNRC4S_W64_MS",
       "n_params": int(sum(x.size for x in jax.tree_util.tree_leaves(ema_params))),
       "epochs": epochs,
       "train_time_s": round(train_s, 2),
@@ -426,7 +441,7 @@ def run_scene(
   )
   print(f"[{scene_name}] EVAL:", json.dumps(met, indent=2), flush=True)
 
-  mod = IrradianceNRC3Scale(base_width=96)
+  mod = IrradianceNRC3Scale(base_width=64)
   n_devs = len(jax.devices())
   benches = []
   # Hero res (1c + 4c) and Native res (4c)
@@ -545,7 +560,7 @@ def main():
   ap = argparse.ArgumentParser()
   ap.add_argument("--data_dir", default="/dev/shm/zaychik-tpu-mjx-w5/opendata")
   ap.add_argument("--scenes", nargs="+", default=["classroom", "monster", "junkshop"])
-  ap.add_argument("--epochs", type=int, default=240)
+  ap.add_argument("--epochs", type=int, default=400)
   ap.add_argument("--merge_only", action="store_true")
   ap.add_argument("--out_json", default="/dev/shm/zaychik-tpu-mjx-w5/v3_w5_opendata_vs_rtxh100.json")
   ap.add_argument("--out_png", default="/dev/shm/zaychik-tpu-mjx-w5/v3_w5_opendata_vs_rtxh100.png")

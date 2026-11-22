@@ -188,6 +188,50 @@
       "hlo_lines": 2058,
       "send_recv_ops": 0,
       "zero_copy_verified": true
+    },
+    "cinema_bistro_10000000_1080p": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 2,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 3010,
+      "send_recv_ops": 0,
+      "zero_host_comm_verified": true
+    },
+    "hybrid_mjx_10m_3dgs_1080p": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 4,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 10320,
+      "send_recv_ops": 0,
+      "zero_host_comm_verified": true
+    },
+    "cinema_bistro_10000000_4K": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 2,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 3010,
+      "send_recv_ops": 0,
+      "zero_host_comm_verified": true
+    },
+    "hybrid_mjx_10m_3dgs_4K": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 4,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 10320,
+      "send_recv_ops": 0,
+      "zero_host_comm_verified": true
     }
   },
   "inverse_3dgs_grad": {
@@ -250,5 +294,85 @@
         "loss": 0.0017
       }
     ]
-  }
+  },
+  "cinema_bistro_4k": [
+    {
+      "scene": "Amazon_Lumberyard_Bistro",
+      "n_chips": 4,
+      "res_label": "1080p",
+      "res": "1920x1080",
+      "n_gaussians": 10000000,
+      "k_tile": 512,
+      "macro_rep": 4,
+      "splat_scale": 0.8,
+      "bake_s": 27.13,
+      "ms": 434.39,
+      "fps": 2.3,
+      "compile_s": 32.86,
+      "features": [
+        "voxel_cone_traced_soft_shadows",
+        "12_ray_hemisphere_ao",
+        "96_warm_tungsten_streetlamps",
+        "ggx_specular_and_fresnel_rim",
+        "nishita_golden_hour_sky_dome",
+        "far_only_aerial_haze_max15pct",
+        "hdr_bloom_and_blender_agx"
+      ]
+    },
+    {
+      "scene": "Amazon_Lumberyard_Bistro",
+      "n_chips": 4,
+      "res_label": "4K",
+      "res": "3840x2160",
+      "n_gaussians": 10000000,
+      "k_tile": 512,
+      "macro_rep": 4,
+      "splat_scale": 0.8,
+      "bake_s": 27.13,
+      "ms": 717.31,
+      "fps": 1.39,
+      "compile_s": 40.33,
+      "features": [
+        "voxel_cone_traced_soft_shadows",
+        "12_ray_hemisphere_ao",
+        "96_warm_tungsten_streetlamps",
+        "ggx_specular_and_fresnel_rim",
+        "nishita_golden_hour_sky_dome",
+        "far_only_aerial_haze_max15pct",
+        "hdr_bloom_and_blender_agx"
+      ]
+    }
+  ],
+  "hybrid_realtosim_4k": [
+    {
+      "n_chips": 4,
+      "res_label": "1080p",
+      "res": "1920x1080",
+      "n_gaussians": 10000000,
+      "k_tile": 512,
+      "macro_rep": 4,
+      "bake_s": 9.86,
+      "ms": 806.16,
+      "fps": 1.24,
+      "compile_s": 39.61,
+      "mjx_robot_pixels": 94247,
+      "mjx_pixels_occluded_by_3dgs_fg": 12758,
+      "cinema_overhaul": true
+    },
+    {
+      "n_chips": 4,
+      "res_label": "4K",
+      "res": "3840x2160",
+      "n_gaussians": 10000000,
+      "k_tile": 512,
+      "macro_rep": 4,
+      "bake_s": 9.86,
+      "ms": 2299.64,
+      "fps": 0.43,
+      "compile_s": 48.33,
+      "mjx_robot_pixels": 376931,
+      "mjx_pixels_occluded_by_3dgs_fg": 50938,
+      "cinema_overhaul": true
+    }
+  ]
 }

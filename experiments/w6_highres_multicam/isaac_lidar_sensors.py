@@ -241,6 +241,8 @@ def pallas_lidar_128x2048(
 
   gids = np.asarray(spec.enabled_geom_ids, dtype=np.int32)
   G = len(gids)
+  loc_block_r = 256 if G > 36 else BLOCK_R
+  assert R == LIDAR_RAYS and R % loc_block_r == 0
   B_pad = ((B + BLOCK_B - 1) // BLOCK_B) * BLOCK_B
   G_pad = ((G + 127) // 128) * 128
 
@@ -259,7 +261,7 @@ def pallas_lidar_128x2048(
   g_16 = jnp.pad(g_16, ((0, B_pad - B), (0, G_pad - G), (0, 0)))
 
   n_b_blk = B_pad // BLOCK_B
-  n_r_blk = R // BLOCK_R
+  n_r_blk = R // loc_block_r
   geom_fields = (
       g_16.reshape(n_b_blk, BLOCK_B, G_pad, 16)
       .transpose(0, 3, 1, 2)
@@ -294,9 +296,9 @@ def pallas_lidar_128x2048(
     roy = cpy + r_min_f * rdy
     roz = cpz + r_min_f * rdz
 
-    best_d = jnp.full((BLOCK_B, BLOCK_R), d_limit_f, dtype=jnp.float32)
-    best_gid = jnp.full((BLOCK_B, BLOCK_R), -1, dtype=jnp.int32)
-    best_sem = jnp.zeros((BLOCK_B, BLOCK_R), dtype=jnp.int32)
+    best_d = jnp.full((BLOCK_B, loc_block_r), d_limit_f, dtype=jnp.float32)
+    best_gid = jnp.full((BLOCK_B, loc_block_r), -1, dtype=jnp.int32)
+    best_sem = jnp.zeros((BLOCK_B, loc_block_r), dtype=jnp.int32)
 
     for k, (gt, gid_val, sem_val, pfx, pfy) in enumerate(
         zip(g_types_static, gids_static, sem_ids_static, plane_fx, plane_fy)
@@ -343,13 +345,13 @@ def pallas_lidar_128x2048(
       grid=(n_b_blk, n_r_blk),
       in_specs=[
           pl.BlockSpec((BLOCK_B, 128), lambda bi, ri: (bi, 0)),
-          pl.BlockSpec((8, BLOCK_R), lambda bi, ri: (0, ri)),
+          pl.BlockSpec((8, loc_block_r), lambda bi, ri: (0, ri)),
           pl.BlockSpec((16 * BLOCK_B, G_pad), lambda bi, ri: (bi, 0)),
       ],
       out_specs=[
-          pl.BlockSpec((BLOCK_B, BLOCK_R), lambda bi, ri: (bi, ri)),
-          pl.BlockSpec((BLOCK_B, BLOCK_R), lambda bi, ri: (bi, ri)),
-          pl.BlockSpec((BLOCK_B, BLOCK_R), lambda bi, ri: (bi, ri)),
+          pl.BlockSpec((BLOCK_B, loc_block_r), lambda bi, ri: (bi, ri)),
+          pl.BlockSpec((BLOCK_B, loc_block_r), lambda bi, ri: (bi, ri)),
+          pl.BlockSpec((BLOCK_B, loc_block_r), lambda bi, ri: (bi, ri)),
       ],
       compiler_params=None if interpret else pltpu.CompilerParams(dimension_semantics=("parallel", "parallel")),
       interpret=interpret,

@@ -1,0 +1,120 @@
+{
+  "experiment": "v3_w7_wave4_tpu_optix_sdk",
+  "backend": "tpu",
+  "n_chips": 4,
+  "sdk_bench": {
+    "gas_name": "cornell_hero_gas",
+    "gas_tris": 2664,
+    "gas_hbm_mb": 0.258,
+    "gas_build_ms": 3.92,
+    "gas_512_16spp_3b_ms": 352.53,
+    "gas_512_16spp_3b_spm": 2723.1,
+    "gas_hlo": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 2,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 2334,
+      "send_recv_ops": 0
+    },
+    "ias_name": "tlas_8x_instances",
+    "ias_effective_tris": 21312,
+    "ias_build_ms": 0.72,
+    "ias_512_16spp_3b_ms": 850.45,
+    "ias_hlo": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 2,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 3802,
+      "send_recv_ops": 0
+    }
+  },
+  "inverse_rendering": {
+    "res": "512x512",
+    "spp_per_grad_step": 16,
+    "max_bounces": 3,
+    "steps": 65,
+    "avg_grad_step_ms": 505.93,
+    "grad_hlo": {
+      "host_callbacks": 0,
+      "dot_ops": 0,
+      "conv_ops": 0,
+      "while_ops": 5,
+      "gather_ops": 0,
+      "custom_calls": 0,
+      "hlo_lines": 3909,
+      "send_recv_ops": 0
+    },
+    "forward_parity_vs_cycles_db": 21.05,
+    "psnr_init_db": 14.17,
+    "psnr_recovered_db": 30.33,
+    "loss_init": 0.063401,
+    "loss_final": 0.006058,
+    "gt": {
+      "light_pos_gt": [
+        0.38,
+        -0.22,
+        2.08
+      ],
+      "light_emit_gt": [
+        15.5,
+        13.8,
+        11.2
+      ],
+      "light_radius": 0.34,
+      "hero_albedo_gt": [
+        0.88,
+        0.56,
+        0.16
+      ],
+      "hero_roughness_gt": 0.14
+    },
+    "init": {
+      "light_pos": [
+        -0.4505,
+        0.3027,
+        1.9415
+      ],
+      "light_emit": [
+        8.0,
+        14.0,
+        18.9999
+      ],
+      "hero_albedo": [
+        0.2427,
+        0.433,
+        0.8223
+      ],
+      "hero_roughness": 0.6777
+    },
+    "recovered": {
+      "light_pos": [
+        0.3058,
+        -0.1021,
+        2.1554
+      ],
+      "light_emit": [
+        21.7278,
+        19.0227,
+        15.0364
+      ],
+      "hero_albedo": [
+        0.6738,
+        0.5876,
+        0.2705
+      ],
+      "hero_roughness": 0.7696
+    },
+    "final_errors": {
+      "light_pos_l2_m": 0.1584,
+      "light_emit_rel": 0.3811,
+      "albedo_l2": 0.2355,
+      "roughness_abs": 0.6296
+    }
+  }
+}

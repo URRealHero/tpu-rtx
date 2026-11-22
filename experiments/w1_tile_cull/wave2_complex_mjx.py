@@ -123,11 +123,20 @@ def run_parity_wave2() -> List[Dict[str, Any]]:
   return results
 
 
-def bench_1c_case(n_prims: int, batch_size: int, res: int, mode: str, n_warmup: int = 2, n_steps: int = 12) -> Dict[str, Any]:
+def bench_1c_case(
+    n_prims: int, batch_size: int, res: int, mode: str,
+    n_warmup: int = 2, n_steps: int = 10,
+    cached_env: Any = None,
+) -> tuple[Dict[str, Any], Any]:
   pallas_interp = (jax.default_backend() == "cpu")
-  m, mx, spec, dx_batch, ctrl = _make_warehouse_batch(n_prims, batch_size, res, res)
-  dx_batch = jax.device_put(dx_batch, jax.devices()[0])
-  ctrl = jax.device_put(ctrl, jax.devices()[0])
+  if cached_env is None:
+    m, mx, spec, dx_batch, ctrl = _make_warehouse_batch(n_prims, batch_size, res, res)
+    dx_batch = jax.device_put(dx_batch, jax.devices()[0])
+    ctrl = jax.device_put(ctrl, jax.devices()[0])
+    dt_phys_ms = None
+  else:
+    m, mx, spec, dx_batch, ctrl, dt_phys_ms = cached_env
+
   rec: Dict[str, Any] = {
       "n_chips": 1,
       "n_target_prims": n_prims,
@@ -139,9 +148,19 @@ def bench_1c_case(n_prims: int, batch_size: int, res: int, mode: str, n_warmup: 
       "mode": mode,
   }
   try:
-    @jax.jit
-    def phys_only(d, u):
-      return jax.vmap(lambda di, ui: mjx.step(mx, di.replace(ctrl=ui)))(d, u)
+    if dt_phys_ms is None:
+      @jax.jit
+      def phys_only(d, u):
+        return jax.vmap(lambda di, ui: mjx.step(mx, di.replace(ctrl=ui)))(d, u)
+      dp = dx_batch
+      for _ in range(n_warmup):
+        dp = phys_only(dp, ctrl)
+      jax.block_until_ready(dp.qpos)
+      t0 = time.perf_counter()
+      for _ in range(n_steps):
+        dp = phys_only(dp, ctrl)
+      jax.block_until_ready(dp.qpos)
+      dt_phys_ms = (time.perf_counter() - t0) * 1e3 / n_steps
 
     @jax.jit
     def e2e_fn(d, u):
@@ -159,16 +178,6 @@ def bench_1c_case(n_prims: int, batch_size: int, res: int, mode: str, n_warmup: 
     hlo_info = _check_hlo_zero_copy(e2e_fn.lower(dx_batch, ctrl).as_text())
     assert hlo_info["host_callbacks"] == 0
     assert hlo_info["send_recv_ops"] == 0
-
-    dp = dx_batch
-    for _ in range(n_warmup):
-      dp = phys_only(dp, ctrl)
-    jax.block_until_ready(dp.qpos)
-    t0 = time.perf_counter()
-    for _ in range(n_steps):
-      dp = phys_only(dp, ctrl)
-    jax.block_until_ready(dp.qpos)
-    dt_phys_ms = (time.perf_counter() - t0) * 1e3 / n_steps
 
     dc = dx_batch
     t_c0 = time.perf_counter()
@@ -201,23 +210,30 @@ def bench_1c_case(n_prims: int, batch_size: int, res: int, mode: str, n_warmup: 
     traceback.print_exc()
   print(f"[W2 1C] G={rec['n_enabled_geoms']} B={batch_size} {res}x{res} {mode} -> {rec.get('status')} "
         f"e2e={rec.get('dt_e2e_ms')}ms phys={rec.get('dt_physics_ms')}ms ren={rec.get('dt_render_ms')}ms fps={rec.get('e2e_fps')}", flush=True)
-  return rec
+  return rec, (m, mx, spec, dx_batch, ctrl, dt_phys_ms)
 
 
-def bench_4c_case(n_prims: int, batch_size: int, res: int, mode: str, n_warmup: int = 2, n_steps: int = 12) -> Dict[str, Any]:
+def bench_4c_case(
+    n_prims: int, batch_size: int, res: int, mode: str,
+    n_warmup: int = 2, n_steps: int = 10,
+    cached_env: Any = None,
+) -> tuple[Dict[str, Any], Any]:
   devs = jax.devices()[:4]
   assert len(devs) == 4
   assert batch_size % 4 == 0
   pallas_interp = (jax.default_backend() == "cpu")
-  m, mx, spec, dx_batch, ctrl = _make_warehouse_batch(n_prims, batch_size, res, res)
-
   mesh = jax.sharding.Mesh(np.array(devs), ("dp",))
   P = jax.sharding.PartitionSpec
-  sharding = jax.sharding.NamedSharding(mesh, P("dp"))
-  replicate = jax.sharding.NamedSharding(mesh, P())
-  dx_batch = jax.device_put(dx_batch, sharding)
-  ctrl = jax.device_put(ctrl, sharding)
-  mx = jax.device_put(mx, replicate)
+  if cached_env is None:
+    m, mx, spec, dx_batch, ctrl = _make_warehouse_batch(n_prims, batch_size, res, res)
+    sharding = jax.sharding.NamedSharding(mesh, P("dp"))
+    replicate = jax.sharding.NamedSharding(mesh, P())
+    dx_batch = jax.device_put(dx_batch, sharding)
+    ctrl = jax.device_put(ctrl, sharding)
+    mx = jax.device_put(mx, replicate)
+    dt_phys_ms = None
+  else:
+    m, mx, spec, dx_batch, ctrl, dt_phys_ms = cached_env
 
   sm_kw = {"check_rep": False} if "check_rep" in inspect.signature(shard_map).parameters else {"check_vma": False}
 
@@ -232,14 +248,25 @@ def bench_4c_case(n_prims: int, batch_size: int, res: int, mode: str, n_warmup: 
       "mode": mode,
   }
   try:
-    _phys_sm = shard_map(
-        lambda d_b, u_b, mx_l: jax.vmap(lambda d, u: mjx.step(mx_l, d.replace(ctrl=u)))(d_b, u_b),
-        mesh=mesh, in_specs=(P("dp"), P("dp"), P()), out_specs=P("dp"), **sm_kw,
-    )
+    if dt_phys_ms is None:
+      _phys_sm = shard_map(
+          lambda d_b, u_b, mx_l: jax.vmap(lambda d, u: mjx.step(mx_l, d.replace(ctrl=u)))(d_b, u_b),
+          mesh=mesh, in_specs=(P("dp"), P("dp"), P()), out_specs=P("dp"), **sm_kw,
+      )
 
-    @jax.jit
-    def phys_only(d_b, u_b):
-      return _phys_sm(d_b, u_b, mx)
+      @jax.jit
+      def phys_only(d_b, u_b):
+        return _phys_sm(d_b, u_b, mx)
+
+      dp = dx_batch
+      for _ in range(n_warmup):
+        dp = phys_only(dp, ctrl)
+      jax.block_until_ready(dp.qpos)
+      t0 = time.perf_counter()
+      for _ in range(n_steps):
+        dp = phys_only(dp, ctrl)
+      jax.block_until_ready(dp.qpos)
+      dt_phys_ms = (time.perf_counter() - t0) * 1e3 / n_steps
 
     def _e2e_local(d_b, u_b, mx_l):
       dn = jax.vmap(lambda d, u: mjx.step(mx_l, d.replace(ctrl=u)))(d_b, u_b)
@@ -262,16 +289,6 @@ def bench_4c_case(n_prims: int, batch_size: int, res: int, mode: str, n_warmup: 
     hlo_info = _check_hlo_zero_copy(e2e_fn.lower(dx_batch, ctrl).as_text())
     assert hlo_info["host_callbacks"] == 0
     assert hlo_info["send_recv_ops"] == 0
-
-    dp = dx_batch
-    for _ in range(n_warmup):
-      dp = phys_only(dp, ctrl)
-    jax.block_until_ready(dp.qpos)
-    t0 = time.perf_counter()
-    for _ in range(n_steps):
-      dp = phys_only(dp, ctrl)
-    jax.block_until_ready(dp.qpos)
-    dt_phys_ms = (time.perf_counter() - t0) * 1e3 / n_steps
 
     dc = dx_batch
     for _ in range(n_warmup):
@@ -300,7 +317,7 @@ def bench_4c_case(n_prims: int, batch_size: int, res: int, mode: str, n_warmup: 
     traceback.print_exc()
   print(f"[W2 4C] G={rec['n_enabled_geoms']} B={batch_size} {res}x{res} {mode} -> {rec.get('status')} "
         f"e2e={rec.get('dt_e2e_ms')}ms phys={rec.get('dt_physics_ms')}ms ren={rec.get('dt_render_ms')}ms fps={rec.get('e2e_fps')}", flush=True)
-  return rec
+  return rec, (m, mx, spec, dx_batch, ctrl, dt_phys_ms)
 
 
 def render_showcase_npz(out_npz: str) -> None:
@@ -362,9 +379,11 @@ def main():
   ap.add_argument("--prims", type=int, nargs="+", default=[50, 200, 1000])
   ap.add_argument("--res_list", type=int, nargs="+", default=[64, 128, 256])
   ap.add_argument("--modes", type=str, nargs="+", default=["flat_loop", "cluster1", "hier2"])
+  ap.add_argument("--max_new_runs", type=int, default=999)
   args = ap.parse_args()
 
   data = _load_or_init(args.out_json)
+  new_runs = 0
 
   if args.phase == "parity":
     data["parity_checks"] = run_parity_wave2()
@@ -376,14 +395,18 @@ def main():
     for n_p in args.prims:
       for res in args.res_list:
         B = batch_by_res[res]
+        cached_env = None
         for mode in args.modes:
+          if new_runs >= args.max_new_runs:
+            break
           if mode == "pallas_v2" and n_p > 50:
             continue
           if (n_p, f"{res}x{res}", mode) in done:
             continue
-          rec = bench_1c_case(n_p, B, res, mode)
+          rec, cached_env = bench_1c_case(n_p, B, res, mode, cached_env=cached_env)
           data["runs_1c"].append(rec)
           _save(args.out_json, data)
+          new_runs += 1
 
   elif args.phase == "bench_4c":
     batch_by_res = {64: 1024, 128: 256, 256: 64}
@@ -391,14 +414,18 @@ def main():
     for n_p in args.prims:
       for res in args.res_list:
         B = batch_by_res[res]
+        cached_env = None
         for mode in args.modes:
+          if new_runs >= args.max_new_runs:
+            break
           if mode == "pallas_v2" and n_p > 50:
             continue
           if (n_p, f"{res}x{res}", mode) in done:
             continue
-          rec = bench_4c_case(n_p, B, res, mode)
+          rec, cached_env = bench_4c_case(n_p, B, res, mode, cached_env=cached_env)
           data["runs_4c"].append(rec)
           _save(args.out_json, data)
+          new_runs += 1
 
   elif args.phase == "showcase":
     render_showcase_npz(args.out_npz)

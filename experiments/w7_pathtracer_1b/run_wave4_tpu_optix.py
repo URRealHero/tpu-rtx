@@ -19,7 +19,9 @@ from tpu_mjx_render.adapters.tpu_optix import (
     OptixBuildInputInstanceArray,
     OptixBuildInputTriangleArray,
     OptixDeviceContext,
+    OptixGAS,
     OptixHitPayload,
+    OptixIAS,
     OptixInstance,
     ShaderBindingTable,
     _build_onb,
@@ -31,6 +33,42 @@ from tpu_mjx_render.adapters.tpu_optix import (
     make_default_pbr_sbt,
     optixTrace,
 )
+
+# Register OptixGAS and OptixIAS as JAX PyTrees so shard_map handles accel with P()
+def _register_optix_pytrees():
+  try:
+    jax.tree_util.register_pytree_node(
+        OptixGAS,
+        lambda g: (
+            (g.l2_roots_dev, g.l2_dev, g.l0_dev, g.leaf_dev),
+            (g.name, g.n_tris, g.n_leaves, g.n_l1, g.n_l2,
+             tuple(np.asarray(g.obj_aabb_min, np.float32).tolist()),
+             tuple(np.asarray(g.obj_aabb_max, np.float32).tolist()),
+             g.hbm_mb),
+        ),
+        lambda aux, ch: OptixGAS(
+            name=aux[0], n_tris=aux[1], n_leaves=aux[2], n_l1=aux[3], n_l2=aux[4],
+            obj_aabb_min=np.array(aux[5], np.float32), obj_aabb_max=np.array(aux[6], np.float32),
+            l2_roots_dev=ch[0], l2_dev=ch[1], l0_dev=ch[2], leaf_dev=ch[3], hbm_mb=aux[7],
+        ),
+    )
+    jax.tree_util.register_pytree_node(
+        OptixIAS,
+        lambda ias: (
+            (ias.unique_gases, ias.inst_xpos_per_gas, ias.inst_xmat_per_gas, ias.inst_ids_per_gas),
+            (ias.name, ias.max_active_per_tile, ias.total_effective_tris),
+        ),
+        lambda aux, ch: OptixIAS(
+            name=aux[0], unique_gases=ch[0], inst_xpos_per_gas=ch[1],
+            inst_xmat_per_gas=ch[2], inst_ids_per_gas=ch[3],
+            max_active_per_tile=aux[1], total_effective_tris=aux[2],
+        ),
+    )
+  except ValueError:
+    pass
+
+
+_register_optix_pytrees()
 
 
 def stitch_strip(out_arr: jax.Array) -> np.ndarray:
@@ -180,9 +218,13 @@ def make_cycles_matched_diff_sbt(
 
     rad_sum = jax.lax.fori_loop(0, spp_seq, _sample_batch, jnp.zeros((R, 3), dtype=jnp.float32))
     rad_avg = (rad_sum / float(spp_seq)).reshape(H, W_local, 3)
-    # Soft differentiable linear -> sRGB (IEC 61966-2-1 gamma 2.2) matching Cycles Standard
-    lin_c = jnp.clip(rad_avg, 1e-4, 1.0)
-    rgb = jnp.power(lin_c, 1.0 / 2.2)
+    # Exact differentiable IEC 61966-2-1 sRGB transfer matching Cycles Standard view transform
+    lin_c = jnp.clip(rad_avg, 0.0, 1.0)
+    rgb = jnp.where(
+        lin_c <= 0.0031308,
+        12.92 * lin_c,
+        1.055 * jnp.power(jnp.maximum(lin_c, 0.0031308), 1.0 / 2.4) - 0.055,
+    )
     return rgb[None, ...]
 
   return ShaderBindingTable(raygen=_raygen, miss=_miss, closesthit=_closesthit, anyhit=_anyhit)
@@ -328,8 +370,10 @@ def main():
   gt_sharded_np = gt_np.reshape(H_inv, ctx.n_chips, W_loc, 3).transpose(1, 0, 2, 3)
   gt_dev = jax.device_put(gt_sharded_np, ctx.sh_dp)
 
-  sbt_inv = make_cycles_matched_diff_sbt(cam_fovy, 0.05, 30.0, spp=16, max_bounces=3, target_mat_tag=0.45)
+  sbt_inv = make_cycles_matched_diff_sbt(cam_fovy, 0.05, 30.0, spp=16, max_bounces=4, target_mat_tag=0.45)
   launch_inv = build_optix_launcher(ctx, sbt_inv, gas_scene, W_inv, H_inv)
+  sbt_vis = make_cycles_matched_diff_sbt(cam_fovy, 0.05, 30.0, spp=256, max_bounces=4, target_mat_tag=0.45)
+  launch_vis = build_optix_launcher(ctx, sbt_vis, gas_scene, W_inv, H_inv)
 
   # Verify forward match at GT parameters first!
   gt_params = jax.device_put({
@@ -382,9 +426,9 @@ def main():
   hlo_grad = ctx.audit_hlo(val_and_grad_fn.lower(theta, jax.device_put(jax.random.PRNGKey(1), ctx.rep)))
   print("jax.value_and_grad HLO zero-copy verified:", hlo_grad, flush=True)
 
-  # Render initial guess image
+  # Render initial guess image cleanly at 256 spp
   p_init = jax.device_get(_unpack_theta(theta))
-  img_init = stitch_strip(launch_inv(jax.device_put(_unpack_theta(theta), ctx.rep), jax.device_put(jax.random.PRNGKey(101), ctx.rep)))
+  img_init = stitch_strip(launch_vis(jax.device_put(_unpack_theta(theta), ctx.rep), jax.device_put(jax.random.PRNGKey(101), ctx.rep)))
 
   # Adam optimizer on TPU
   m = jnp.zeros_like(theta)
@@ -448,7 +492,7 @@ def main():
       continue
     psnrs.append(psnr_cur)
 
-  img_rec = stitch_strip(launch_inv(jax.device_put(_unpack_theta(theta), ctx.rep), jax.device_put(jax.random.PRNGKey(99), ctx.rep)))
+  img_rec = stitch_strip(launch_vis(jax.device_put(_unpack_theta(theta), ctx.rep), jax.device_put(jax.random.PRNGKey(99), ctx.rep)))
   psnr_init = compute_psnr(img_init, gt_np)
   psnr_rec = compute_psnr(img_rec, gt_np)
   p_final = jax.device_get(_unpack_theta(theta))
@@ -460,8 +504,8 @@ def main():
   canvas = Image.new("RGB", (2 * pw + 3 * pad, 2 * (ph + hdr) + 3 * pad), (15, 17, 21))
   draw = ImageDraw.Draw(canvas)
   panels = [
-      (f"Initial Wrong Guess (PSNR {psnr_init:.2f} dB)", Image.fromarray(np.clip(img_init * 255.0 + 0.5, 0, 255).astype(np.uint8))),
-      (f"tpu_optix jax.grad Recovered (PSNR {psnr_rec:.2f} dB)", Image.fromarray(np.clip(img_rec * 255.0 + 0.5, 0, 255).astype(np.uint8))),
+      (f"Initial Wrong Guess (256 spp | PSNR {psnr_init:.2f} dB)", Image.fromarray(np.clip(img_init * 255.0 + 0.5, 0, 255).astype(np.uint8))),
+      (f"tpu_optix jax.grad Recovered (256 spp | PSNR {psnr_rec:.2f} dB)", Image.fromarray(np.clip(img_rec * 255.0 + 0.5, 0, 255).astype(np.uint8))),
       ("Blender 5.3.0 Cycles Reference GT (256 spp)", gt_pil),
       (f"Optimization Convergence ({np.mean(step_times_ms):.1f} ms/grad-step)", plot_im),
   ]

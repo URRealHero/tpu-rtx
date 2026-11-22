@@ -384,7 +384,7 @@ def make_stratified_3d_poses(ds, B: int, K_inst: int):
   return tuple(ixp_l), tuple(ixm_l), cxp, cxm
 
 
-def run_w3_tlas_1b_10b_4c(out_path: str, png_8k_path: str, png_crop_path: str):
+def run_w3_tlas_1b_10b_4c(out_path: str, png_8k_path: str, png_crop_path: str, configs=None):
   ds, base_meshes = load_base_scene()
   devs = jax.devices()
   assert len(devs) == 4
@@ -409,8 +409,10 @@ def run_w3_tlas_1b_10b_4c(out_path: str, png_8k_path: str, png_crop_path: str):
   blas_tris = sum(it.n_tris_orig for it in items_c)
   print(f"BUILT 10.64M COMPACT BLAS: tris={blas_tris:,} hbm={hbm_b/(1024**2):.1f} MB", flush=True)
 
+  if configs is None:
+    configs = [(96, 16, 4), (960, 30, 4), (9600, 64, 4)]
   # Test K_inst = 96 (1.02B), 960 (10.22B), and 9600 (102.18B effective tris) at 4K & Spatial-Sharded 8K!
-  for K_inst, grp_sz, top_g in [(96, 16, 4), (960, 30, 4), (9600, 64, 4)]:
+  for K_inst, grp_sz, top_g in configs:
     eff_tris = blas_tris * K_inst
     ixp, ixm, cxp, cxm = make_stratified_3d_poses(ds, 1, K_inst)
     ixp_r = tuple(jax.device_put(np.asarray(x), rep) for x in ixp)
@@ -730,7 +732,7 @@ def run_w3_1b_unique_4c(out_path: str):
 
 def main():
   ap = argparse.ArgumentParser()
-  ap.add_argument("--phase", choices=["w3_parity_250m", "w3_500m_1c", "w3_1b_unique_4c", "w3_tlas_1b_10b_4c", "w3_sponza_megascene"], required=True)
+  ap.add_argument("--phase", choices=["w3_parity_250m", "w3_500m_1c", "w3_1b_unique_4c", "w3_tlas_1b_10b_4c", "w3_tlas_100b_4c", "w3_sponza_megascene"], required=True)
   ap.add_argument("--out", required=True)
   ap.add_argument("--png8k", default="/dev/shm/zaychik-tpu-mjx-w2/v3_w2_100b_8k_hero.png")
   ap.add_argument("--pngcrop", default="/dev/shm/zaychik-tpu-mjx-w2/v3_w2_100b_8k_crop.png")
@@ -744,6 +746,8 @@ def main():
     run_w3_1b_unique_4c(args.out)
   elif args.phase == "w3_tlas_1b_10b_4c":
     run_w3_tlas_1b_10b_4c(args.out, args.png8k, args.pngcrop)
+  elif args.phase == "w3_tlas_100b_4c":
+    run_w3_tlas_1b_10b_4c(args.out, args.png8k, args.pngcrop, configs=[(9600, 64, 4)])
   elif args.phase == "w3_sponza_megascene":
     run_w3_sponza_megascene(args.out, args.pngsponza)
 

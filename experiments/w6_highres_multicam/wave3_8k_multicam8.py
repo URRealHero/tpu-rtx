@@ -112,45 +112,45 @@ def make_cluttered_tabletop_8cam_xml() -> str:
     <geom name="workbench_trim" type="box" pos="0.62 0.0 0.005" size="0.44 0.54 0.005" rgba="0.22 0.24 0.27 1" contype="0" conaffinity="0"/>
 
     <!-- Colorful sorting bins (front-left & front-right) -->
-    <geom name="bin_blue_base" type="box" pos="0.50 -0.32 0.028" size="0.09 0.09 0.006" rgba="0.12 0.42 0.85 1"/>
-    <geom name="bin_blue_w1" type="box" pos="0.41 -0.32 0.062" size="0.006 0.09 0.032" rgba="0.12 0.42 0.85 1"/>
-    <geom name="bin_blue_w2" type="box" pos="0.59 -0.32 0.062" size="0.006 0.09 0.032" rgba="0.12 0.42 0.85 1"/>
-    <geom name="bin_blue_w3" type="box" pos="0.50 -0.41 0.062" size="0.09 0.006 0.032" rgba="0.12 0.42 0.85 1"/>
-    <geom name="bin_blue_w4" type="box" pos="0.50 -0.23 0.062" size="0.09 0.006 0.032" rgba="0.12 0.42 0.85 1"/>
+    <geom name="bin_blue_base" type="box" pos="0.50 -0.32 0.028" size="0.09 0.09 0.006" rgba="0.12 0.42 0.85 1" contype="0" conaffinity="0"/>
+    <geom name="bin_blue_w1" type="box" pos="0.41 -0.32 0.062" size="0.006 0.09 0.032" rgba="0.12 0.42 0.85 1" contype="0" conaffinity="0"/>
+    <geom name="bin_blue_w2" type="box" pos="0.59 -0.32 0.062" size="0.006 0.09 0.032" rgba="0.12 0.42 0.85 1" contype="0" conaffinity="0"/>
+    <geom name="bin_blue_w3" type="box" pos="0.50 -0.41 0.062" size="0.09 0.006 0.032" rgba="0.12 0.42 0.85 1" contype="0" conaffinity="0"/>
+    <geom name="bin_blue_w4" type="box" pos="0.50 -0.23 0.062" size="0.09 0.006 0.032" rgba="0.12 0.42 0.85 1" contype="0" conaffinity="0"/>
 
-    <geom name="bin_green_base" type="box" pos="0.50 0.32 0.028" size="0.09 0.09 0.006" rgba="0.16 0.68 0.34 1"/>
-    <geom name="bin_green_w1" type="box" pos="0.41 0.32 0.062" size="0.006 0.09 0.032" rgba="0.16 0.68 0.34 1"/>
-    <geom name="bin_green_w2" type="box" pos="0.59 0.32 0.062" size="0.006 0.09 0.032" rgba="0.16 0.68 0.34 1"/>
-    <geom name="bin_green_w3" type="box" pos="0.50 0.23 0.062" size="0.09 0.006 0.032" rgba="0.16 0.68 0.34 1"/>
-    <geom name="bin_green_w4" type="box" pos="0.50 0.41 0.062" size="0.09 0.006 0.032" rgba="0.16 0.68 0.34 1"/>
+    <geom name="bin_green_base" type="box" pos="0.50 0.32 0.028" size="0.09 0.09 0.006" rgba="0.16 0.68 0.34 1" contype="0" conaffinity="0"/>
+    <geom name="bin_green_w1" type="box" pos="0.41 0.32 0.062" size="0.006 0.09 0.032" rgba="0.16 0.68 0.34 1" contype="0" conaffinity="0"/>
+    <geom name="bin_green_w2" type="box" pos="0.59 0.32 0.062" size="0.006 0.09 0.032" rgba="0.16 0.68 0.34 1" contype="0" conaffinity="0"/>
+    <geom name="bin_green_w3" type="box" pos="0.50 0.23 0.062" size="0.09 0.006 0.032" rgba="0.16 0.68 0.34 1" contype="0" conaffinity="0"/>
+    <geom name="bin_green_w4" type="box" pos="0.50 0.41 0.062" size="0.09 0.006 0.032" rgba="0.16 0.68 0.34 1" contype="0" conaffinity="0"/>
 
     <!-- Tool rack & pegs on back edge -->
-    <geom name="rack_post_l" type="cylinder" pos="0.88 -0.24 0.14" size="0.015 0.12" rgba="0.25 0.26 0.28 1"/>
-    <geom name="rack_post_r" type="cylinder" pos="0.88 0.24 0.14" size="0.015 0.12" rgba="0.25 0.26 0.28 1"/>
-    <geom name="rack_bar" type="capsule" fromto="0.88 -0.25 0.23 0.88 0.25 0.23" size="0.014" rgba="0.82 0.56 0.16 1"/>
-    <geom name="rack_shelf" type="box" pos="0.88 0.0 0.12" size="0.045 0.24 0.008" rgba="0.32 0.34 0.38 1"/>
+    <geom name="rack_post_l" type="cylinder" pos="0.88 -0.24 0.14" size="0.015 0.12" rgba="0.25 0.26 0.28 1" contype="0" conaffinity="0"/>
+    <geom name="rack_post_r" type="cylinder" pos="0.88 0.24 0.14" size="0.015 0.12" rgba="0.25 0.26 0.28 1" contype="0" conaffinity="0"/>
+    <geom name="rack_bar" type="capsule" fromto="0.88 -0.25 0.23 0.88 0.25 0.23" size="0.014" rgba="0.82 0.56 0.16 1" contype="0" conaffinity="0"/>
+    <geom name="rack_shelf" type="box" pos="0.88 0.0 0.12" size="0.045 0.24 0.008" rgba="0.32 0.34 0.38 1" contype="0" conaffinity="0"/>
 
     <!-- Bottles, canisters, spheres & tools scattered on tabletop -->
-    <geom name="bottle_teal" type="cylinder" pos="0.72 -0.20 0.085" size="0.028 0.060" rgba="0.10 0.72 0.78 1"/>
-    <geom name="bottle_teal_cap" type="cylinder" pos="0.72 -0.20 0.155" size="0.014 0.012" rgba="0.95 0.95 0.95 1"/>
-    <geom name="bottle_amber" type="cylinder" pos="0.76 0.18 0.095" size="0.030 0.070" rgba="0.92 0.52 0.12 1"/>
-    <geom name="bottle_amber_cap" type="cylinder" pos="0.76 0.18 0.175" size="0.013 0.012" rgba="0.20 0.20 0.22 1"/>
-    <geom name="spray_can" type="capsule" pos="0.44 0.14 0.065" size="0.022 0.040" rgba="0.88 0.22 0.52 1"/>
+    <geom name="bottle_teal" type="cylinder" pos="0.72 -0.20 0.085" size="0.028 0.060" rgba="0.10 0.72 0.78 1" contype="0" conaffinity="0"/>
+    <geom name="bottle_teal_cap" type="cylinder" pos="0.72 -0.20 0.155" size="0.014 0.012" rgba="0.95 0.95 0.95 1" contype="0" conaffinity="0"/>
+    <geom name="bottle_amber" type="cylinder" pos="0.76 0.18 0.095" size="0.030 0.070" rgba="0.92 0.52 0.12 1" contype="0" conaffinity="0"/>
+    <geom name="bottle_amber_cap" type="cylinder" pos="0.76 0.18 0.175" size="0.013 0.012" rgba="0.20 0.20 0.22 1" contype="0" conaffinity="0"/>
+    <geom name="spray_can" type="capsule" pos="0.44 0.14 0.065" size="0.022 0.040" rgba="0.88 0.22 0.52 1" contype="0" conaffinity="0"/>
 
     <!-- Tools: wrench, mallet, screwdriver -->
-    <geom name="wrench_handle" type="box" pos="0.56 -0.11 0.032" euler="0 0 0.45" size="0.075 0.012 0.008" rgba="0.78 0.80 0.84 1"/>
-    <geom name="wrench_head" type="cylinder" pos="0.63 -0.075 0.032" size="0.022 0.009" rgba="0.72 0.75 0.79 1"/>
-    <geom name="mallet_handle" type="capsule" fromto="0.38 0.04 0.036 0.52 0.12 0.036" size="0.011" rgba="0.74 0.50 0.26 1"/>
-    <geom name="mallet_head" type="cylinder" pos="0.53 0.125 0.045" euler="1.57 0.45 0" size="0.024 0.036" rgba="0.18 0.18 0.20 1"/>
+    <geom name="wrench_handle" type="box" pos="0.56 -0.11 0.032" euler="0 0 0.45" size="0.075 0.012 0.008" rgba="0.78 0.80 0.84 1" contype="0" conaffinity="0"/>
+    <geom name="wrench_head" type="cylinder" pos="0.63 -0.075 0.032" size="0.022 0.009" rgba="0.72 0.75 0.79 1" contype="0" conaffinity="0"/>
+    <geom name="mallet_handle" type="capsule" fromto="0.38 0.04 0.036 0.52 0.12 0.036" size="0.011" rgba="0.74 0.50 0.26 1" contype="0" conaffinity="0"/>
+    <geom name="mallet_head" type="cylinder" pos="0.53 0.125 0.045" euler="1.57 0.45 0" size="0.024 0.036" rgba="0.18 0.18 0.20 1" contype="0" conaffinity="0"/>
 
     <!-- Props inside bins and near target cube -->
-    <geom name="prop_sphere_gold" type="sphere" pos="0.49 -0.31 0.058" size="0.024" rgba="0.96 0.76 0.14 1"/>
-    <geom name="prop_block_cyan" type="box" pos="0.52 -0.35 0.052" euler="0 0 0.3" size="0.020 0.020 0.018" rgba="0.18 0.80 0.90 1"/>
-    <geom name="prop_block_yellow" type="box" pos="0.48 0.31 0.054" euler="0 0 -0.4" size="0.022 0.022 0.020" rgba="0.95 0.85 0.18 1"/>
-    <geom name="prop_cyl_purple" type="cylinder" pos="0.53 0.34 0.060" size="0.018 0.026" rgba="0.64 0.24 0.84 1"/>
-    <geom name="target_cube_blue" type="box" pos="0.69 0.06 0.050" euler="0 0 0.5" size="0.024 0.024 0.026" rgba="0.18 0.48 0.94 1"/>
-    <geom name="target_cube_green" type="box" pos="0.58 0.09 0.044" euler="0 0 -0.2" size="0.020 0.020 0.020" rgba="0.22 0.82 0.32 1"/>
-    <geom name="mug_ellipsoid" type="ellipsoid" pos="0.73 -0.05 0.056" size="0.028 0.028 0.032" rgba="0.94 0.92 0.86 1"/>
+    <geom name="prop_sphere_gold" type="sphere" pos="0.49 -0.31 0.058" size="0.024" rgba="0.96 0.76 0.14 1" contype="0" conaffinity="0"/>
+    <geom name="prop_block_cyan" type="box" pos="0.52 -0.35 0.052" euler="0 0 0.3" size="0.020 0.020 0.018" rgba="0.18 0.80 0.90 1" contype="0" conaffinity="0"/>
+    <geom name="prop_block_yellow" type="box" pos="0.48 0.31 0.054" euler="0 0 -0.4" size="0.022 0.022 0.020" rgba="0.95 0.85 0.18 1" contype="0" conaffinity="0"/>
+    <geom name="prop_cyl_purple" type="cylinder" pos="0.53 0.34 0.060" size="0.018 0.026" rgba="0.64 0.24 0.84 1" contype="0" conaffinity="0"/>
+    <geom name="target_cube_blue" type="box" pos="0.69 0.06 0.050" euler="0 0 0.5" size="0.024 0.024 0.026" rgba="0.18 0.48 0.94 1" contype="0" conaffinity="0"/>
+    <geom name="target_cube_green" type="box" pos="0.58 0.09 0.044" euler="0 0 -0.2" size="0.020 0.020 0.020" rgba="0.22 0.82 0.32 1" contype="0" conaffinity="0"/>
+    <geom name="mug_ellipsoid" type="ellipsoid" pos="0.73 -0.05 0.056" size="0.028 0.028 0.032" rgba="0.94 0.92 0.86 1" contype="0" conaffinity="0"/>
 """
   anchor = '    <body mocap="true" name="mocap_target" pos="0.65 0 0.25">'
   assert anchor in xml
@@ -180,9 +180,12 @@ def pallas_raycast_ncam_v2(
     assert int(s.height) == H and int(s.width) == W
     assert s.enabled_geom_ids == s0.enabled_geom_ids
 
+  gids = np.asarray(s0.enabled_geom_ids, dtype=np.int32)
+  G = len(gids)
   R = H * W
-  assert R % BLOCK_R == 0, f"Requires R % {BLOCK_R} == 0 for tile-aligned multi-cam, got R={R}"
-  n_r_blk_cam = R // BLOCK_R
+  loc_block_r = 256 if G > 36 else BLOCK_R
+  assert R % loc_block_r == 0, f"Requires R % {loc_block_r} == 0 for tile-aligned multi-cam, got R={R}"
+  n_r_blk_cam = R // loc_block_r
   R_total = n_cams * R
   n_r_blk = n_cams * n_r_blk_cam
 
@@ -196,8 +199,6 @@ def pallas_raycast_ncam_v2(
   geom_size = jnp.asarray(s0.geom_size, dtype=jnp.float32)
   geom_rgba = jnp.asarray(s0.geom_rgba, dtype=jnp.float32) if geom_rgba_batch is None else geom_rgba_batch
 
-  gids = np.asarray(s0.enabled_geom_ids, dtype=np.int32)
-  G = len(gids)
   B_pad = ((B + BLOCK_B - 1) // BLOCK_B) * BLOCK_B
   G_pad = ((G + 127) // 128) * 128
 
@@ -253,7 +254,7 @@ def pallas_raycast_ncam_v2(
   plane_fx = tuple(float(s0.geom_size[g, 0]) > 0.0 for g in gids)
   plane_fy = tuple(float(s0.geom_size[g, 1]) > 0.0 for g in gids)
   znear_f = float(s0.znear)
-  do_in_vmem_shadow = shadow_l_idx >= 0
+  do_in_vmem_shadow = (shadow_l_idx >= 0) and (G <= 36)
 
   def _ncam_kernel(
       cam_ref, lray_ref, gf_ref, light_ref,
@@ -267,7 +268,7 @@ def pallas_raycast_ncam_v2(
     ldx, ldy, ldz = lr[0:1, :], lr[1:2, :], lr[2:3, :]
     lox, loy, loz = lr[3:4, :], lr[4:5, :], lr[5:6, :]
     inv_cos = znear_f / lr[6:7, :]
-    max_d = jnp.broadcast_to(lr[7:8, :], (BLOCK_B, BLOCK_R))
+    max_d = jnp.broadcast_to(lr[7:8, :], (BLOCK_B, loc_block_r))
 
     cam_idx = pl.program_id(1) // n_r_blk_cam
     c_cols = [cam[:, i : i + 1] for i in range(12)]
@@ -289,10 +290,10 @@ def pallas_raycast_ncam_v2(
     roz = cpz + (c20 * lox + c21 * loy + c22 * loz) + inv_cos * rdz
 
     best_d = max_d
-    best_nx = jnp.zeros((BLOCK_B, BLOCK_R), dtype=jnp.float32)
-    best_ny = jnp.zeros((BLOCK_B, BLOCK_R), dtype=jnp.float32)
-    best_nz = jnp.zeros((BLOCK_B, BLOCK_R), dtype=jnp.float32)
-    best_gid = jnp.full((BLOCK_B, BLOCK_R), -1, dtype=jnp.int32)
+    best_nx = jnp.zeros((BLOCK_B, loc_block_r), dtype=jnp.float32)
+    best_ny = jnp.zeros((BLOCK_B, loc_block_r), dtype=jnp.float32)
+    best_nz = jnp.zeros((BLOCK_B, loc_block_r), dtype=jnp.float32)
+    best_gid = jnp.full((BLOCK_B, loc_block_r), -1, dtype=jnp.int32)
 
     for k, (gt, gid_val, pfx, pfy) in enumerate(zip(g_types_static, gids_static, plane_fx, plane_fy)):
       px = gf[0 * 8 : 1 * 8, k : k + 1]
@@ -322,7 +323,7 @@ def pallas_raycast_ncam_v2(
     out_ny_v = jnp.where(hit, best_ny, 0.0)
     out_nz_v = jnp.where(hit, best_nz, 0.0)
 
-    sh_occ = jnp.zeros((BLOCK_B, BLOCK_R), dtype=jnp.float32)
+    sh_occ = jnp.zeros((BLOCK_B, loc_block_r), dtype=jnp.float32)
     if do_in_vmem_shadow:
       d_safe = jnp.where(hit, best_d, 0.0)
       hx = rox + d_safe * rdx + out_nx_v * 1.0e-4
@@ -341,7 +342,7 @@ def pallas_raycast_ncam_v2(
       dist_lim = jnp.where(is_dir, 1.0e8, jnp.maximum(d_pt - 1.0e-3, 0.0))
       sh_max = jnp.where(hit & (ndotl > 0.0), dist_lim, 0.0)
 
-      occ_bool = jnp.zeros((BLOCK_B, BLOCK_R), dtype=jnp.bool_)
+      occ_bool = jnp.zeros((BLOCK_B, loc_block_r), dtype=jnp.bool_)
       for k, (gt, pfx, pfy) in enumerate(zip(g_types_static, plane_fx, plane_fy)):
         px = gf[0 * 8 : 1 * 8, k : k + 1]
         py = gf[1 * 8 : 2 * 8, k : k + 1]
@@ -379,17 +380,17 @@ def pallas_raycast_ncam_v2(
       grid=(n_b_blk, n_r_blk),
       in_specs=[
           pl.BlockSpec((BLOCK_B, 128), lambda bi, ri: (bi, 0)),
-          pl.BlockSpec((8, BLOCK_R), lambda bi, ri: (0, ri)),
+          pl.BlockSpec((8, loc_block_r), lambda bi, ri: (0, ri)),
           pl.BlockSpec((16 * BLOCK_B, G_pad), lambda bi, ri: (bi, 0)),
           pl.BlockSpec((BLOCK_B, 128), lambda bi, ri: (bi, 0)),
       ],
       out_specs=[
-          pl.BlockSpec((BLOCK_B, BLOCK_R), lambda bi, ri: (bi, ri)),
-          pl.BlockSpec((BLOCK_B, BLOCK_R), lambda bi, ri: (bi, ri)),
-          pl.BlockSpec((BLOCK_B, BLOCK_R), lambda bi, ri: (bi, ri)),
-          pl.BlockSpec((BLOCK_B, BLOCK_R), lambda bi, ri: (bi, ri)),
-          pl.BlockSpec((BLOCK_B, BLOCK_R), lambda bi, ri: (bi, ri)),
-          pl.BlockSpec((BLOCK_B, BLOCK_R), lambda bi, ri: (bi, ri)),
+          pl.BlockSpec((BLOCK_B, loc_block_r), lambda bi, ri: (bi, ri)),
+          pl.BlockSpec((BLOCK_B, loc_block_r), lambda bi, ri: (bi, ri)),
+          pl.BlockSpec((BLOCK_B, loc_block_r), lambda bi, ri: (bi, ri)),
+          pl.BlockSpec((BLOCK_B, loc_block_r), lambda bi, ri: (bi, ri)),
+          pl.BlockSpec((BLOCK_B, loc_block_r), lambda bi, ri: (bi, ri)),
+          pl.BlockSpec((BLOCK_B, loc_block_r), lambda bi, ri: (bi, ri)),
       ],
       compiler_params=None if interpret else pltpu.CompilerParams(dimension_semantics=("parallel", "parallel")),
       interpret=interpret,
@@ -422,7 +423,7 @@ def pallas_raycast_ncam_v2(
   ]
 
 
-def run_8k_spatial_4c(neural_ckpt: str, out_json: str, export_dir: str) -> Dict[str, Any]:
+def run_8k_spatial_4c(neural_ckpt: str, out_json: str, export_dir: str, scene_filter: Optional[List[str]] = None) -> Dict[str, Any]:
   """Benchmark 8K UHD (7680x4320, 33.18M px) Stage 1 & Stage 1+2 (BF16) on 4-chip spatial split."""
   pallas_interp = (jax.default_backend() == "cpu")
   devs = jax.devices()[:4]
@@ -444,11 +445,15 @@ def run_8k_spatial_4c(neural_ckpt: str, out_json: str, export_dir: str) -> Dict[
   W_STRIP = W_8K // 4  # 1920 = 240 * 8
   R_STRIP = H_8K * W_STRIP  # 8,294,400 = 16,200 * 512
 
-  out_rows: List[Dict[str, Any]] = []
-  for scene_label, xml_str in (
+  scene_defs = [
       ("panda_pick_cube", get_scene_xml("panda_pick_cube")),
       ("cluttered_tabletop", make_cluttered_tabletop_8cam_xml()),
-  ):
+  ]
+  if scene_filter:
+    scene_defs = [sd for sd in scene_defs if sd[0] in scene_filter]
+
+  out_rows: List[Dict[str, Any]] = []
+  for scene_label, xml_str in scene_defs:
     m = mujoco.MjModel.from_xml_string(xml_str)
     mx = mjx.put_model(m, impl="jax")
     spec_8k = RenderSceneSpec.from_mjmodel(m, cam_id=0, height=H_8K, width=W_8K, use_shadows=True)
@@ -527,6 +532,8 @@ def run_8k_spatial_4c(neural_ckpt: str, out_json: str, export_dir: str) -> Dict[
           "hlo_zero_copy": True,
       }
       out_rows.append(rec)
+      with open(out_json, "w") as f:
+        json.dump({"resolution": f"{W_8K}x{H_8K}", "runs": out_rows}, f, indent=2)
       print(f"8K {scene_label} {'S1+M2' if with_m2 else 'S1'}: e2e={dt_e2e*1e3:.2f}ms fps={rec['e2e_fps']:.2f} ({gpix_s:.3f} GPix/s)", flush=True)
 
       if with_m2 and export_dir:
@@ -712,6 +719,7 @@ def main():
   ap.add_argument("--phase", required=True, choices=["8k", "ncam", "grid4k", "merge"])
   ap.add_argument("--n_chips", type=int, default=4)
   ap.add_argument("--res_list", type=int, nargs="*", default=None)
+  ap.add_argument("--scenes", nargs="*", default=None)
   ap.add_argument("--neural_ckpt", default="/dev/shm/zaychik-tpu-mjx/out/metrics/M2_spatial_128_params.pkl")
   ap.add_argument("--out_json", required=True)
   ap.add_argument("--export_dir", default="/dev/shm/zaychik-tpu-mjx-w6/out/vis")
@@ -720,7 +728,7 @@ def main():
 
   os.makedirs(os.path.dirname(args.out_json) or ".", exist_ok=True)
   if args.phase == "8k":
-    res = run_8k_spatial_4c(args.neural_ckpt, args.out_json, args.export_dir)
+    res = run_8k_spatial_4c(args.neural_ckpt, args.out_json, args.export_dir, scene_filter=args.scenes)
   elif args.phase == "ncam":
     res = {"n_chips": args.n_chips, "ncam_runs": run_ncam_suite(args.n_chips, res_filter=args.res_list, out_json=args.out_json)}
   elif args.phase == "grid4k":

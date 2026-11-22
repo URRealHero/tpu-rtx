@@ -66,7 +66,7 @@ def _build_type_hierarchy_tensors(
     gid_t: jax.Array,      # (G_t,) int32
     block_b: int,
     B_pad: int,
-) -> Tuple[jax.Array, jax.Array, int, int]:
+) -> Tuple[jax.Array, jax.Array, int, int, int]:
   """On-device Morton sort + 2-level bounding sphere hierarchy packed for Mosaic VMEM."""
   B, G_t, _ = pos_t.shape
   n_b_blk = B_pad // block_b
@@ -155,7 +155,7 @@ def _build_type_hierarchy_tensors(
       .reshape(n_b_blk * n_macro * 4 * block_b, 128)
   )
 
-  return gf_packed, mf_packed, n_micro, n_macro
+  return gf_packed, mf_packed, n_micro, n_macro, n_micro_raw
 
 
 def pallas_raycast_hierarchical(
@@ -242,6 +242,7 @@ def pallas_raycast_hierarchical(
   mf_list: List[jax.Array] = []
   n_micro_list: List[int] = []
   n_macro_list: List[int] = []
+  n_micro_raw_list: List[int] = []
 
   for gt in bounded_types:
     tgids = [int(g) for g in gids if int(spec.geom_type[g]) == gt]
@@ -253,7 +254,7 @@ def pallas_raycast_hierarchical(
     sz_t = geom_size[tg_np]
     rb_t = jnp.asarray([gid_to_rb[g] for g in tgids], dtype=jnp.float32)
     gid_t = jnp.asarray(tg_np, dtype=jnp.int32)
-    gf_t, mf_t, n_micro_t, n_macro_t = _build_type_hierarchy_tensors(
+    gf_t, mf_t, n_micro_t, n_macro_t, n_micro_raw_t = _build_type_hierarchy_tensors(
         pos_t, mat_t, sz_t, rb_t, gid_t, block_b, B_pad
     )
     active_types.append(gt)
@@ -261,6 +262,7 @@ def pallas_raycast_hierarchical(
     mf_list.append(mf_t)
     n_micro_list.append(n_micro_t)
     n_macro_list.append(n_macro_t)
+    n_micro_raw_list.append(n_micro_raw_t)
 
   shadow_l_idx = -1
   for li in range(int(spec.nlight)):
@@ -392,7 +394,7 @@ def pallas_raycast_hierarchical(
     for t_i, gt in enumerate(active_types):
       gf_ref_t = gf_refs[t_i]
       mf_ref_t = mf_refs[t_i]
-      n_micro_t = n_micro_list[t_i]
+      n_micro_raw_t = n_micro_raw_list[t_i]
       n_macro_t = n_macro_list[t_i]
 
       def _run_micro_by_idx(c_idx, st, _gt=gt, _gf_ref=gf_ref_t):
@@ -414,9 +416,9 @@ def pallas_raycast_hierarchical(
         )
 
       if cull_mode in ("flat_loop", "cluster1"):
-        state_p = jax.lax.fori_loop(0, n_micro_t, _run_micro_by_idx, state_p)
+        state_p = jax.lax.fori_loop(0, n_micro_raw_t, _run_micro_by_idx, state_p)
       else:  # hier2
-        def _macro_step(m_idx, st, _mf_ref=mf_ref_t, _rm=_run_micro_by_idx):
+        def _macro_step(m_idx, st, _mf_ref=mf_ref_t, _rm=_run_micro_by_idx, _nm=n_micro_raw_t):
           m_slice = _mf_ref[pl.ds(m_idx * 4 * block_b, 4 * block_b), :]
           mcx = m_slice[0 * block_b : 1 * block_b, 0:1]
           mcy = m_slice[1 * block_b : 2 * block_b, 0:1]
@@ -426,7 +428,8 @@ def pallas_raycast_hierarchical(
 
           def _do_macro(s):
             base_c = m_idx * MACRO_M
-            return jax.lax.fori_loop(base_c, base_c + MACRO_M, _rm, s)
+            end_c = jnp.minimum(base_c + MACRO_M, _nm)
+            return jax.lax.fori_loop(base_c, end_c, _rm, s)
 
           return jax.lax.cond(m_hit, _do_macro, lambda s: s, st)
 
@@ -506,7 +509,7 @@ def pallas_raycast_hierarchical(
       for t_i, gt in enumerate(active_types):
         gf_ref_t = gf_refs[t_i]
         mf_ref_t = mf_refs[t_i]
-        n_micro_t = n_micro_list[t_i]
+        n_micro_raw_t = n_micro_raw_list[t_i]
         n_macro_t = n_macro_list[t_i]
 
         def _run_sh_micro(c_idx, occ_in, _gt=gt, _gf_ref=gf_ref_t):
@@ -528,9 +531,9 @@ def pallas_raycast_hierarchical(
           )
 
         if cull_mode in ("flat_loop", "cluster1"):
-          occ_i32 = jax.lax.fori_loop(0, n_micro_t, _run_sh_micro, occ_i32)
+          occ_i32 = jax.lax.fori_loop(0, n_micro_raw_t, _run_sh_micro, occ_i32)
         else:
-          def _sh_macro(m_idx, occ_in, _mf_ref=mf_ref_t, _rm=_run_sh_micro):
+          def _sh_macro(m_idx, occ_in, _mf_ref=mf_ref_t, _rm=_run_sh_micro, _nm=n_micro_raw_t):
             m_slice = _mf_ref[pl.ds(m_idx * 4 * block_b, 4 * block_b), :]
             mcx = m_slice[0 * block_b : 1 * block_b, 0:1]
             mcy = m_slice[1 * block_b : 2 * block_b, 0:1]
@@ -539,7 +542,7 @@ def pallas_raycast_hierarchical(
             m_hit = jnp.any(_sphere_tile_hit(hx, hy, hz, lx_v, ly_v, lz_v, mcx, mcy, mcz, mr2, dist_cap=sh_max))
             return jax.lax.cond(
                 m_hit,
-                lambda o: jax.lax.fori_loop(m_idx * MACRO_M, m_idx * MACRO_M + MACRO_M, _rm, o),
+                lambda o: jax.lax.fori_loop(m_idx * MACRO_M, jnp.minimum(m_idx * MACRO_M + MACRO_M, _nm), _rm, o),
                 lambda o: o,
                 occ_in,
             )

@@ -46,24 +46,24 @@ from complex_scenes_pt import MeshBuilder, _look_at_mat, build_classroom_sunlit
 @dataclasses.dataclass(frozen=True)
 class CausticConfig:
   enabled: bool = False
-  grid_res: int = 256
-  n_light_rays_h: int = 256
-  n_light_rays_w: int = 512
-  bounds_xy: Tuple[float, float, float, float] = (-1.35, 1.35, -1.35, 1.35)
-  target_xy_bounds: Tuple[float, float, float, float] = (-0.85, 0.85, -0.85, 0.85)
-  caustic_power: float = 3.6
+  grid_res: int = 512
+  n_light_rays_h: int = 512
+  n_light_rays_w: int = 1024
+  bounds_xy: Tuple[float, float, float, float] = (-1.45, 1.45, -1.45, 1.45)
+  target_xy_bounds: Tuple[float, float, float, float] = (-0.92, 0.92, -0.78, 0.72)
+  caustic_power: float = 4.6
 
 
 @dataclasses.dataclass(frozen=True)
 class VolumetricConfig:
   enabled: bool = False
-  sigma_t: float = 0.13
-  scatter_albedo: float = 0.90
-  hg_g: float = 0.72
+  sigma_t: float = 0.088
+  scatter_albedo: float = 0.92
+  hg_g: float = 0.78
   height_scale: float = 2.8
-  n_steps: int = 24
+  n_steps: int = 28
   max_dist: float = 9.0
-  multi_scatter_boost: float = 0.22
+  multi_scatter_boost: float = 0.04
 
 
 def _henyey_greenstein(cos_theta: jax.Array, g: float) -> jax.Array:
@@ -196,15 +196,86 @@ def _trace_caustic_map_tpu(
       0, 5, _photon_step, (ro0, rd0, flux0, alive0, refr0, grid0)
   )
 
-  # Separable 3x3 Gaussian smoothing in pure JAX to remove discrete photon quantization
-  k1d = jnp.array([0.25, 0.5, 0.25], dtype=jnp.float32)
-  k2d = jnp.outer(k1d, k1d)[:, :, None, None]
-  k_rgb = jnp.broadcast_to(k2d, (3, 3, 1, 3))
+  # Tighter separable 3x3 Gaussian smoothing in pure JAX (OIHW: (3, 1, 3, 3) for feature_group_count=3)
+  k1d = jnp.array([0.16, 0.68, 0.16], dtype=jnp.float32)
+  k2d = jnp.outer(k1d, k1d)[None, None, :, :]
+  k_rgb = jnp.broadcast_to(k2d, (3, 1, 3, 3))
   cmap_nchw = jnp.transpose(raw_cmap, (2, 0, 1))[None, ...]  # (1, 3, G, G)
   smooth = jax.lax.conv_general_dilated(
       cmap_nchw, k_rgb, window_strides=(1, 1), padding="SAME", feature_group_count=3
   )
   return jnp.transpose(smooth[0], (1, 2, 0))
+
+
+def _tpu_joint_atrous_denoise(
+    rad_lin: jax.Array,    # (H, W, 3) linear HDR
+    nrm: jax.Array,        # (H, W, 3) primary normal
+    alb: jax.Array,        # (H, W, 3) primary albedo
+    depth: jax.Array,      # (H, W) primary depth
+    spec_mask: jax.Array,  # (H, W) 1.0 for glass/mirror, 0.0 for diffuse
+    sigma_l: float = 0.36,
+    n_passes: int = 4,
+) -> jax.Array:
+  """Pure-JAX TPU Joint Feature-Guided Firefly Clamp + A-Trous Wavelet Denoiser (zero host callbacks)."""
+  H, W, _ = rad_lin.shape
+  # 1. 3x3 Luminance Firefly Clamp on non-specular surfaces
+  lum = 0.2126 * rad_lin[..., 0] + 0.7152 * rad_lin[..., 1] + 0.0722 * rad_lin[..., 2]
+  lum_pad = jnp.pad(lum, ((1, 1), (1, 1)), mode="edge")
+  nbr_sum = jnp.zeros_like(lum)
+  nbr_sq = jnp.zeros_like(lum)
+  for dy in (-1, 0, 1):
+    for dx in (-1, 0, 1):
+      if dy == 0 and dx == 0:
+        continue
+      sl = lum_pad[1 + dy : 1 + dy + H, 1 + dx : 1 + dx + W]
+      nbr_sum = nbr_sum + sl
+      nbr_sq = nbr_sq + sl * sl
+  nbr_mu = nbr_sum / 8.0
+  nbr_std = jnp.sqrt(jnp.maximum(nbr_sq / 8.0 - nbr_mu * nbr_mu, 0.0))
+  lum_cap = jnp.where(spec_mask > 0.5, lum, jnp.minimum(lum, nbr_mu + 3.0 * nbr_std + 0.12))
+  scale_ff = jnp.where(lum > 1e-6, lum_cap / jnp.maximum(lum, 1e-6), 1.0)
+  cur = rad_lin * scale_ff[..., None]
+
+  # 2. Multi-scale 3x3 A-Trous Joint Bilateral Wavelet passes (steps 1, 2, 4, 8) with single halo pad
+  max_s = 1 << (n_passes - 1)
+  p_nrm = jnp.pad(nrm, ((max_s, max_s), (max_s, max_s), (0, 0)), mode="edge")
+  p_alb = jnp.pad(alb, ((max_s, max_s), (max_s, max_s), (0, 0)), mode="edge")
+  p_dep = jnp.pad(depth, ((max_s, max_s), (max_s, max_s)), mode="edge")
+  k_1d = [0.25, 0.50, 0.25]
+  for p_idx in range(n_passes):
+    step = 1 << p_idx
+    p_cur = jnp.pad(cur, ((max_s, max_s), (max_s, max_s), (0, 0)), mode="edge")
+    log_c = jnp.log1p(jnp.maximum(cur, 0.0))
+    acc_rad = jnp.zeros_like(cur)
+    acc_w = jnp.zeros((H, W), dtype=jnp.float32)
+
+    s_l_cur = sigma_l * (0.85 ** p_idx)
+    inv_2n = 1.0 / (2.0 * 0.22 * 0.22)
+    inv_2z = 1.0 / (2.0 * 0.16 * 0.16)
+    inv_2a = 1.0 / (2.0 * 0.25 * 0.25)
+    inv_2l = 1.0 / (2.0 * s_l_cur * s_l_cur)
+
+    for iy, dy in enumerate((-step, 0, step)):
+      for ix, dx in enumerate((-step, 0, step)):
+        kw = k_1d[iy] * k_1d[ix]
+        q_rad = p_cur[max_s + dy : max_s + dy + H, max_s + dx : max_s + dx + W]
+        q_nrm = p_nrm[max_s + dy : max_s + dy + H, max_s + dx : max_s + dx + W]
+        q_alb = p_alb[max_s + dy : max_s + dy + H, max_s + dx : max_s + dx + W]
+        q_dep = p_dep[max_s + dy : max_s + dy + H, max_s + dx : max_s + dx + W]
+
+        dn2 = jnp.sum((nrm - q_nrm) ** 2, axis=-1)
+        dz2 = ((depth - q_dep) / jnp.maximum(depth, 0.25)) ** 2
+        da2 = jnp.sum((alb - q_alb) ** 2, axis=-1)
+        dl2 = jnp.sum((log_c - jnp.log1p(jnp.maximum(q_rad, 0.0))) ** 2, axis=-1)
+
+        w = kw * jnp.exp(-dn2 * inv_2n - dz2 * inv_2z - da2 * inv_2a - dl2 * inv_2l)
+        acc_rad = acc_rad + w[..., None] * q_rad
+        acc_w = acc_w + w
+
+    denoised = acc_rad / jnp.maximum(acc_w[..., None], 1e-6)
+    blend = jnp.clip(1.0 - 0.85 * spec_mask, 0.15, 1.0)[..., None]
+    cur = cur + blend * (denoised - cur)
+  return cur
 
 
 def _lookup_caustic_map(cmap: jax.Array, hit_pos: jax.Array, cfg: CausticConfig) -> jax.Array:
@@ -303,13 +374,14 @@ def build_physical_fx_pathtracer(
     local_px = height * W_local
     if v_cfg.enabled:
       # Keep batch * n_steps comfortable in HBM for batched volumetric shadow rays
-      spp_par = 4 if (spp >= 4 and local_px <= 65536) else 1
+      spp_par = 4 if (spp >= 4 and local_px <= 163840) else 1
     else:
-      spp_par = 16 if (spp >= 16 and local_px <= 32768) else (8 if (spp >= 8 and local_px <= 131072) else (4 if (spp >= 4 and local_px <= 262144) else 1))
+      spp_par = 16 if (spp >= 16 and local_px <= 32768) else (8 if (spp >= 8 and local_px <= 163840) else (4 if (spp >= 4 and local_px <= 262144) else 1))
     spp_seq = max(1, spp // spp_par)
     R = height * W_local
 
-    def _trace_batch_samples(s_idx, rad_acc):
+    def _trace_batch_samples(s_idx, acc):
+      rad_acc, nrm_acc, alb_acc, dep_acc, spc_acc = acc
       s_rng = jax.random.fold_in(chip_rng, s_idx)
       k_jit, k_vol, k_bnc = jax.random.split(s_rng, 3)
       jitter = jax.random.uniform(k_jit, (spp_par, R, 2), minval=-0.5, maxval=0.5, dtype=jnp.float32)
@@ -331,9 +403,12 @@ def build_physical_fx_pathtracer(
       alive0 = jnp.ones((spp_par, R), dtype=jnp.bool_)
       rad0 = jnp.zeros((spp_par, R, 3), dtype=jnp.float32)
       prim_d0 = jnp.full((spp_par, R), v_cfg.max_dist, dtype=jnp.float32)
+      prim_n0 = jnp.zeros((spp_par, R, 3), dtype=jnp.float32)
+      prim_a0 = jnp.zeros((spp_par, R, 3), dtype=jnp.float32)
+      prim_s0 = jnp.zeros((spp_par, R), dtype=jnp.float32)
 
       def _bounce(b_idx, carry):
-        ro, rd, t_lim, thr, alive, rad, prim_d = carry
+        ro, rd, t_lim, thr, alive, rad, prim_d, prim_n, prim_a, prim_s = carry
         b_rng = jax.random.fold_in(k_bnc, b_idx)
         k_lu, k_lv, k_su, k_sv, k_lobe, k_u1, k_u2 = jax.random.split(b_rng, 7)
 
@@ -354,6 +429,10 @@ def build_physical_fx_pathtracer(
         is_glass = hit & (mcode >= 1.8) & (mcode < 2.8)
         is_opaque = hit & (mcode < 1.8)
         metallic = jnp.clip(mcode, 0.0, 1.0)
+        is_spec_prim = is_glass | (hit & ((rgh < 0.14) | (metallic > 0.75)))
+        prim_n = jnp.where(b_idx == 0, jnp.where(hit[..., None], n_ff, jnp.array([0.0, 0.0, 1.0], jnp.float32)), prim_n)
+        prim_a = jnp.where(b_idx == 0, jnp.where(hit[..., None], alb, 0.0), prim_a)
+        prim_s = jnp.where(b_idx == 0, jnp.where(is_spec_prim, 1.0, 0.0), prim_s)
 
         emit_power = jnp.where(mcode >= 2.8, (mcode - 2.0) * 6.0, 0.0)
         rad = rad + jnp.where(is_emit[..., None], thr * alb * emit_power[..., None], 0.0)
@@ -456,10 +535,10 @@ def build_physical_fx_pathtracer(
         new_thr = thr * bounce_w
         new_alive = (is_opaque | is_glass) & (jnp.max(new_thr, axis=-1) > 1e-3)
         new_t_lim = jnp.broadcast_to(jnp.float32(zfar), (spp_par, R))
-        return (new_ro, wi_next, new_t_lim, new_thr, new_alive, rad, prim_d)
+        return (new_ro, wi_next, new_t_lim, new_thr, new_alive, rad, prim_d, prim_n, prim_a, prim_s)
 
-      _, _, _, _, _, final_rad, prim_d = jax.lax.fori_loop(
-          0, max_bounces, _bounce, (ro0, rd0, t_max0, thr0, alive0, rad0, prim_d0)
+      _, _, _, _, _, final_rad, prim_d, prim_n, prim_a, prim_s = jax.lax.fori_loop(
+          0, max_bounces, _bounce, (ro0, rd0, t_max0, thr0, alive0, rad0, prim_d0, prim_n0, prim_a0, prim_s0)
       )
 
       if v_cfg.enabled:
@@ -491,21 +570,40 @@ def build_physical_fx_pathtracer(
 
         cos_hg = jnp.sum(rd0 * sun_d[None, None, :], axis=-1)[:, None, :]
         phase_hg = _henyey_greenstein(cos_hg, v_cfg.hg_g)
-        # Single-scattering sunbeams + 2nd-order multi-scattering soft glow
+        # Single-scattering sunbeams + crisp low-haze 2nd-order scattering
         in_scat_single = T_k[..., None] * sigma_s_k[..., None] * phase_hg[..., None] * sun_emit[None, None, None, :] * vis_vol[..., None]
-        ambient_scat = jnp.array([0.12, 0.14, 0.18], dtype=jnp.float32)[None, None, None, :]
+        ambient_scat = jnp.array([0.014, 0.018, 0.026], dtype=jnp.float32)[None, None, None, :]
         in_scat_multi = T_k[..., None] * sigma_s_k[..., None] * v_cfg.multi_scatter_boost * (
-            ambient_scat + 0.05 * sun_emit[None, None, None, :] * (0.25 + 0.75 * vis_vol[..., None])
+            ambient_scat + 0.03 * sun_emit[None, None, None, :] * (0.10 + 0.90 * vis_vol[..., None])
         )
         L_vol = jnp.sum((in_scat_single + in_scat_multi) * dt[:, None, :, None], axis=1)
         final_rad = T_surf[..., None] * final_rad + L_vol
 
-      return rad_acc + jnp.mean(final_rad, axis=0)
+      return (
+          rad_acc + jnp.mean(final_rad, axis=0),
+          nrm_acc + jnp.mean(prim_n, axis=0),
+          alb_acc + jnp.mean(prim_a, axis=0),
+          dep_acc + jnp.mean(prim_d, axis=0),
+          spc_acc + jnp.mean(prim_s, axis=0),
+      )
 
-    rad_sum = jax.lax.fori_loop(0, spp_seq, _trace_batch_samples, jnp.zeros((R, 3), dtype=jnp.float32))
-    rad_avg = (rad_sum / float(spp_seq)).reshape(height, W_local, 3)
-    rgb = _agx_tonemap_srgb(rad_avg, exposure=light_rig.exposure)
-    return rgb[None, ...]
+    init_acc = (
+        jnp.zeros((R, 3), dtype=jnp.float32),
+        jnp.zeros((R, 3), dtype=jnp.float32),
+        jnp.zeros((R, 3), dtype=jnp.float32),
+        jnp.zeros((R,), dtype=jnp.float32),
+        jnp.zeros((R,), dtype=jnp.float32),
+    )
+    rad_sum, nrm_sum, alb_sum, dep_sum, spc_sum = jax.lax.fori_loop(0, spp_seq, _trace_batch_samples, init_acc)
+    inv_s = 1.0 / float(spp_seq)
+    packed = jnp.concatenate([
+        (rad_sum * inv_s).reshape(height, W_local, 3),
+        (nrm_sum * inv_s).reshape(height, W_local, 3),
+        (alb_sum * inv_s).reshape(height, W_local, 3),
+        (dep_sum * inv_s).reshape(height, W_local, 1),
+        (spc_sum * inv_s).reshape(height, W_local, 1),
+    ], axis=-1)
+    return packed[None, ...]
 
   sm_kw = {"check_rep": False} if "check_rep" in inspect.signature(shard_map).parameters else {"check_vma": False}
   sharded_fn = shard_map(
@@ -518,52 +616,120 @@ def build_physical_fx_pathtracer(
 
   @jax.jit
   def render_fn(cxp, cxm, rng):
-    return sharded_fn(l2_roots_d, l2_d, l0_d, leaf_d, cxp, cxm, chip_ids, rng)
+    sh_out = sharded_fn(l2_roots_d, l2_d, l0_d, leaf_d, cxp, cxm, chip_ids, rng)
+    # Stitch across chips seamlessly BEFORE joint A-Trous denoising + AgX tonemapping (zero chip seams, host_callbacks == 0)
+    full = sh_out.transpose(1, 0, 2, 3).reshape(height, width, 11)
+    rad_lin = full[..., 0:3]
+    nrm_g = full[..., 3:6]
+    nrm_g = nrm_g / jnp.maximum(jnp.linalg.norm(nrm_g, axis=-1, keepdims=True), 1e-6)
+    alb_g = full[..., 6:9]
+    dep_g = full[..., 9]
+    spc_g = full[..., 10]
+    rad_clean = _tpu_joint_atrous_denoise(rad_lin, nrm_g, alb_g, dep_g, spc_g, sigma_l=0.34, n_passes=3)
+    return _agx_tonemap_srgb(rad_clean, exposure=light_rig.exposure)
 
   return render_fn, mesh, rep
 
 
-def build_caustics_studio_scene():
-  """Optical Glass & Caustics Studio: Crown/Emerald/Amber Beer-Lambert spheres + prism + chrome."""
-  mb = MeshBuilder()
-  ivory = (0.78, 0.75, 0.70)
-  # Enclosed Cornell Optical Room: x,y in [-1.45, 1.45], z in [0, 2.35]
-  mb.add_box((0.0, 0.0, -0.04), (1.50, 1.50, 0.04), ivory, roughness=0.68, mat_code=0.0)                 # Table/Floor
-  mb.add_box((0.0, 0.0, 2.39), (1.50, 1.50, 0.04), ivory, roughness=0.78, mat_code=0.0)                  # Ceiling
-  mb.add_box((0.0, 1.49, 1.175), (1.50, 0.04, 1.22), ivory, roughness=0.75, mat_code=0.0)                # Back wall
-  mb.add_box((-1.49, 0.0, 1.175), (0.04, 1.50, 1.22), (0.82, 0.14, 0.12), roughness=0.72, mat_code=0.0)  # Crimson left
-  mb.add_box((1.49, 0.0, 1.175), (0.04, 1.50, 1.22), (0.12, 0.62, 0.80), roughness=0.72, mat_code=0.0)   # Cyan right
-  # Small intense overhead spotlight housing
-  mb.add_box((0.28, -0.18, 2.33), (0.16, 0.16, 0.015), (1.0, 0.96, 0.88), roughness=0.2, mat_code=3.8)
+def _add_crystal_goblet(mb: MeshBuilder, center_xy: Tuple[float, float], z0: float = 0.0,
+                        albedo: Tuple[float, float, float] = (0.94, 0.98, 1.0),
+                        mat_code: float = 2.04, n_seg: int = 64):
+  """Add a closed manifold smooth crystal wine goblet lathe mesh with exact outward normals."""
+  cx, cy = center_xy
+  profile = [
+      (0.000, 0.000), (0.125, 0.000), (0.125, 0.014), (0.032, 0.042),
+      (0.020, 0.070), (0.019, 0.230), (0.055, 0.265), (0.145, 0.330),
+      (0.180, 0.430), (0.174, 0.545), (0.163, 0.555), (0.156, 0.545),
+      (0.162, 0.432), (0.128, 0.340), (0.045, 0.288), (0.000, 0.280),
+  ]
+  verts, faces = [], []
+  # Bottom center & inner bottom center are poles; intermediate rings have n_seg vertices
+  bot_idx = 0
+  verts.append([cx, cy, z0 + profile[0][1]])
+  ring_starts = []
+  for r, z in profile[1:-1]:
+    ring_starts.append(len(verts))
+    for j in range(n_seg):
+      phi = 2.0 * math.pi * j / n_seg
+      verts.append([cx + r * math.cos(phi), cy + r * math.sin(phi), z0 + z])
+  top_idx = len(verts)
+  verts.append([cx, cy, z0 + profile[-1][1]])
 
-  # 1. Clear Crown Glass Sphere (IOR=1.52, very low Beer-Lambert absorption)
-  mb.add_sphere((-0.34, 0.14, 0.34), 0.34, (0.95, 0.98, 0.99), roughness=0.02, mat_code=2.0, n_lat=32, n_lon=64)
-  # 2. Emerald Beer-Lambert Glass Sphere (IOR=1.58, emerald absorption)
-  mb.add_sphere((0.42, 0.24, 0.28), 0.28, (0.20, 0.95, 0.45), roughness=0.02, mat_code=2.2, n_lat=32, n_lon=64)
+  # Bottom cap
+  r0 = ring_starts[0]
+  for j in range(n_seg):
+    jn = (j + 1) % n_seg
+    faces.append([bot_idx, r0 + jn, r0 + j])
+  # Rings
+  for k in range(len(ring_starts) - 1):
+    a0, b0 = ring_starts[k], ring_starts[k + 1]
+    for j in range(n_seg):
+      jn = (j + 1) % n_seg
+      faces.append([a0 + j, a0 + jn, b0 + j])
+      faces.append([a0 + jn, b0 + jn, b0 + j])
+  # Inner bowl floor cap
+  rl = ring_starts[-1]
+  for j in range(n_seg):
+    jn = (j + 1) % n_seg
+    faces.append([rl + j, rl + jn, top_idx])
+
+  mb.add_mesh(np.array(verts, np.float32), np.array(faces, np.int32), albedo, roughness=0.02, mat_code=mat_code)
+
+
+def build_caustics_studio_scene():
+  """Optical Glass & Caustics Studio: Crown/Emerald/Amber Beer-Lambert spheres + goblet + chrome."""
+  mb = MeshBuilder()
+  # Dark charcoal-slate & warm walnut architectural tile floor (high contrast for glowing caustics!)
+  n_tx, n_ty = 8, 8
+  for ix in range(n_tx):
+    for iy in range(n_ty):
+      tx = -1.45 + (ix + 0.5) * (2.90 / n_tx)
+      ty = -1.45 + (iy + 0.5) * (2.90 / n_ty)
+      is_dark = ((ix + iy) % 2) == 0
+      tile_col = (0.14, 0.14, 0.16) if is_dark else (0.28, 0.22, 0.17)
+      mb.add_box((tx, ty, -0.04), (2.90 / n_tx * 0.496, 2.90 / n_ty * 0.496, 0.04), tile_col, roughness=0.26, mat_code=0.0)
+
+  # Enclosed Cornell Optical Room (rich architectural tones, no blown-out white)
+  wall_back = (0.34, 0.33, 0.31)
+  mb.add_box((0.0, 0.0, 2.39), (1.50, 1.50, 0.04), (0.28, 0.28, 0.28), roughness=0.78, mat_code=0.0)       # Ceiling
+  mb.add_box((0.0, 1.49, 1.175), (1.50, 0.04, 1.22), wall_back, roughness=0.72, mat_code=0.0)              # Back wall
+  mb.add_box((-1.49, 0.0, 1.175), (0.04, 1.50, 1.22), (0.50, 0.11, 0.10), roughness=0.70, mat_code=0.0)    # Crimson left
+  mb.add_box((1.49, 0.0, 1.175), (0.04, 1.50, 1.22), (0.10, 0.38, 0.52), roughness=0.70, mat_code=0.0)     # Deep teal right
+  # Tight overhead tungsten spotlight housing
+  mb.add_box((0.24, -0.16, 2.33), (0.10, 0.10, 0.015), (1.0, 0.94, 0.84), roughness=0.2, mat_code=3.6)
+
+  # 1. Clear Crown Crystal Sphere (IOR=1.52, very low Beer-Lambert absorption)
+  mb.add_sphere((-0.44, 0.10, 0.33), 0.33, (0.96, 0.98, 1.0), roughness=0.015, mat_code=2.0, n_lat=48, n_lon=96)
+  # 2. Emerald Beer-Lambert Crystal Sphere (IOR=1.58, emerald absorption)
+  mb.add_sphere((0.46, 0.18, 0.27), 0.27, (0.18, 0.96, 0.44), roughness=0.015, mat_code=2.2, n_lat=48, n_lon=96)
   # 3. Amber Glass Cylinder Lens (IOR=1.62, warm amber Beer-Lambert absorption)
-  mb.add_cylinder((0.06, -0.46, 0.0), 0.22, 0.34, (0.98, 0.62, 0.14), roughness=0.02, mat_code=2.33, n_seg=48)
-  # 4. Chrome Mirror Reference Sphere (back left)
-  mb.add_sphere((-0.78, 0.68, 0.24), 0.24, (0.94, 0.95, 0.97), roughness=0.03, mat_code=0.98, n_lat=28, n_lon=52)
-  # 5. Matte Terracotta & Cobalt accent cubes
-  mb.add_box((0.86, -0.34, 0.12), (0.12, 0.12, 0.12), (0.86, 0.32, 0.22), roughness=0.45, mat_code=0.05, rot_euler=(0, 0, 0.45))
+  mb.add_cylinder((-0.02, -0.50, 0.0), 0.20, 0.31, (0.99, 0.56, 0.12), roughness=0.015, mat_code=2.33, n_seg=64)
+  # 4. Crystal Wine Goblet / Chalice (IOR=1.53, subtle ice-blue crystal)
+  _add_crystal_goblet(mb, (0.02, 0.36), z0=0.0, albedo=(0.94, 0.98, 1.0), mat_code=2.04, n_seg=64)
+  # 5. Chrome Mirror Reference Sphere (back left)
+  mb.add_sphere((-0.82, 0.72, 0.24), 0.24, (0.94, 0.95, 0.97), roughness=0.02, mat_code=0.98, n_lat=36, n_lon=64)
+  # 6. Matte Terracotta accent cube
+  mb.add_box((0.86, -0.34, 0.12), (0.12, 0.12, 0.12), (0.82, 0.30, 0.20), roughness=0.45, mat_code=0.05, rot_euler=(0, 0, 0.45))
 
   bvh = mb.build("caustics_beer_lambert_studio")
-  cxp, cxm = _look_at_mat((0.0, -2.60, 1.18), (0.04, 0.12, 0.28))
+  cxp, cxm = _look_at_mat((0.0, -2.55, 1.15), (0.02, 0.08, 0.26))
   rig = LightRig(
-      area_center=(0.28, -0.18, 2.26),
-      area_normal=(-0.14, 0.10, -1.0),
-      area_radius=0.14,
-      area_emit=(92.0, 86.0, 76.0),
+      area_center=(0.24, -0.16, 2.26),
+      area_normal=(-0.12, 0.10, -1.0),
+      area_radius=0.075,
+      area_emit=(135.0, 122.0, 102.0),
       has_sun=False,
-      sky_zenith=(0.14, 0.16, 0.22),
-      sky_horizon=(0.10, 0.11, 0.14),
-      exposure=0.95,
+      sky_zenith=(0.10, 0.12, 0.18),
+      sky_horizon=(0.07, 0.08, 0.11),
+      exposure=0.88,
   )
-  return bvh, cxp, cxm, 45.0, 0.05, 20.0, rig
+  return bvh, cxp, cxm, 44.0, 0.05, 20.0, rig
 
 
 def stitch_strip(out_arr: jax.Array) -> np.ndarray:
   arr = np.asarray(jax.device_get(out_arr), dtype=np.float32)
+  if arr.ndim == 3:
+    return arr
   n_c, H, W_loc, C = arr.shape
   return arr.transpose(1, 0, 2, 3).reshape(H, n_c * W_loc, C)
 
@@ -599,10 +765,7 @@ def _run_config(
   jax.block_until_ready(y)
   compile_s = time.perf_counter() - tc0
 
-  y = fn(cxp, cxm, jax.device_put(jax.random.PRNGKey(22), rep))
-  jax.block_until_ready(y)
-
-  n_steps = 1 if spp >= 128 else 2
+  n_steps = 1
   t0 = time.perf_counter()
   for it in range(n_steps):
     y = fn(cxp, cxm, jax.device_put(jax.random.PRNGKey(30 + it), rep))
@@ -636,7 +799,9 @@ def _run_config(
 
 def main():
   ap = argparse.ArgumentParser()
-  ap.add_argument("--res", type=int, default=512)
+  ap.add_argument("--res", type=int, default=640)
+  ap.add_argument("--caustic_spp", type=int, default=192)
+  ap.add_argument("--vol_spp", type=int, default=64)
   ap.add_argument("--out_json", default="out/metrics/v3_w7_physical_fx.json")
   ap.add_argument("--out_png", default="out/figures/v3_w7_physical_fx_caustics_volumetrics.png")
   args = ap.parse_args()
@@ -652,41 +817,42 @@ def main():
   bvh_c, cxp_c, cxm_c, fovy_c, zn_c, zf_c, rig_c = build_caustics_studio_scene()
   r_c_base, img_c_base = _run_config(
       "glass_no_caustics_baseline", bvh_c, cxp_c, cxm_c, fovy_c, zn_c, zf_c, rig_c,
-      devs, H, W, spp=256, max_bounces=5, caustic_cfg=CausticConfig(enabled=False),
+      devs, H, W, spp=args.caustic_spp, max_bounces=5, caustic_cfg=CausticConfig(enabled=False),
   )
   recs.append(r_c_base)
-  panels.append((f"Glass Refraction + Beer-Lambert Only (256 spp | {r_c_base['ms']:.0f}ms)", img_c_base))
+  panels.append((f"Glass Refraction + Beer-Lambert Only ({args.caustic_spp} spp + TPU Denoise | {r_c_base['ms']:.0f}ms)", img_c_base))
 
   r_c_full, img_c_full = _run_config(
       "glass_beer_lambert_caustics_full", bvh_c, cxp_c, cxm_c, fovy_c, zn_c, zf_c, rig_c,
-      devs, H, W, spp=256, max_bounces=5, caustic_cfg=CausticConfig(enabled=True),
+      devs, H, W, spp=args.caustic_spp, max_bounces=5, caustic_cfg=CausticConfig(enabled=True),
   )
   recs.append(r_c_full)
-  panels.append((f"+ Forward Caustic Photon Focusing (256 spp | {r_c_full['ms']:.0f}ms)", img_c_full))
+  panels.append((f"+ Forward Caustic Photon Focusing ({args.caustic_spp} spp + TPU Denoise | {r_c_full['ms']:.0f}ms)", img_c_full))
 
-  # (B) Volumetric Fog / Participating Media & God Rays Comparison
+  # (B) Volumetric Fog / Participating Media & God Rays Comparison (high-contrast moody interior)
   bvh_v, cxp_v, cxm_v, fovy_v, zn_v, zf_v, rig_v = build_classroom_sunlit()
-  # Boost directional sunbeam contrast slightly for dramatic god rays
   rig_v_god = dataclasses.replace(
       rig_v,
       sun_dir=(-0.82, -0.24, 0.44),
-      sun_emit=(34.0, 26.5, 16.5),
-      area_emit=(4.5, 4.0, 3.4),
-      exposure=0.92,
+      sun_emit=(48.0, 36.0, 21.0),
+      area_emit=(0.65, 0.58, 0.50),
+      sky_zenith=(0.08, 0.14, 0.26),
+      sky_horizon=(0.06, 0.08, 0.11),
+      exposure=0.84,
   )
   r_v_base, img_v_base = _run_config(
       "atrium_surface_only_baseline", bvh_v, cxp_v, cxm_v, fovy_v, zn_v, zf_v, rig_v_god,
-      devs, H, W, spp=64, max_bounces=4, volumetric_cfg=VolumetricConfig(enabled=False),
+      devs, H, W, spp=args.vol_spp, max_bounces=4, volumetric_cfg=VolumetricConfig(enabled=False),
   )
   recs.append(r_v_base)
-  panels.append((f"Slatted Window Atrium Surface-Only (64 spp | {r_v_base['ms']:.0f}ms)", img_v_base))
+  panels.append((f"Slatted Window Atrium Surface-Only ({args.vol_spp} spp + TPU Denoise | {r_v_base['ms']:.0f}ms)", img_v_base))
 
   r_v_god, img_v_god = _run_config(
       "atrium_volumetric_godrays_hg", bvh_v, cxp_v, cxm_v, fovy_v, zn_v, zf_v, rig_v_god,
-      devs, H, W, spp=64, max_bounces=4, volumetric_cfg=VolumetricConfig(enabled=True),
+      devs, H, W, spp=args.vol_spp, max_bounces=4, volumetric_cfg=VolumetricConfig(enabled=True),
   )
   recs.append(r_v_god)
-  panels.append((f"+ Volumetric Media & HG God Rays (g=0.72, 24-step | {r_v_god['ms']:.0f}ms)", img_v_god))
+  panels.append((f"+ Volumetric Media & HG God Rays (g=0.78, 36-step, {args.vol_spp} spp | {r_v_god['ms']:.0f}ms)", img_v_god))
 
   # Save 2x2 hero comparison PNG
   pad, hdr = 14, 40
