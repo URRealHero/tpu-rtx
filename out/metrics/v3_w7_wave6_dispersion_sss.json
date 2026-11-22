@@ -1,0 +1,117 @@
+{
+  "experiment": "v3_w7_wave6_dispersion_sss",
+  "backend": "tpu",
+  "n_chips": 4,
+  "spectral_bands": 6,
+  "wavelength_range_nm": [
+    420.0,
+    680.0
+  ],
+  "cauchy_formula": "n(lambda) = 1.50 + 0.015 / lambda_um^2",
+  "runs": [
+    {
+      "label": "glass_no_dispersion_baseline",
+      "scene": "spectral_prism_dispersion_studio",
+      "tris": 1136,
+      "res": "640x640",
+      "spp": 160,
+      "max_bounces": 6,
+      "dispersion": false,
+      "sss_random_walk": false,
+      "n_chips": 4,
+      "compile_s": 29.48,
+      "ms": 15262.32,
+      "images_per_sec": 0.066,
+      "samples_per_min": 629.0,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 1,
+        "while_ops": 4,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 6671,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "label": "spectral_cauchy_prism_caustics",
+      "scene": "spectral_prism_dispersion_studio",
+      "tris": 1136,
+      "res": "640x640",
+      "spp": 160,
+      "max_bounces": 6,
+      "dispersion": true,
+      "sss_random_walk": false,
+      "n_chips": 4,
+      "compile_s": 29.96,
+      "ms": 15203.67,
+      "images_per_sec": 0.066,
+      "samples_per_min": 631.4,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 1,
+        "while_ops": 4,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 6886,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "label": "sss_opaque_diffuse_baseline",
+      "scene": "backlit_sss_sculptures_studio",
+      "tris": 17072,
+      "res": "640x640",
+      "spp": 128,
+      "max_bounces": 4,
+      "dispersion": false,
+      "sss_random_walk": false,
+      "n_chips": 4,
+      "compile_s": 29.21,
+      "ms": 16443.41,
+      "images_per_sec": 0.061,
+      "samples_per_min": 467.1,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 5043,
+        "send_recv_ops": 0
+      }
+    },
+    {
+      "label": "sss_backlit_random_walk_volumetric",
+      "scene": "backlit_sss_sculptures_studio",
+      "tris": 17072,
+      "res": "640x640",
+      "spp": 128,
+      "max_bounces": 4,
+      "dispersion": false,
+      "sss_random_walk": true,
+      "n_chips": 4,
+      "compile_s": 103.44,
+      "ms": 87659.97,
+      "images_per_sec": 0.011,
+      "samples_per_min": 87.6,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 3,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 6004,
+        "send_recv_ops": 0
+      }
+    }
+  ]
+}
