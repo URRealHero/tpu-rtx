@@ -1,0 +1,512 @@
+{
+  "experiment": "v3_w7_wave5_restir_cinema",
+  "device_kind": "TPU v5",
+  "n_devices": 4,
+  "scene": "night_lantern_courtyard_1024lights",
+  "scene_tris": 47696,
+  "gas_hbm_mb": 4.402,
+  "restir_config": {
+    "m_candidates": 32,
+    "spatial_passes": 2,
+    "spatial_neighbors": 5,
+    "spatial_radii": [
+      24,
+      12
+    ],
+    "depth_rel_thresh": 0.1,
+    "normal_dot_thresh": 0.9,
+    "equal_vis_rays_per_px": 2
+  },
+  "quality_1024lights": {
+    "n_lights": 1024,
+    "res": "1280x720",
+    "naive_psnr_db": 8.471,
+    "restir_psnr_db": 14.102,
+    "restir_denoise_psnr_db": 22.021,
+    "psnr_gain_restir_db": 5.632,
+    "psnr_gain_restir_denoise_db": 13.55,
+    "naive_ssim": 0.1599,
+    "restir_ssim": 0.2278,
+    "restir_denoise_ssim": 0.6382,
+    "variance_reduction_restir_hdr": 2.23,
+    "variance_reduction_restir_denoise_hdr": 3.06,
+    "variance_reduction_restir_srgb": 3.66,
+    "variance_reduction_restir_denoise_srgb": 22.65,
+    "hlo_audit": {
+      "naive": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 1,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 1605,
+        "send_recv_ops": 0
+      },
+      "restir": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 5379,
+        "send_recv_ops": 0
+      },
+      "restir_denoise": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 7555,
+        "send_recv_ops": 0
+      },
+      "gt": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 3,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 3207,
+        "send_recv_ops": 0
+      }
+    }
+  },
+  "light_count_scaling_512": [
+    {
+      "n_lights": 64,
+      "res": "512x512",
+      "naive_psnr_db": 17.54,
+      "restir_psnr_db": 23.713,
+      "restir_denoise_psnr_db": 27.34,
+      "psnr_gain_restir_db": 6.173,
+      "psnr_gain_restir_denoise_db": 9.8,
+      "naive_ssim": 0.3566,
+      "restir_ssim": 0.5697,
+      "restir_denoise_ssim": 0.8794,
+      "variance_reduction_restir_hdr": 0.76,
+      "variance_reduction_restir_denoise_hdr": 1.44,
+      "variance_reduction_restir_srgb": 4.14,
+      "variance_reduction_restir_denoise_srgb": 9.55,
+      "hlo_audit": {
+        "naive": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 1,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 1605,
+          "send_recv_ops": 0
+        },
+        "restir": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 2,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 5379,
+          "send_recv_ops": 0
+        },
+        "restir_denoise": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 2,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 7555,
+          "send_recv_ops": 0
+        },
+        "gt": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 3,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 3207,
+          "send_recv_ops": 0
+        }
+      }
+    },
+    {
+      "n_lights": 256,
+      "res": "512x512",
+      "naive_psnr_db": 12.889,
+      "restir_psnr_db": 17.113,
+      "restir_denoise_psnr_db": 22.271,
+      "psnr_gain_restir_db": 4.225,
+      "psnr_gain_restir_denoise_db": 9.382,
+      "naive_ssim": 0.2741,
+      "restir_ssim": 0.3827,
+      "restir_denoise_ssim": 0.7124,
+      "variance_reduction_restir_hdr": 1.13,
+      "variance_reduction_restir_denoise_hdr": 1.63,
+      "variance_reduction_restir_srgb": 2.65,
+      "variance_reduction_restir_denoise_srgb": 8.67,
+      "hlo_audit": {
+        "naive": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 1,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 1605,
+          "send_recv_ops": 0
+        },
+        "restir": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 2,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 5379,
+          "send_recv_ops": 0
+        },
+        "restir_denoise": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 2,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 7555,
+          "send_recv_ops": 0
+        },
+        "gt": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 3,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 3207,
+          "send_recv_ops": 0
+        }
+      }
+    },
+    {
+      "n_lights": 512,
+      "res": "512x512",
+      "naive_psnr_db": 10.41,
+      "restir_psnr_db": 14.801,
+      "restir_denoise_psnr_db": 20.301,
+      "psnr_gain_restir_db": 4.392,
+      "psnr_gain_restir_denoise_db": 9.892,
+      "naive_ssim": 0.2632,
+      "restir_ssim": 0.3449,
+      "restir_denoise_ssim": 0.6394,
+      "variance_reduction_restir_hdr": 1.29,
+      "variance_reduction_restir_denoise_hdr": 1.65,
+      "variance_reduction_restir_srgb": 2.75,
+      "variance_reduction_restir_denoise_srgb": 9.75,
+      "hlo_audit": {
+        "naive": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 1,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 1605,
+          "send_recv_ops": 0
+        },
+        "restir": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 2,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 5379,
+          "send_recv_ops": 0
+        },
+        "restir_denoise": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 2,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 7555,
+          "send_recv_ops": 0
+        },
+        "gt": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 3,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 3207,
+          "send_recv_ops": 0
+        }
+      }
+    },
+    {
+      "n_lights": 1024,
+      "res": "512x512",
+      "naive_psnr_db": 8.948,
+      "restir_psnr_db": 13.59,
+      "restir_denoise_psnr_db": 19.46,
+      "psnr_gain_restir_db": 4.642,
+      "psnr_gain_restir_denoise_db": 10.513,
+      "naive_ssim": 0.2514,
+      "restir_ssim": 0.3218,
+      "restir_denoise_ssim": 0.6262,
+      "variance_reduction_restir_hdr": 1.64,
+      "variance_reduction_restir_denoise_hdr": 2.17,
+      "variance_reduction_restir_srgb": 2.91,
+      "variance_reduction_restir_denoise_srgb": 11.25,
+      "hlo_audit": {
+        "naive": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 1,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 1605,
+          "send_recv_ops": 0
+        },
+        "restir": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 2,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 5379,
+          "send_recv_ops": 0
+        },
+        "restir_denoise": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 2,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 7555,
+          "send_recv_ops": 0
+        },
+        "gt": {
+          "host_callbacks": 0,
+          "dot_ops": 0,
+          "conv_ops": 0,
+          "while_ops": 3,
+          "gather_ops": 0,
+          "custom_calls": 0,
+          "hlo_lines": 3207,
+          "send_recv_ops": 0
+        }
+      }
+    }
+  ],
+  "benchmarks": [
+    {
+      "n_chips": 1,
+      "resolution": "512x512",
+      "mode": "naive",
+      "compile_s": 9.57,
+      "ms": 174.15,
+      "fps": 5.742,
+      "mpix_per_sec": 1.51,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "n_chips": 1,
+      "resolution": "512x512",
+      "mode": "restir",
+      "compile_s": 21.88,
+      "ms": 927.52,
+      "fps": 1.078,
+      "mpix_per_sec": 0.28,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "n_chips": 1,
+      "resolution": "512x512",
+      "mode": "restir_denoise",
+      "compile_s": 24.83,
+      "ms": 927.73,
+      "fps": 1.078,
+      "mpix_per_sec": 0.28,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "n_chips": 1,
+      "resolution": "1920x1080",
+      "mode": "naive",
+      "compile_s": 13.24,
+      "ms": 1316.21,
+      "fps": 0.76,
+      "mpix_per_sec": 1.58,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "n_chips": 1,
+      "resolution": "1920x1080",
+      "mode": "restir",
+      "compile_s": 22.47,
+      "ms": 9091.61,
+      "fps": 0.11,
+      "mpix_per_sec": 0.23,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "n_chips": 1,
+      "resolution": "1920x1080",
+      "mode": "restir_denoise",
+      "compile_s": 28.63,
+      "ms": 9039.52,
+      "fps": 0.111,
+      "mpix_per_sec": 0.23,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "n_chips": 1,
+      "resolution": "3840x2160",
+      "mode": "naive",
+      "compile_s": 38.41,
+      "ms": 5196.4,
+      "fps": 0.192,
+      "mpix_per_sec": 1.6,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "n_chips": 1,
+      "resolution": "3840x2160",
+      "mode": "restir",
+      "compile_s": 46.36,
+      "ms": 37642.86,
+      "fps": 0.027,
+      "mpix_per_sec": 0.22,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "n_chips": 1,
+      "resolution": "3840x2160",
+      "mode": "restir_denoise",
+      "compile_s": 55.7,
+      "ms": 37671.43,
+      "fps": 0.027,
+      "mpix_per_sec": 0.22,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "n_chips": 4,
+      "resolution": "512x512",
+      "mode": "naive",
+      "compile_s": 0.27,
+      "ms": 44.52,
+      "fps": 22.46,
+      "mpix_per_sec": 5.89,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "n_chips": 4,
+      "resolution": "512x512",
+      "mode": "restir",
+      "compile_s": 0.9,
+      "ms": 238.07,
+      "fps": 4.2,
+      "mpix_per_sec": 1.1,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "n_chips": 4,
+      "resolution": "512x512",
+      "mode": "restir_denoise",
+      "compile_s": 1.77,
+      "ms": 240.99,
+      "fps": 4.149,
+      "mpix_per_sec": 1.09,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "n_chips": 4,
+      "resolution": "1920x1080",
+      "mode": "naive",
+      "compile_s": 15.63,
+      "ms": 338.44,
+      "fps": 2.955,
+      "mpix_per_sec": 6.13,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "n_chips": 4,
+      "resolution": "1920x1080",
+      "mode": "restir",
+      "compile_s": 154.13,
+      "ms": 1883.03,
+      "fps": 0.531,
+      "mpix_per_sec": 1.1,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "n_chips": 4,
+      "resolution": "1920x1080",
+      "mode": "restir_denoise",
+      "compile_s": 154.32,
+      "ms": 1883.18,
+      "fps": 0.531,
+      "mpix_per_sec": 1.1,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "n_chips": 4,
+      "resolution": "3840x2160",
+      "mode": "naive",
+      "compile_s": 15.23,
+      "ms": 1338.42,
+      "fps": 0.747,
+      "mpix_per_sec": 6.2,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "n_chips": 4,
+      "resolution": "3840x2160",
+      "mode": "restir",
+      "compile_s": 17.34,
+      "ms": 7588.9,
+      "fps": 0.132,
+      "mpix_per_sec": 1.09,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    },
+    {
+      "n_chips": 4,
+      "resolution": "3840x2160",
+      "mode": "restir_denoise",
+      "compile_s": 24.33,
+      "ms": 7598.1,
+      "fps": 0.132,
+      "mpix_per_sec": 1.09,
+      "host_callbacks": 0,
+      "send_recv_ops": 0
+    }
+  ]
+}
