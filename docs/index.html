@@ -74,7 +74,7 @@
     <!-- HERO -->
     <section class="hero">
       <div class="hero-meta-row">
-        <span class="hero-meta" data-i18n="hero.meta">Google Cloud TPU v5p (1–32 chips) · Zero host_callbacks · Zero HBM Gather</span>
+        <span class="hero-meta" data-i18n="hero.meta">Google Cloud TPU v5p (1–32 chips) · host_callbacks = 0 · XLA gather_ops = 0</span>
         <span class="hero-byline">
           <span data-i18n="hero.by">By</span> <strong>Feiyang Liu</strong> · <span>2026</span> · <span data-i18n="hero.license">Apache-2.0</span>
         </span>
@@ -465,9 +465,9 @@ obs = tpu_rtx.render(mjx_data, scene)  # → {"rgb", "depth", "normal", "seg_id"
 
           <div class="ledger-box">
             <div class="ledger-controls">
-              <input class="ledger-search" id="ledger-search" type="search" placeholder="Filter 21 experiments, scenes, JSON..." aria-label="Filter Experiment Ledger" />
+              <input class="ledger-search" id="ledger-search" type="search" placeholder="Filter 23 experiments, scenes, JSON..." aria-label="Filter Experiment Ledger" />
               <div class="tab-strip" id="ledger-tabs" style="margin-bottom:0;">
-                <button class="tab-btn active" data-ld="all" type="button" data-i18n="ld.all">All (21)</button>
+                <button class="tab-btn active" data-ld="all" type="button" data-i18n="ld.all">All (23)</button>
                 <button class="tab-btn" data-ld="robotics" type="button" data-i18n="ld.rob">Robotics</button>
                 <button class="tab-btn" data-ld="film" type="button" data-i18n="ld.film">Film &amp; Cloth</button>
                 <button class="tab-btn" data-ld="gs3d" type="button" data-i18n="ld.gs">3DGS / 4DGS</button>
