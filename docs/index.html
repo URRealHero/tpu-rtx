@@ -100,27 +100,31 @@
         </div>
       </div>
 
-      <!-- Uncropped Single-Scene 3-Plate Cinema Hero Stage -->
+      <!-- Uncropped Single-Scene & Live 4K Video Cinema Hero Stage -->
       <div class="cinema-stage">
-        <div class="cinema-viewport" id="hero-stage-view" title="Click to open Darkroom Lightbox">
-          <img id="hero-stage-img" src="./assets/singles/moana_mjx_beach.webp" alt="Live MJX Robots on Disney Moana Island Beach 4K" />
+        <div class="cinema-viewport is-video" id="hero-stage-view" title="Click image frames to open Darkroom Lightbox">
+          <video id="hero-stage-video" src="./assets/videos/robowild_4dgs_push_4k.mp4" poster="./assets/videos/robowild_4dgs_push_4k_poster.jpg" autoplay loop muted playsinline controls preload="metadata"></video>
         </div>
         <div class="cinema-hud-bar">
           <span id="hero-hud-left"></span>
           <span id="hero-hud-right"></span>
         </div>
-        <div class="cinema-tabs" id="hero-tabs">
+        <div class="cinema-tabs cols-4" id="hero-tabs">
           <button class="cinema-tab active" data-hero="0" type="button">
-            <span class="cinema-tab-idx" data-i18n="hero.t0i">SCENE 01 · FILM × PHYSICAL AI</span>
-            <span class="cinema-tab-title" data-i18n="hero.t0t">Live MJX Robots on 22.30B-Tri Moana Beach (4K)</span>
+            <span class="cinema-tab-idx" data-i18n="hero.t0i">SCENE 01 · LIVE 4K VIDEO</span>
+            <span class="cinema-tab-title" data-i18n="hero.t0t">4DGS × MJX Panda Pushing LEGO Dozer (4K)</span>
           </button>
           <button class="cinema-tab" data-hero="1" type="button">
-            <span class="cinema-tab-idx" data-i18n="hero.t1i">SCENE 02 · REAL-TO-SIM 3DGS</span>
-            <span class="cinema-tab-title" data-i18n="hero.t1t">Live MJX Robots in 10M-Splat Amazon Bistro (4K)</span>
+            <span class="cinema-tab-idx" data-i18n="hero.t1i">SCENE 02 · FILM × PHYSICAL AI</span>
+            <span class="cinema-tab-title" data-i18n="hero.t1t">Live MJX Robots on 22.30B-Tri Moana Beach (4K)</span>
           </button>
           <button class="cinema-tab" data-hero="2" type="button">
-            <span class="cinema-tab-idx" data-i18n="hero.t2i">SCENE 03 · BLENDER CYCLES</span>
-            <span class="cinema-tab-title" data-i18n="hero.t2t">Barcelona Pavilion (54.91M Tris, 4K)</span>
+            <span class="cinema-tab-idx" data-i18n="hero.t2i">SCENE 03 · REAL-TO-SIM 3DGS</span>
+            <span class="cinema-tab-title" data-i18n="hero.t2t">Live MJX Robots in 10M-Splat Amazon Bistro (4K)</span>
+          </button>
+          <button class="cinema-tab" data-hero="3" type="button">
+            <span class="cinema-tab-idx" data-i18n="hero.t3i">SCENE 04 · BLENDER CYCLES</span>
+            <span class="cinema-tab-title" data-i18n="hero.t3t">Barcelona Pavilion (54.91M Tris, 4K)</span>
           </button>
         </div>
       </div>
@@ -241,6 +245,27 @@ obs = tpu_rtx.render(mjx_data, scene)  # -&gt; {"rgb", "depth", "normal", "seg_i
         <div>
           <h2 class="chapter-title" id="c3-title"></h2>
           <p class="chapter-lead" id="c3-lead"></p>
+
+          <!-- Full-Width Native 4K & Optics TPU Video Theatre (11 Real-Time Rendered Clips) -->
+          <div class="cinema-stage" id="stage-video-cinema">
+            <div class="cinema-head">
+              <span class="cinema-head-title" id="ch3-video-head"></span>
+              <div class="tab-group" id="ch3-video-cats">
+                <button class="tab-btn active" data-vcat="all" type="button" data-i18n="vid.all">All Videos (11)</button>
+                <button class="tab-btn" data-vcat="gs3d" type="button" data-i18n="vid.gs3d">4K 3DGS / 4DGS (6)</button>
+                <button class="tab-btn" data-vcat="optics" type="button" data-i18n="vid.optics">4K Bokeh &amp; Cloth (3)</button>
+                <button class="tab-btn" data-vcat="relight" type="button" data-i18n="vid.relight">Neural Relight (2)</button>
+              </div>
+            </div>
+            <div class="cinema-viewport is-video">
+              <video id="ch3-video-el" src="./assets/videos/mipnerf_garden_4k.mp4" poster="./assets/videos/mipnerf_garden_4k_poster.jpg" autoplay loop muted playsinline controls preload="metadata"></video>
+            </div>
+            <div class="cinema-hud-bar">
+              <span id="ch3-video-hudL"></span>
+              <span id="ch3-video-hudR"></span>
+            </div>
+            <div class="video-grid-tabs" id="ch3-video-tabs"></div>
+          </div>
 
           <!-- Slider Lab 1: TPU-RTX vs Blender Cycles Ground Truth (6 Scenes, borders cleanly trimmed) -->
           <div class="compare-lab" id="compare-blender"></div>
@@ -392,6 +417,21 @@ obs = tpu_rtx.render(mjx_data, scene)  # -&gt; {"rgb", "depth", "normal", "seg_i
               <div id="chart-vla-surround"></div>
               <div class="chart-foot"><span>Source: v3_w1_wave4_vla_tactile_factory.json, v3_w6_wave5_surround_bokeh.json, v3_pod_v5p64_capstone.json</span><span>0 host callbacks</span></div>
             </div>
+          </div>
+
+          <!-- Full-Width Embodied Robotics & Diff-Physics Live Video Theatre (6 Clips) -->
+          <div class="cinema-stage" id="stage-embodied-video">
+            <div class="cinema-head">
+              <span class="cinema-head-title" id="ch5-video-head"></span>
+            </div>
+            <div class="cinema-viewport is-video">
+              <video id="ch5-video-el" src="./assets/videos/robotwin_bimanual.mp4" poster="./assets/videos/robotwin_bimanual_poster.jpg" autoplay loop muted playsinline controls preload="metadata"></video>
+            </div>
+            <div class="cinema-hud-bar">
+              <span id="ch5-video-hudL"></span>
+              <span id="ch5-video-hudR"></span>
+            </div>
+            <div class="video-grid-tabs" id="ch5-video-tabs"></div>
           </div>
 
           <!-- Full-Width Standalone Robot PBR Stage Switcher (5 Robots incl. RoboTwin) -->

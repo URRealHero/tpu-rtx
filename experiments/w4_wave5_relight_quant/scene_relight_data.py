@@ -16,6 +16,7 @@ from __future__ import annotations
 import dataclasses
 import inspect
 import math
+import os
 from typing import Any, Dict, List, Sequence, Tuple
 
 import jax
@@ -298,7 +299,12 @@ def _build_cornell_relightable() -> Tuple[PBRWideBVHMesh, np.ndarray, np.ndarray
   # Anchor 2: Dielectric Clear Glass Sphere (IOR 1.50)
   mb.add_sphere((0.36, -0.22, 0.25), 0.25, (0.96, 0.99, 0.98), roughness=0.02, mat_code=2.0, n_lat=28, n_lon=52)
 
-  ds = np.load("/dev/shm/zaychik-tpu-mjx/out/assets/blender_real_scene.npz")
+  _repo_asset = os.path.join(
+      os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+      "out/assets/blender_real_scene.npz",
+  )
+  _asset_path = _repo_asset if os.path.exists(_repo_asset) else "/dev/shm/zaychik-tpu-mjx/out/assets/blender_real_scene.npz"
+  ds = np.load(_asset_path)
   # Anchor 3: Gold Torus on pedestal
   tor_v, tor_f = _subdivide_simple(ds["mesh_1_verts"], ds["mesh_1_faces"], 4)
   tor_v = tor_v * 1.45

@@ -17,6 +17,9 @@
     heroIdx: 0,
     stage3dgsIdx: 0,
     stageMenagerieIdx: 0,
+    videoCh3Cat: "all",
+    videoCh3Idx: 0,
+    videoCh5Idx: 0,
     benchKey: "mjx",
     dirFilter: "all",
     ledgerCat: "all",
@@ -85,18 +88,85 @@
   function renderHeroStage(idx) {
     state.heroIdx = idx;
     const item = DATA.heroStage[idx];
-    const plate = platesById[item.plateId];
     const lang = state.lang;
-    const img = document.getElementById("hero-stage-img");
-    img.src = plate.web;
-    img.alt = plate.title[lang];
-    document.getElementById("hero-stage-view").dataset.openId = plate.id;
+    const view = document.getElementById("hero-stage-view");
+    if (item.video) {
+      view.classList.add("is-video");
+      delete view.dataset.openId;
+      view.innerHTML = `<video id="hero-stage-video" src="${item.video}" poster="${item.poster}" autoplay loop muted playsinline controls preload="metadata"></video>`;
+      const v = document.getElementById("hero-stage-video");
+      if (v) v.play().catch(() => {});
+    } else {
+      const plate = platesById[item.plateId];
+      view.classList.remove("is-video");
+      view.dataset.openId = plate.id;
+      view.innerHTML = `<img id="hero-stage-img" src="${plate.web}" alt="${plate.title[lang]}" />`;
+    }
     document.getElementById("hero-hud-left").innerHTML = item.hudL[lang];
     document.getElementById("hero-hud-right").innerHTML = item.hudR[lang];
 
     document.querySelectorAll("#hero-tabs .cinema-tab").forEach((b) => {
       b.classList.toggle("active", Number(b.dataset.hero) === idx);
     });
+  }
+
+  function renderVideoStageCh3() {
+    const items = DATA.videoStageCh3.filter((v) => state.videoCh3Cat === "all" || v.cat === state.videoCh3Cat);
+    if (!items.length) return;
+    if (state.videoCh3Idx >= items.length) state.videoCh3Idx = 0;
+    const item = items[state.videoCh3Idx];
+    const lang = state.lang;
+    const vid = document.getElementById("ch3-video-el");
+    const tabs = document.getElementById("ch3-video-tabs");
+    if (!vid || !tabs) return;
+    if (vid.getAttribute("src") !== item.mp4) {
+      vid.setAttribute("src", item.mp4);
+      vid.setAttribute("poster", item.poster);
+      vid.load();
+      vid.play().catch(() => {});
+    }
+    document.getElementById("ch3-video-hudL").innerHTML = item.hudL[lang];
+    document.getElementById("ch3-video-hudR").innerHTML = item.hudR[lang];
+    document.querySelectorAll("#ch3-video-cats .tab-btn").forEach((b) => {
+      b.classList.toggle("active", b.dataset.vcat === state.videoCh3Cat);
+    });
+    tabs.innerHTML = items
+      .map(
+        (it, i) => `
+        <button class="cinema-tab ${i === state.videoCh3Idx ? "active" : ""}" data-v3="${i}" type="button">
+          <span class="cinema-tab-idx">${it.tabIdx[lang]}</span>
+          <span class="cinema-tab-title">${it.tabTitle[lang]}</span>
+        </button>`
+      )
+      .join("");
+  }
+
+  function renderVideoStageCh5() {
+    const items = DATA.videoStageCh5;
+    if (!items.length) return;
+    if (state.videoCh5Idx >= items.length) state.videoCh5Idx = 0;
+    const item = items[state.videoCh5Idx];
+    const lang = state.lang;
+    const vid = document.getElementById("ch5-video-el");
+    const tabs = document.getElementById("ch5-video-tabs");
+    if (!vid || !tabs) return;
+    if (vid.getAttribute("src") !== item.mp4) {
+      vid.setAttribute("src", item.mp4);
+      vid.setAttribute("poster", item.poster);
+      vid.load();
+      vid.play().catch(() => {});
+    }
+    document.getElementById("ch5-video-hudL").innerHTML = item.hudL[lang];
+    document.getElementById("ch5-video-hudR").innerHTML = item.hudR[lang];
+    tabs.innerHTML = items
+      .map(
+        (it, i) => `
+        <button class="cinema-tab ${i === state.videoCh5Idx ? "active" : ""}" data-v5="${i}" type="button">
+          <span class="cinema-tab-idx">${it.tabIdx[lang]}</span>
+          <span class="cinema-tab-title">${it.tabTitle[lang]}</span>
+        </button>`
+      )
+      .join("");
   }
 
   function renderSingleStage(prefix, items, idx, dataAttr) {
@@ -318,6 +388,8 @@
       "hero.t0i": t.hero.t0i, "hero.t0t": t.hero.t0t,
       "hero.t1i": t.hero.t1i, "hero.t1t": t.hero.t1t,
       "hero.t2i": t.hero.t2i, "hero.t2t": t.hero.t2t,
+      "hero.t3i": t.hero.t3i, "hero.t3t": t.hero.t3t,
+      "vid.all": t.ui.vid_all, "vid.gs3d": t.ui.vid_gs3d, "vid.optics": t.ui.vid_optics, "vid.relight": t.ui.vid_relight,
       "hero.stackTag": t.hero.stackTag, "hero.stackTitle": t.hero.stackTitle, "hero.stackSub": t.hero.stackSub,
       "c1.num": t.c1.num, "c1.rail": t.c1.rail, "c1.gvtTag": t.c1.gvtTag, "c1.gvtTitle": t.c1.gvtTitle, "c1.gvtSub": t.c1.gvtSub,
       "c2.num": t.c2.num, "c2.rail": t.c2.rail, "c2.sdkBar": t.c2.sdkBar,
@@ -425,7 +497,12 @@
       window.TPU_RTX_CHARTS.renderAll(state.lang);
     }
 
+    document.getElementById("ch3-video-head").innerHTML = t.ui.v3_head;
+    document.getElementById("ch5-video-head").innerHTML = t.ui.v5_head;
+
     renderHeroStage(state.heroIdx);
+    renderVideoStageCh3();
+    renderVideoStageCh5();
     renderCompareLab("compare-blender", "blender");
     renderCompareLab("compare-optics", "optics");
     renderCompareLab("compare-neural", "neural");
@@ -544,6 +621,28 @@
     const btn = e.target.closest(".cinema-tab");
     if (!btn) return;
     renderHeroStage(Number(btn.dataset.hero));
+  });
+
+  document.getElementById("ch3-video-cats").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-vcat]");
+    if (!btn) return;
+    state.videoCh3Cat = btn.dataset.vcat;
+    state.videoCh3Idx = 0;
+    renderVideoStageCh3();
+  });
+
+  document.getElementById("ch3-video-tabs").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-v3]");
+    if (!btn) return;
+    state.videoCh3Idx = Number(btn.dataset.v3);
+    renderVideoStageCh3();
+  });
+
+  document.getElementById("ch5-video-tabs").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-v5]");
+    if (!btn) return;
+    state.videoCh5Idx = Number(btn.dataset.v5);
+    renderVideoStageCh5();
   });
 
   document.getElementById("stage-3dgs-tabs").addEventListener("click", (e) => {

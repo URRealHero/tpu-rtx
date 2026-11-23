@@ -331,7 +331,8 @@ def build_cornell_workshop():
   # Hero 2: Dielectric Clear Glass Sphere (IOR 1.50, foreground right)
   mb.add_sphere((0.36, -0.22, 0.25), 0.25, (0.96, 0.99, 0.98), roughness=0.02, mat_code=2.0, n_lat=28, n_lon=52)
   # Hero 3: Frosted Brushed Gold Torus (built from Blender torus mesh rotated)
-  ds = np.load("/dev/shm/zaychik-tpu-mjx/out/assets/blender_real_scene.npz")
+  _repo_asset = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "out", "assets", "blender_real_scene.npz"))
+  ds = np.load(_repo_asset if os.path.exists(_repo_asset) else "/dev/shm/zaychik-tpu-mjx/out/assets/blender_real_scene.npz")
   tor_v, tor_f = _subdivide_simple(ds["mesh_1_verts"], ds["mesh_1_faces"], 4)
   tor_v = tor_v * 1.45
   # Rotate torus to lean upright on slate pedestal

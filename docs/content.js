@@ -488,6 +488,176 @@ window.TPU_RTX_DATA = {
 
   spreadCh3: ["moana_daylight_4k", "moana_sunset", "moana_8k_bay", "prism_dispersion", "cathedral_godrays"],
 
+  videoStageCh3: [
+    {
+      id: "mipnerf_garden_4k",
+      cat: "gs3d",
+      mp4: "./assets/videos/mipnerf_garden_4k.mp4",
+      poster: "./assets/videos/mipnerf_garden_4k_poster.jpg",
+      tabIdx: { en: "4K VIDEO · 5.83M SH3", zh: "4K 实拍重建 · 583 万高斯" },
+      tabTitle: { en: "Mip-NeRF 360 Garden (4K Orbit)", zh: "Mip-NeRF 360 Garden 花园 360° (4K)" },
+      hudL: { en: "<strong>Mip-NeRF 360 Garden (30 fps Native 4K)</strong> · 5,834,784 Full SH3 Gaussians · 4 TPU v5p Chips", zh: "<strong>Mip-NeRF 360 花园实景（原生 4K 30fps）</strong>· 583 万全 SH3 高斯 · 4 芯 TPU v5p 实时光栅" },
+      hudR: { en: "<strong>3840×2160 Native 4K</strong> · Zero HBM Gathers · Zero Baked Text", zh: "<strong>3840×2160 原生 4K</strong> · 零 HBM Gather · 纯净全幅" }
+    },
+    {
+      id: "robowild_4dgs_push_4k",
+      cat: "gs3d",
+      mp4: "./assets/videos/robowild_4dgs_push_4k.mp4",
+      poster: "./assets/videos/robowild_4dgs_push_4k_poster.jpg",
+      tabIdx: { en: "4K VIDEO · 4DGS × MJX", zh: "4K 视频 · 4DGS 物理交互" },
+      tabTitle: { en: "RoboWild Panda × 4DGS Dozer (4K)", zh: "RoboWild 机械臂推 4DGS 推土机 (4K)" },
+      hudL: { en: "<strong>Live RoboWild 4DGS × MJX Contact Push (4K)</strong> · SE(3) Rigid Gaussians + Analytical Panda Shadows", zh: "<strong>实景 4DGS × MJX 机器人触碰推挤（原生 4K）</strong>· 乐高推土机 SE(3) 联动 + 桌面投影" },
+      hudR: { en: "<strong>3840×2160 Native 4K</strong> · Physics + 3DGS Single XLA Graph", zh: "<strong>3840×2160 原生 4K</strong> · 物理+光栅单 XLA 计算图" }
+    },
+    {
+      id: "mipnerf_bicycle_4k",
+      cat: "gs3d",
+      mp4: "./assets/videos/mipnerf_bicycle_4k.mp4",
+      poster: "./assets/videos/mipnerf_bicycle_4k_poster.jpg",
+      tabIdx: { en: "4K VIDEO · 6.13M SH3", zh: "4K 实景 · 613 万高斯" },
+      tabTitle: { en: "Mip-NeRF 360 Bicycle (4K Orbit)", zh: "Mip-NeRF 360 Bicycle 公园自行车 (4K)" },
+      hudL: { en: "<strong>Mip-NeRF 360 Bicycle (Native 4K)</strong> · 6,131,954 SH3 Splats · Crisp Rim Spokes &amp; Foliage", zh: "<strong>Mip-NeRF 360 公园自行车（原生 4K）</strong>· 613 万 SH3 高斯 · 草坪树冠与细辐条" },
+      hudR: { en: "<strong>3840×2160 Native 4K</strong> · 4-Chip TPU v5p · gather_ops=0", zh: "<strong>3840×2160 原生 4K</strong> · 4 芯 TPU v5p · 零 Gather" }
+    },
+    {
+      id: "mipnerf_bonsai_4k",
+      cat: "gs3d",
+      mp4: "./assets/videos/mipnerf_bonsai_4k.mp4",
+      poster: "./assets/videos/mipnerf_bonsai_4k_poster.jpg",
+      tabIdx: { en: "4K VIDEO · 1.24M SH3", zh: "4K 实景 · 室内樱花盆景" },
+      tabTitle: { en: "Mip-NeRF 360 Bonsai (4K Orbit)", zh: "Mip-NeRF 360 Bonsai 桌面盆景 (4K)" },
+      hudL: { en: "<strong>Mip-NeRF 360 Bonsai (Native 4K)</strong> · 1,244,819 SH3 Splats · Studio Table 360° Fly-Around", zh: "<strong>Mip-NeRF 360 桌面樱花盆景（原生 4K）</strong>· 124 万 SH3 高斯 · 360° 平滑环绕" },
+      hudR: { en: "<strong>3840×2160 Native 4K</strong> · 4.20 FPS Live 4K Raster", zh: "<strong>3840×2160 原生 4K</strong> · 4 芯真机实测 4.20 FPS" }
+    },
+    {
+      id: "mipnerf_counter_orbit",
+      cat: "gs3d",
+      mp4: "./assets/videos/mipnerf_counter_orbit.mp4",
+      poster: "./assets/videos/mipnerf_counter_orbit_poster.jpg",
+      tabIdx: { en: "1080P · KITCHEN TABLE", zh: "1080p · 厨房料理台" },
+      tabTitle: { en: "Mip-NeRF Countertop (1080p Orbit)", zh: "Mip-NeRF 360 Counter 料理台环绕" },
+      hudL: { en: "<strong>Mip-NeRF 360 Counter (1920×1080, 120f)</strong> · Specular Jar, Bread &amp; Baking Tray SH3 Orbit", zh: "<strong>Mip-NeRF 360 厨房料理台（1080p，120 帧）</strong>· 玻璃壶、面点与金属烤盘 SH3 视角响应" },
+      hudR: { en: "<strong>1920×1080 30fps</strong> · Two-Band Exact EWA Splatting", zh: "<strong>1920×1080 30fps</strong> · 双频精确 EWA 无截断投影" }
+    },
+    {
+      id: "mipnerf_stump_orbit",
+      cat: "gs3d",
+      mp4: "./assets/videos/mipnerf_stump_orbit.mp4",
+      poster: "./assets/videos/mipnerf_stump_orbit_poster.jpg",
+      tabIdx: { en: "1080P · 4.96M SH3", zh: "1080p · 496 万树桩" },
+      tabTitle: { en: "Mip-NeRF Forest Stump (1080p)", zh: "Mip-NeRF 360 Stump 森林树桩" },
+      hudL: { en: "<strong>Mip-NeRF 360 Forest Stump (1080p)</strong> · 4,961,797 SH3 Gaussians · Ivy &amp; Bark Micro-Geometry", zh: "<strong>Mip-NeRF 360 森林老树桩（1080p）</strong>· 496 万全 SH3 高斯 · 常春藤与树皮细节" },
+      hudR: { en: "<strong>1920×1080 30fps</strong> · 62.4 s Total TPU Render (150f)", zh: "<strong>1920×1080 30fps</strong> · 4 芯实测 150 帧仅 62.4 s" }
+    },
+    {
+      id: "thinlens_bokeh_dolly_4k",
+      cat: "optics",
+      mp4: "./assets/videos/thinlens_bokeh_dolly_4k.mp4",
+      poster: "./assets/videos/thinlens_bokeh_dolly_4k_poster.jpg",
+      tabIdx: { en: "4K OPTICS · f/1.4 DOLLY", zh: "4K 光学 · f/1.4 移轴拉焦" },
+      tabTitle: { en: "4K f/1.4 Thin-Lens Parallax + Focus Rack", zh: "4K f/1.4 薄透镜横移视差+变焦" },
+      hudL: { en: "<strong>Stochastic Thin-Lens Camera (Native 4K, 32 spp)</strong> · Concentric-Disk Aperture + R2 Cranley-Patterson", zh: "<strong>原生 4K 随机薄透镜光圈（f/1.4，32 spp）</strong>· Shirley-Chiu 同心圆盘采样 + 横移视差" },
+      hudR: { en: "<strong>3840×2160 Native 4K</strong> · Single-Compile Mosaic Pallas", zh: "<strong>3840×2160 原生 4K</strong> · 单次编译零主控回调" }
+    },
+    {
+      id: "thinlens_bokeh_pull_4k",
+      cat: "optics",
+      mp4: "./assets/videos/thinlens_bokeh_pull_4k.mp4",
+      poster: "./assets/videos/thinlens_bokeh_pull_4k_poster.jpg",
+      tabIdx: { en: "4K OPTICS · FOCUS RACK", zh: "4K 光学 · f/1.4 景深虚化" },
+      tabTitle: { en: "4K f/1.4 Near→Far→Near Focus Pull", zh: "4K f/1.4 前景↔背景光斑平滑拉焦" },
+      hudL: { en: "<strong>55mm f/1.4 Focus Rack (0.78 m ↔ 2.25 m)</strong> · Foreground Gold Sphere to Luminous Bokeh Orbs", zh: "<strong>55mm f/1.4 景深呼吸拉焦（0.78 m ↔ 2.25 m）</strong>· 前景金属球至背景霓虹焦外圆斑" },
+      hudR: { en: "<strong>3840×2160 Native 4K</strong> · 32 spp HDR ACES Filmic", zh: "<strong>3840×2160 原生 4K</strong> · 32 spp HDR ACES 映射" }
+    },
+    {
+      id: "cloth_bvh_refit",
+      cat: "optics",
+      mp4: "./assets/videos/cloth_bvh_refit.mp4",
+      poster: "./assets/videos/cloth_bvh_refit_poster.jpg",
+      tabIdx: { en: "LIVE OPTIX · BVH REFIT", zh: "动态 Optix · 布料 BVH 重拟合" },
+      tabTitle: { en: "PBD Silk Cloth Live Wide-BVH Refit", zh: "PBD 丝绸布料碰撞与 BVH 重拟合" },
+      hudL: { en: "<strong>Real-Time Deformable Silk Cloth (32,768 Tris)</strong> · Bottom-Up L0→L1→L2 Wide-BVH-64 Refit Inside XLA", zh: "<strong>实时可变形 PBD 丝绸布料（32,768 面）</strong>· XLA 图内从叶至根自底向上重拟合 BVH" },
+      hudR: { en: "<strong>0.0 m Depth Error</strong> vs CPU Rebuild · Soft Shadow + Sheen", zh: "对比 CPU 重建 <strong>0.0 m</strong> 误差 · 实时软阴影与丝绸光泽" }
+    },
+    {
+      id: "relight_tod_sweep",
+      cat: "relight",
+      mp4: "./assets/videos/relight_tod_sweep.mp4",
+      poster: "./assets/videos/relight_tod_sweep_poster.jpg",
+      tabIdx: { en: "MXU BF16 · ZERO-RT", zh: "BF16 MXU · 零光追昼夜切换" },
+      tabTitle: { en: "Classroom Sunlit Time-of-Day Sweep", zh: "教室百叶窗零光追昼夜连续变换" },
+      hudL: { en: "<strong>Single Static G-Buffer Interactive Relight</strong> · Morning → Noon → 2600K Sunset → 9500K Twilight", zh: "<strong>单一静态 G-Buffer 零光追实时重打光</strong>· 清晨 → 正午 → 黄金日落 → 蓝调暮光连续滑动" },
+      hudR: { en: "<strong>0 Raytrace Ops / Frame</strong> · 307 FPS 1080p / 78.6 FPS 4K", zh: "<strong>逐帧 0 次光追</strong> · 1080p 307 FPS / 4K 78.6 FPS" }
+    },
+    {
+      id: "relight_material_sweep",
+      cat: "relight",
+      mp4: "./assets/videos/relight_material_sweep.mp4",
+      poster: "./assets/videos/relight_material_sweep_poster.jpg",
+      tabIdx: { en: "MXU BF16 · BRDF SWEEP", zh: "BF16 MXU · 材质连续转换" },
+      tabTitle: { en: "Cornell Workshop Material Sweep", zh: "康奈尔工坊材质哑光→镀铬连贯变化" },
+      hudL: { en: "<strong>Zero-Raytrace FiLM BRDF Relighting</strong> · Matte Clay → Satin → Brushed Gold → Mirror Chrome", zh: "<strong>零光追 FiLM 连续材质推理</strong>· 哑光泥塑 → 缎面 → 拉丝金 → 高光镜面铬合金" },
+      hudR: { en: "<strong>0 Raytrace Ops / Frame</strong> · Verified vs 4-Bounce MC GT", zh: "<strong>逐帧 0 次光追</strong> · 对齐 4-Bounce 蒙特卡洛真值" }
+    }
+  ],
+
+  videoStageCh5: [
+    {
+      id: "robotwin_bimanual",
+      mp4: "./assets/videos/robotwin_bimanual.mp4",
+      poster: "./assets/videos/robotwin_bimanual_poster.jpg",
+      tabIdx: { en: "EMBODIED · ROBOTWIN", zh: "具身仿真 · ROBOTWIN 双臂" },
+      tabTitle: { en: "RoboTwin 16-DOF Bimanual Manipulation", zh: "RoboTwin 16 自由度双臂桌面操控" },
+      hudL: { en: "<strong>RoboTwin Bimanual Tabletop (1024×1024 AgX)</strong> · Live Articulated Dual-Arm Trajectory + Studio Shadows", zh: "<strong>RoboTwin 双臂桌面操控（1024×1024 AgX）</strong>· 72 刚体实时碰撞影 + 工具台精细光影" },
+      hudR: { en: "<strong>123,858 cam-FPS</strong> DR Bench · Zero CPU Callback", zh: "4 芯 3 摄 DR 实测 <strong>123,858 cam-FPS</strong>" }
+    },
+    {
+      id: "diffphys_servoing",
+      mp4: "./assets/videos/diffphys_servoing.mp4",
+      poster: "./assets/videos/diffphys_servoing_poster.jpg",
+      tabIdx: { en: "JAX.GRAD · DIFF-PHYS", zh: "可微物理+渲染 · 视觉伺服" },
+      tabTitle: { en: "Pixel-to-Torque jax.grad Servoing (1024²)", zh: "纯像素反传力矩视觉伺服收敛全过程" },
+      hudL: { en: "<strong>240-Iter jax.value_and_grad(mjx.step + PBR)</strong> · Torque Solved from RGB Loss Alone (Zero State Labels)", zh: "<strong>240 步 jax.value_and_grad(物理+光追) 优化轨迹</strong>· 零关节状态监督，仅凭图像误差反传力矩" },
+      hudR: { en: "<strong>36.08 dB</strong> · <strong>1.63 cm EE Error</strong> in 8.61 s", zh: "8.61 秒收敛至 <strong>36.08 dB</strong> / 末端误差 <strong>1.63 cm</strong>" }
+    },
+    {
+      id: "menagerie_g1_orbit",
+      mp4: "./assets/videos/menagerie_g1_orbit.mp4",
+      poster: "./assets/videos/menagerie_g1_orbit_poster.jpg",
+      tabIdx: { en: "MENAGERIE · UNITREE G1", zh: "MENAGERIE · 宇树 G1 人形" },
+      tabTitle: { en: "Unitree G1 Humanoid 360° (1024²)", zh: "宇树 Unitree G1 人形机器人 360°" },
+      hudL: { en: "<strong>Official Google DeepMind MuJoCo Menagerie Unitree G1</strong> · 393k Tris · Wide-BVH-64 + Hemisphere AO", zh: "<strong>DeepMind MuJoCo Menagerie 官方宇树 G1</strong>· 39.3 万三角面 · Wide-BVH-64 + 半球 AO" },
+      hudR: { en: "<strong>2,546 FPS</strong> @ 64² (4 Chips) · Direct MJCF", zh: "4 芯 64² 实测 <strong>2,546 FPS</strong> · 官方 MJCF 直编" }
+    },
+    {
+      id: "menagerie_go2_orbit",
+      mp4: "./assets/videos/menagerie_go2_orbit.mp4",
+      poster: "./assets/videos/menagerie_go2_orbit_poster.jpg",
+      tabIdx: { en: "MENAGERIE · UNITREE GO2", zh: "MENAGERIE · 宇树 Go2 四足" },
+      tabTitle: { en: "Unitree Go2 Quadruped 360° (1024²)", zh: "宇树 Unitree Go2 四足机器狗 360°" },
+      hudL: { en: "<strong>Official MuJoCo Menagerie Unitree Go2 (398k Tris)</strong> · Embossed Chassis Mesh + Live Soft Shadows", zh: "<strong>官方 MuJoCo Menagerie 宇树 Go2（39.8 万面）</strong>· 机身细节雕纹 + 实时软阴影" },
+      hudR: { en: "<strong>1,863 FPS</strong> @ 64² (4 Chips) · gather_ops=0", zh: "4 芯 64² 实测 <strong>1,863 FPS</strong> · 零 HBM Gather" }
+    },
+    {
+      id: "humanoid_running_orbit",
+      mp4: "./assets/videos/humanoid_running_orbit.mp4",
+      poster: "./assets/videos/humanoid_running_orbit_poster.jpg",
+      tabIdx: { en: "MJX STUDIO · HUMANOID", zh: "MJX 物理 · 人形奔跑步态" },
+      tabTitle: { en: "21-DOF Humanoid Running Stride (1024²)", zh: "21 自由度人形机器人奔跑步态 360°" },
+      hudL: { en: "<strong>27-DOF Humanoid Studio Running Cycle</strong> · 16-Sample AO + Penumbra Soft Shadow + AgX Grade", zh: "<strong>27 自由度人形奔跑动画</strong>· 16 采样 AO + 半影软阴影 + Blender AgX 电影调色" },
+      hudR: { en: "<strong>292,000 env/s</strong> Vision PPO Trained in HBM", zh: "4 芯片上 Vision PPO 达 <strong>29.2 万 env/s</strong>" }
+    },
+    {
+      id: "quadruped_trot_orbit",
+      mp4: "./assets/videos/quadruped_trot_orbit.mp4",
+      poster: "./assets/videos/quadruped_trot_orbit_poster.jpg",
+      tabIdx: { en: "MJX STUDIO · QUADRUPED", zh: "MJX 物理 · 四足对角小跑" },
+      tabTitle: { en: "12-DOF Quadruped Diagonal Trot (1024²)", zh: "12 自由度四足机器人小跑步态 360°" },
+      hudL: { en: "<strong>Quadruped Diagonal Trot Gait (1024×1024)</strong> · Checkerboard Floor + Dynamic Joint Kinematics", zh: "<strong>四足对角小跑动态步态（1024×1024）</strong>· 棋盘地面高光阴影实时追踪" },
+      hudR: { en: "<strong>4-Chip Zero-Copy TPU-RTX</strong> · host_callbacks=0", zh: "<strong>4 芯零拷贝 TPU-RTX</strong> · 零主机回调" }
+    }
+  ],
+
   stage3dgs: [
     {
       plateId: "robowild_panda_4k",
@@ -565,6 +735,22 @@ window.TPU_RTX_DATA = {
   ],
 
   heroStage: [
+    {
+      video: "./assets/videos/robowild_4dgs_push_4k.mp4",
+      poster: "./assets/videos/robowild_4dgs_push_4k_poster.jpg",
+      title: {
+        en: "RoboWild 4DGS × MJX Panda Pushing LEGO Bulldozer (Native 4K)",
+        zh: "RoboWild 4DGS × MJX 机械臂推乐高推土机（原生 4K）"
+      },
+      hudL: {
+        en: "<strong>LIVE NATIVE 4K TPU VIDEO · 4DGS × MJX</strong> · 7-DOF Panda Physically Pushing 125.6k-Splat LEGO Dozer",
+        zh: "<strong>原生 4K TPU 实时录屏 · 4DGS × MJX</strong> · 7 轴 Panda 机械臂实时触碰推挤 12.56 万高斯乐高推土机"
+      },
+      hudR: {
+        en: "<strong>3840×2160 Native 4K</strong> · Physics + 3DGS + Shadows in Single XLA Graph",
+        zh: "<strong>3840×2160 原生 4K</strong> · 物理+光栅+阴影同驻单 XLA 计算图"
+      }
+    },
     {
       plateId: "moana_mjx_beach",
       hudL: {
@@ -913,13 +1099,15 @@ window.TPU_RTX_DATA = {
         lead: "Native ray tracing, path tracing, <strong>1.06B</strong>-splat 3DGS, and <strong>17.18B</strong>-triangle OpenUSD / Physical AI on <strong>Google Cloud TPU v5p</strong> — compiled into one zero-copy XLA graph with zero CPU round-trips.",
         ctaStart: "Explore Visual Proof",
         ctaGallery: "Software & Benchmarks",
-        stamp: "Single-Scene Cinema Monograph · Zero Cropped Borders · Zero Collages",
-        t0i: "SCENE 01 · FILM × PHYSICAL AI",
-        t0t: "Live MJX Robots on 22.30B-Tri Moana Beach (4K)",
-        t1i: "SCENE 02 · REAL-TO-SIM 3DGS",
-        t1t: "Live MJX Robots in 10M-Splat Amazon Bistro (4K)",
-        t2i: "SCENE 03 · BLENDER CYCLES",
-        t2t: "Barcelona Pavilion (54.91M Tris, 4K)",
+        stamp: "17 Live 4K/HD TPU Videos + 26 Uncropped Cinema Plates · 100% TPU v5p Verified",
+        t0i: "SCENE 01 · LIVE 4K VIDEO",
+        t0t: "4DGS × MJX Panda Pushing LEGO Dozer (4K)",
+        t1i: "SCENE 02 · FILM × PHYSICAL AI",
+        t1t: "Live MJX Robots on 22.30B-Tri Moana Beach (4K)",
+        t2i: "SCENE 03 · REAL-TO-SIM 3DGS",
+        t2t: "Live MJX Robots in 10M-Splat Amazon Bistro (4K)",
+        t3i: "SCENE 04 · BLENDER CYCLES",
+        t3t: "Barcelona Pavilion (54.91M Tris, 4K)",
         stackTag: "SYSTEM STACK OVERVIEW · 10-SECOND MAP",
         stackTitle: "How TPU-RTX Connects TPU v5p Silicon to Robotics, OpenUSD, Blender & 3DGS",
         stackSub: "Four clean layers inside one zero-copy XLA HLO graph: TPU v5p Silicon -> 3 Core Kernels -> 8 Drop-In Software Adapters -> Verified Benchmarks."
@@ -983,9 +1171,9 @@ window.TPU_RTX_DATA = {
       },
       c3: {
         num: "03 / 06 · VISUAL PROOF",
-        rail: "All visual comparisons in one place: 6 Blender Cycles split sliders, 8 optical/cloth sliders, 5 clean 4K/8K cinema plates, 5 4K 3DGS stages & 5 neural sliders.",
-        title: "<em>Visual Proof</em>: Film, Wave Optics &amp; Real&#8209;World 3DGS.",
-        lead: "Zero stitched multi-panel collages and zero dark letterbox edges: inspect 6 Blender Cycles comparisons, 8 physical-optics &amp; cloth effects, 5 standalone 4K/8K cinema plates (including daylight Moana Lagoon and prism dispersion), our 5-scene 4K Real-World 3DGS + RoboWild stage, and 5 neural rendering sliders."
+        rail: "11 real-time 4K/HD TPU videos + 6 Cycles split sliders, 8 optics sliders, 5 4K/8K plates, 5 4K 3DGS stages & 5 neural sliders.",
+        title: "<em>Visual Proof</em>: Live 4K Videos, Film &amp; Real&#8209;World 3DGS.",
+        lead: "Explore <strong>11 real-time 30 fps TPU videos</strong> (Native 4K 3DGS/4DGS orbits, 4K <code>f/1.4</code> thin-lens focus pulls, live PBD cloth BVH refit, and zero-raytrace MXU relighting), alongside uncropped Blender Cycles sliders, physical-optics comparisons, and 4K/8K cinema plates."
       },
       c4: {
         num: "04 / 06 · PERF & 32-CHIP",
@@ -1055,6 +1243,9 @@ window.TPU_RTX_DATA = {
         copy: "Copy", copied: "Copied", zoom4k: "Inspect ↗", loupe: "1:1 Pixel Loupe (L)", raw: "Open Full Image ↗",
         footerL: "TPU-RTX · Google Cloud TPU v5p (JAX + Pallas Mosaic · Zero host_callbacks · Zero HBM Gathers)",
         searchPlaceholder: "Search experiments, scenes, JSON...",
+        v3_head: "TPU-RTX Real-Time Rendered Video Cinema (Native 4K · 30 fps)",
+        v5_head: "Embodied Robotics, Diff-Physics Servoing &amp; Menagerie Motion (30 fps)",
+        vid_all: "All Videos (11)", vid_gs3d: "4K 3DGS / 4DGS (6)", vid_optics: "4K Bokeh & Cloth (3)", vid_relight: "Neural Relight (2)",
         b_mjx: "Robotics & Embodied AI", b_gs3d: "3DGS / 4DGS / 1.06B Pod", b_cinema: "Moana, Cloth & Blender", b_dlss: "TPU-DLSS 3.5 & Relight", b_fx: "Path Tracing & Optics",
         g_all: "All Standalone Plates (26)", g_film: "Moana & Blender Studio (10)", g_optics: "Physical Optics (3)", g_gs3d: "Real-World 3DGS / Bistro (6)", g_robotics: "Menagerie & RoboTwin (5)", g_rej: "QA-Rejected (2)",
         th1: "Workload", th2: "TPU-RTX (Google TPU v5p)", th3: "GPU Cycles (wenhaochai/rtx-h100)", th4: "NVIDIA Isaac Sim / OptiX",
@@ -1091,13 +1282,15 @@ window.TPU_RTX_DATA = {
         lead: "全栈原生运行于 <strong>Google Cloud TPU v5p</strong>：单张零拷贝 XLA 计算图直驱 <strong>223 亿</strong>面电影 OpenUSD、<strong>10.6 亿</strong> 3DGS、<strong>171.8 亿</strong>唯一三角面与 <strong>41.1 万 FPS</strong> 具身物理仿真。",
         ctaStart: "先看真实画质对比",
         ctaGallery: "支持的软件与 Bench",
-        stamp: "全单图全幅专刊 · 零黑边残留 · 零多宫格拼图 · 100% TPU v5p 真机实测",
-        t0i: "场景 01 · 电影 × 具身",
-        t0t: "MJX 机器人奔跑在 223 亿面 Moana 沙滩（4K）",
-        t1i: "场景 02 · 实景 3DGS × 具身",
-        t1t: "MJX 人形与熊猫进入 1,000 万 Bistro 街区（4K）",
-        t2i: "场景 03 · BLENDER CYCLES",
-        t2t: "巴塞罗那展馆（5,491 万唯一面，原生 4K）",
+        stamp: "17 段真机实时 TPU 视频 + 26 张 4K/8K 纯净大图 · 100% TPU v5p 实测",
+        t0i: "场景 01 · 原生 4K 实拍视频",
+        t0t: "4DGS × MJX 机械臂推 4DGS 推土机 (4K)",
+        t1i: "场景 02 · 电影 × 具身",
+        t1t: "MJX 机器人奔跑在 223 亿面 Moana 沙滩（4K）",
+        t2i: "场景 03 · 实景 3DGS × 具身",
+        t2t: "MJX 人形与熊猫进入 1,000 万 Bistro 街区（4K）",
+        t3i: "场景 04 · BLENDER CYCLES",
+        t3t: "巴塞罗那展馆（5,491 万唯一面，原生 4K）",
         stackTag: "10 秒系统总览图 · 四层全景架构",
         stackTitle: "TPU-RTX 如何把 Google TPU v5p 底层硬件直接连通具身智能、OpenUSD、Blender 与 3DGS",
         stackSub: "从下至上四层全部驻留在同一张零拷贝 XLA 计算图内：TPU v5p 硬件 -> 3 大零拷贝核心内核 -> 8 大软件适配器 -> 已验证基准套件。"
@@ -1160,10 +1353,10 @@ window.TPU_RTX_DATA = {
         ]
       },
       c3: {
-        num: "03 / 06 · 视觉画质与拉杆对比",
-        rail: "全站所有电影、光学、3DGS 与神经超分画质对比一章看尽：两组主拉杆 + 5 张纯净 4K/8K 大图 + 4K 实景 3DGS + 神经重打光拉杆。",
-        title: "<em>真实画质检验</em>：电影、波动光学与实景 3DGS。",
-        lead: "全部黑边与字条瑕疵已裁净、剔除多宫格拼图与缺陷图：下方依次为 6 大 Blender Cycles 左右拉杆、8 组物理光学与布料拉杆、5 张无暇 4K/8K 电影光学大图（含晴天 Moana 绿松石泻湖与棱镜色散）、5 景原生 4K 3DGS 大舞台（含无 HUD 版 RoboWild）及神经渲染拉杆。"
+        num: "03 / 06 · 视觉画质与动态视频",
+        rail: "11 段原生 4K/高清实时视频展厅 + Blender Cycles、波动光学、4K 实景 3DGS 与神经重打光全对比。",
+        title: "<em>真实画质检验</em>：原生 4K 实时视频、电影光学与实景 3DGS。",
+        lead: "上方新增 <strong>11 段 Google TPU v5p 真机录制的 30fps 视频展厅</strong>（含原生 4K Mip-NeRF 360 环绕、4K 4DGS×MJX 推土机物理交互、原生 4K <code>f/1.4</code> 景深拉焦、可变形丝绸 BVH 重拟合及零光追 MXU 昼夜/材质变化），随后完整保留全部 Blender Cycles 与光学拉杆。"
       },
       c4: {
         num: "04 / 06 · 性能剖析与 32 芯实测",
@@ -1233,6 +1426,9 @@ window.TPU_RTX_DATA = {
         copy: "复制", copied: "已复制", zoom4k: "检视原图 ↗", loupe: "1:1 像素放大镜 (L)", raw: "打开完整原图 ↗",
         footerL: "TPU-RTX · Google Cloud TPU v5p (JAX + Pallas Mosaic · 零 host_callbacks · 零 HBM Gather)",
         searchPlaceholder: "搜索实验名称、场景或 JSON 文件名...",
+        v3_head: "TPU-RTX 实机渲染动态视频展厅（原生 4K / 1080p · 30 fps）",
+        v5_head: "具身机器人动态步态、可微物理伺服与 Menagerie 视频展厅（30 fps）",
+        vid_all: "全部视频 (11)", vid_gs3d: "4K 3DGS / 4DGS (6)", vid_optics: "4K 虚化与布料 (3)", vid_relight: "神经重打光 (2)",
         b_mjx: "具身与机器人仿真", b_gs3d: "3DGS / 4DGS / 10.6 亿集群", b_cinema: "Moana / 布料 / Blender", b_dlss: "TPU-DLSS 3.5 与重打光", b_fx: "路径追踪与物理光学",
         g_all: "全部单场景 (26)", g_film: "Moana 与 Blender Studio (10)", g_optics: "物理光学与焦散 (3)", g_gs3d: "实景 3DGS / Bistro (6)", g_robotics: "Menagerie 与 RoboTwin (5)", g_rej: "QA 淘汰案例 (2)",
         th1: "任务类型", th2: "TPU-RTX (Google TPU v5p)", th3: "GPU Cycles (wenhaochai/rtx-h100)", th4: "NVIDIA Isaac Sim / OptiX",
