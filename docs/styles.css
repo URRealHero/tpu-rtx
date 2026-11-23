@@ -70,7 +70,7 @@ html[data-theme="light"] {
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; font-size: 16px; }
+html { scroll-behavior: smooth; font-size: 16px; overflow-x: clip; }
 
 body {
   background-color: var(--bg);
@@ -79,7 +79,7 @@ body {
   line-height: 1.68;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
+  overflow-x: clip;
   transition: background-color 0.2s var(--ease-out), color 0.2s var(--ease-out);
 }
 
@@ -137,6 +137,12 @@ code {
 .pill-btn.gh { background: var(--text); color: var(--bg); border-color: transparent; }
 
 @media (max-width: 860px) { .nav-links { display: none; } }
+@media (max-width: 640px) {
+  .nav-inner { gap: 8px; }
+  .brand { font-size: 12.5px; }
+  .nav-controls { gap: 5px; }
+  .pill-btn { padding: 4px 8px; font-size: 10.5px; }
+}
 
 /* Hero */
 .hero { padding: clamp(32px, 4.5vw, 56px) 0 clamp(28px, 3.5vw, 40px); }

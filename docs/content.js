@@ -351,23 +351,23 @@ window.TPU_RTX_DATA = {
         zh: "1,000 万街区 3DGS 与 MJX 人形、移动机械臂按 Z 深度逐像素合成，4 芯 4K 单帧 439.3 ms（2.28 FPS）。"
       }
     },
-    // --- MuJoCo Menagerie & RoboTwin PBR Robot Singles (5 Robotics) ---
+    // --- MuJoCo Menagerie & Bimanual 72-Geom Proxy Singles (5 Robotics) ---
     {
       id: "robotwin_bimanual",
       cat: "robotics",
       web: "./assets/singles/robotwin_bimanual.webp",
       png: "./assets/singles/robotwin_bimanual.webp",
       badges: {
-        en: [["hot", "RoboTwin 16-DOF"], ["", "123.9k cam-FPS (DR)"], ["ok", "72 MJX Geoms + GGX"]],
-        zh: [["hot", "RoboTwin 双臂桌面"], ["", "123.9k cam-FPS (DR)"], ["ok", "72 刚体 + GGX"]]
+        en: [["hot", "72-Geom MJX Proxy"], ["", "64²: 123.9k cam-FPS"], ["ok", "Analytic Ray Cast"]],
+        zh: [["hot", "72 刚体 MJX 代理"], ["", "64²: 123.9k cam-FPS"], ["ok", "解析光线投射"]]
       },
       title: {
-        en: "RoboTwin 16-DOF Bimanual Tabletop — Isaac Replicator DR + Wide-BVH-64",
-        zh: "RoboTwin 16 自由度双臂桌面 — Isaac Replicator 域随机化 + Wide-BVH-64"
+        en: "Bimanual Tabletop (72-Geom MJX Proxy) — Analytic Ray Casting + Replicator DR",
+        zh: "双臂桌面操控（72 刚体 MJX 代理）— 解析光线投射 + Replicator 域随机化"
       },
       desc: {
-        en: "Dual 7-DOF bimanual arms, overhead third-person cam, sorting bins, and tabletop props at 123,858 cam-FPS (41,286 env-steps/s) across 4 TPU v5p chips (+0.32% DR overhead).",
-        zh: "双臂协作抓取与分拣桌面环境在 4 芯 TPU v5p 上达 123,858 cam-FPS（41,286 env-steps/s），五模态 Replicator DR 开销 +0.32%。"
+        en: "Procedural 72-primitive MJX bimanual tabletop proxy (not official SAPIEN RoboTwin; rendered at 1024×1024 for inspection). Benchmarked at 64×64 across 3 cams on 4 TPU v5p chips: 41,286 env-FPS (123,858 cam-FPS, +0.32% DR overhead).",
+        zh: "72 个解析原语构建的 MJX 双臂桌面代理场景（非官方 SAPIEN RoboTwin；静态展示图以 1024×1024 渲染）。64×64 3 相机 4 芯 TPU v5p 实测 41,286 env-FPS（合计 123,858 cam-FPS，DR 开销 +0.32%）。"
       }
     },
     {
@@ -660,10 +660,10 @@ window.TPU_RTX_DATA = {
       id: "robotwin_bimanual",
       mp4: "./assets/videos/robotwin_bimanual.mp4",
       poster: "./assets/videos/robotwin_bimanual_poster.jpg",
-      tabIdx: { en: "ROBOTWIN · BIMANUAL", zh: "ROBOTWIN · 双臂" },
-      tabTitle: { en: "RoboTwin 16-DOF Manipulation", zh: "RoboTwin 16 自由度双臂操控" },
-      hudL: { en: "<strong>RoboTwin Bimanual Tabletop (1024×1024 AgX)</strong> · Articulated Dual-Arm Trajectory", zh: "<strong>RoboTwin 双臂桌面操控 (1024×1024 AgX)</strong> · 72 刚体实时轨迹" },
-      hudR: { en: "<strong>123,858 cam-FPS</strong> DR Bench · 0 CPU Callbacks", zh: "4 芯 DR 实测 <strong>123,858 cam-FPS</strong> · 零回调" }
+      tabIdx: { en: "BIMANUAL · 72-GEOM PROXY", zh: "双臂 · 72 刚体代理" },
+      tabTitle: { en: "Bimanual Tabletop (72-Geom Proxy)", zh: "双臂桌面代理（72 解析刚体）" },
+      hudL: { en: "<strong>Bimanual Tabletop Proxy (1024×1024 video)</strong> · 72 Analytic MJX Geoms (not SAPIEN RoboTwin)", zh: "<strong>双臂桌面代理 (1024×1024 录屏)</strong> · 72 解析刚体（非 SAPIEN RoboTwin）" },
+      hudR: { en: "<strong>64×64 Bench: 41,286 env-FPS</strong> (3 cams = 123.9k cam-FPS) · 0 CPU Callbacks", zh: "<strong>64×64 实测 41,286 env-FPS</strong>（3 相机 123.9k cam-FPS）· 零回调" }
     },
     {
       id: "diffphys_servoing",
@@ -952,7 +952,7 @@ window.TPU_RTX_DATA = {
       rows: [
         { label: { en: "V3 Fused 4c MJX + Render (64×64, B=8192)", zh: "V3 融合 4 芯 MJX + 渲染 (64×64, B=8192)" }, val: 266209, unit: "FPS E2E", pct: 98, extra: { en: "921,309 render-equiv", zh: "921,309 纯渲染等效" } },
         { label: { en: "4-Sensor Visuo-Tactile GelSight + Cams (4c)", zh: "4 路视触觉 GelSight + 相机 (4 芯)" }, val: 270625, unit: "sensor-FPS", pct: 100, extra: { en: "67,656 env-steps/s (+0.15% DR)", zh: "67,656 env/s (+0.15% DR)" } },
-        { label: { en: "Isaac Replicator RoboTwin 3-Cam + DR (4c)", zh: "Isaac Replicator RoboTwin 三摄 + DR (4 芯)" }, val: 123858, unit: "cam-FPS", pct: 46, extra: { en: "41,286 env/s (+0.32% DR)", zh: "41,286 env/s (+0.32% DR)" } },
+        { label: { en: "Bimanual 72-Geom Proxy 3-Cam + DR (64×64, 4c)", zh: "72 刚体双臂代理三摄 + DR (64×64, 4 芯)" }, val: 123858, unit: "cam-FPS", pct: 46, extra: { en: "41,286 env/s (+0.32% DR)", zh: "41,286 env/s (+0.32% DR)" } },
         { label: { en: "Closed-Loop Vision PPO Cartpole (4c)", zh: "零拷贝闭环 Vision PPO Cartpole (4 芯)" }, val: 656358, unit: "env-steps/s", pct: 95, extra: { en: "steady · Panda 211.6k / Humanoid 292.0k", zh: "稳态 · Panda 211.6k / Humanoid 292.0k" } },
         { label: { en: "Factory G=2048 Sim-to-VLA ViT-Tiny (4c)", zh: "G=2048 在线 Sim-to-VLA ViT-Tiny (4 芯)" }, val: 7143, unit: "frames/s", pct: 12, extra: { en: "1M frames / 142.6 s · −1.84% VLA", zh: "百万帧 142.6 s · −1.84% 开销" } },
         { label: { en: "MuJoCo Menagerie Wide-BVH-64 (4c)", zh: "MuJoCo Menagerie Wide-BVH-64 (4 芯)" }, val: 4284, unit: "FPS (64²)", pct: 8, extra: { en: "3,131 Panda / 2,546 G1 / 1,863 Go2", zh: "Panda 3,131 / G1 2,546 / Go2 1,863" } },
@@ -1037,7 +1037,7 @@ window.TPU_RTX_DATA = {
     { cat: "robotics", name: "Zero-Copy Vision PPO (Cartpole/Panda/Humanoid)", scale: "4c, 64×64, B=1024–4096", speed: "656.4k / 211.6k / 292.0k env/s", acc: "Cartpole eval 94.2% success", file: "v3_w0_wave4_rl_sdk.json" },
     { cat: "robotics", name: "Diff Physics + PBR Visual Servoing", scale: "1c, 12-step MJX, 7-DOF", speed: "27.87 grad-steps/s (8.61s)", acc: "36.08 dB · EE 16.81 → 1.63 cm", file: "v3_w0_taskB.json" },
     { cat: "robotics", name: "MuJoCo Menagerie Multi-Mesh Wide-BVH-64", scale: "4c, Aero/Panda/G1/Go2", speed: "4,284 / 3,131 / 2,546 / 1,863 FPS", acc: "host_callbacks=0, gather_ops=0", file: "v3_w0_taskA.json" },
-    { cat: "robotics", name: "Isaac Replicator RoboTwin 3-Cam DR", scale: "4c, 5-modality DR", speed: "123,858 cam-FPS (+0.32% DR)", acc: "41,286 env-steps/s", file: "v3_w1_wave3_replicator.json" },
+    { cat: "robotics", name: "Isaac Replicator Bimanual 3-Cam DR (72-Geom Proxy)", scale: "4c, 64×64, 5-modality DR", speed: "41,286 env-FPS (123,858 cam-FPS)", acc: "+0.32% DR overhead", file: "v3_w1_wave3_replicator.json" },
     { cat: "robotics", name: "1M Factory Frames + Sim-to-VLA + GelSight", scale: "4c, G=2048, ViT-Tiny 1.02M", speed: "1M/142.6s · VLA 7,143 · Tactile 270.6k/s", acc: "Loss 0.2378 → 0.0332 (−1.84% VLA)", file: "v3_w1_wave4_vla_tactile_factory.json" },
     { cat: "robotics", name: "Autonomous 8×1080p + 2×128×2048 LiDAR Rig", scale: "4c, B=16 fused XLA graph", speed: "8.35 env-FPS · 66.8 cam · 142.9 MRays/s", acc: "Dual-XYZ MAE = 3.13e-8 m", file: "v3_w6_wave5_surround_bokeh.json" },
     { cat: "film", name: "Disney Moana OpenUSD v2.1 (4K/8K)", scale: "4c, 22.30B tris, 4.65 GiB", speed: "4K 5.13 s · 8K 17.24 s", acc: "0 host callbacks, 0 gathers", file: "v3_w2_wave5_moana_8k_mjx.json" },
@@ -1118,7 +1118,7 @@ window.TPU_RTX_DATA = {
         ecoSub: "Click any module badge to view its XLA / Pallas Mosaic source on GitHub.",
         adapters: [
           ["MuJoCo / MJX & Menagerie", "mjx_universal.py", "Compiles unmodified MjModel, MJCF XML, or Menagerie multi-mesh scenes into Wide-BVH-64 + analytic primitives, with jax.grad differentiable servoing.", "266k FPS (4c) / 411k FPS (32c) · Menagerie 1.9k–4.3k FPS"],
-          ["NVIDIA Isaac Sim & Replicator", "isaac_replicator.py", "Implements TiledCamera (RGB/Depth/Normal/Seg/Flow), rep.randomizer.* XLA domain randomization, 128×2048 LiDAR, and GelSight tactile kernels in one graph.", "RoboTwin 123.9k cam-FPS (+0.32% DR) · 32c LiDAR 63.88B rays/s"],
+          ["NVIDIA Isaac Sim & Replicator", "isaac_replicator.py", "Implements TiledCamera (RGB/Depth/Normal/Seg/Flow), rep.randomizer.* XLA domain randomization, 128×2048 LiDAR, and GelSight tactile kernels in one graph.", "Bimanual 72-Geom Proxy 41.3k env / 123.9k cam-FPS (64²) · 32c LiDAR 63.88B rays/s"],
           ["Blender 4.x / Cycles .blend", "blend_compiler.py", "Walks Cycles Shader Graphs (Principled / Glass / Glossy / SSS) and Depsgraph modifiers from .blend files directly into TPU ScenePack + AgX.", "BMW27 37.65 dB · Monster 36.98 dB · Barbershop 31.00 dB"],
           ["Pixar / Disney OpenUSD", "openusd_loader.py", "Loads .usd / .usda / .usdc / .usdz with UsdGeom.Mesh, PointInstancer, and BasisCurves into a 2-level Wide-TLAS-64 on TPU.", "Disney Moana 22.30B tris in 4.65 GiB · 4K 5.13 s / 8K 17.24 s"],
           ["NVIDIA OptiX Python API", "tpu_optix.py", "Provides OptixDeviceContext, accelBuild(GAS/IAS), ShaderBindingTable (raygen/miss/closesthit/anyhit), and cloth BVH refit.", "Cloth Refit 973.3 FPS (0.0 m error) · 17.18B unique tris (32c)"],
@@ -1129,7 +1129,7 @@ window.TPU_RTX_DATA = {
         bmkTitle: "Benchmark Coverage",
         bmkSub: "Distinguishing measured TPU v5p suites from API-compatible drop-in targets.",
         benchSupportRows: [
-          ["<strong>RoboTwin</strong> (Bimanual Tabletop)", "<code>isaac_replicator</code> + <code>mjx_universal</code>", "<span class='badge ok'>Measured</span>", "64×64 analytic ray casting (72 primitives, <code>fast_dr</code>, 1 hard shadow): <strong>41,286 env-FPS</strong> (123,858 cam-FPS across 3 cams, +0.32% DR overhead)."],
+          ["<strong>Bimanual Tabletop Proxy</strong> (not official SAPIEN RoboTwin)", "<code>isaac_replicator</code> + <code>mjx_universal</code>", "<span class='badge ok'>Measured</span>", "64×64 analytic ray casting (72-geom MJX proxy, <code>fast_dr</code>, 1 hard shadow): <strong>41,286 env-FPS</strong> (123,858 cam-FPS across 3 cams, +0.32% DR overhead)."],
           ["<strong>RoboWild</strong> (3DGS / 4DGS × MJX)", "<code>tpu_gsplat</code> + <code>mjx_universal</code>", "<span class='badge ok'>Measured</span>", "Franka Panda pushing 125.6k LEGO Dozer splats in Mip-NeRF kitchen (+16.43 cm, 5.32 FPS 1080p / 1.30 FPS 4K)."],
           ["<strong>MuJoCo Menagerie</strong> (DeepMind)", "<code>mjx_universal</code>", "<span class='badge ok'>Measured</span>", "Unmodified MJCFs (Wide-BVH-64 meshes, 64×64, 4c): Aero Hand 4,284 FPS, Panda 3,131, Unitree G1 2,546, Go2 1,863."],
           ["<strong>Factory Sim-to-VLA + GelSight</strong>", "<code>isaac_replicator</code> + <code>tactile_kernel</code>", "<span class='badge ok'>Measured</span>", "1M frames in 142.6 s, ViT-Tiny VLA 7,143 FPS (−1.84% overhead), 4-sensor GelSight 270,625/s."],
@@ -1199,7 +1199,7 @@ window.TPU_RTX_DATA = {
             desc: "Local tile accumulation bounds clipped splat tails outside each 16×16 bin, causing grid seams and black borders. Image excluded; the fixed training pipeline reached 31.31 dB."
           }
         ],
-        honest: "Every metric on this page — across 1-chip runs, 4-chip hosts (383 GiB HBM), and the 8-host 32-chip TPU v5p-64 pod (3.064 TB HBM, v3_pod_v5p64_capstone.json) — was measured directly on Google Cloud TPU v5p hardware without extrapolation. Note two important evaluation distinctions: (1) High-FPS Vision RL numbers (411k env-FPS 32c, 266k env-FPS 4c, 41.3k env-FPS / 123.9k cam-FPS RoboTwin) use 64×64 analytic-primitive ray casting + 1 shadow ray, whereas Blender Studio parity (37.65 dB BMW27) uses Wide-BVH-64 G-buffers + neural relighting. On pure multi-bounce triangle-mesh MC path tracing, GPUs remain ~100× faster: Classroom (606k tris, 3-bounce, 360×640) runs at 137.9 spm on 4 TPU chips (Lone Monk 5.61M 4-bounce: 25.7 spm) vs. 14,106 spm on H100 exact or 19,202 spm on RTX 5090 (Chai et al., 2026). (2) XLA gather_ops = 0 refers to zero XLA gather() IR ops and zero per-ray HBM gathers; MJX analytic rendering and differentiable 3DGS are strictly zero-gather, 3DGS forward uses in-VMEM VPU take_along_axis, and Wide-BVH-64 issues tile-granular (8×16, 128-ray) 4 KB / 12 KB pltpu.async_copy block DMAs inside Pallas with geometry + normals packed inline. Suites without a recorded run JSON (RoboDojo, MuJoCo Playground, ALOHA, ManiSkill) are marked Compatible rather than Measured.",
+        honest: "Every metric on this page — across 1-chip runs, 4-chip hosts (383 GiB HBM), and the 8-host 32-chip TPU v5p-64 pod (3.064 TB HBM, v3_pod_v5p64_capstone.json) — was measured directly on Google Cloud TPU v5p hardware without extrapolation. Note two important evaluation distinctions: (1) High-FPS Vision RL numbers (411k env-FPS 32c, 266k env-FPS 4c, and the 41.3k env-FPS / 123.9k cam-FPS 72-geom bimanual MJX proxy) use 64×64 analytic-primitive ray casting + 1 shadow ray, whereas Blender Studio parity (37.65 dB BMW27) uses Wide-BVH-64 G-buffers + neural relighting. On pure multi-bounce triangle-mesh MC path tracing, GPUs remain ~100× faster: Classroom (606k tris, 3-bounce, 360×640) runs at 137.9 spm on 4 TPU chips (Lone Monk 5.61M 4-bounce: 25.7 spm) vs. 14,106 spm on H100 exact or 19,202 spm on RTX 5090 (Chai et al., 2026). (2) XLA gather_ops = 0 refers to zero XLA gather() IR ops and zero per-ray HBM gathers; MJX analytic rendering and differentiable 3DGS are strictly zero-gather, 3DGS forward uses in-VMEM VPU take_along_axis, and Wide-BVH-64 issues tile-granular (8×16, 128-ray) 4 KB / 12 KB pltpu.async_copy block DMAs inside Pallas with geometry + normals packed inline. Suites without a recorded run JSON (RoboDojo, MuJoCo Playground, ALOHA, ManiSkill, official SAPIEN RoboTwin) are marked Compatible or Proxied rather than Measured.",
         authorBio: "Systems and graphics engineer working on compiler-native rendering, differentiable physics, and Physical AI workloads on ML accelerators.",
         ack: "Third-Party Assets & References: Walt Disney Animation Studios Moana Island Scene v2.1 (Non-Commercial License); Blender Open Data / Blender Studio scenes (BMW27, Barcelona Pavilion, Barbershop, Classroom, Junkshop, Lone Monk, Monster Under the Bed, Fishy Cat — CC0 / CC-BY); Mip-NeRF 360 dataset (Barron et al.); Google DeepMind mujoco_menagerie (Apache-2.0 / BSD); Chai et al. (2026) wenhaochai/rtx-h100 H100/RTX PRO 6000 Cycles benchmarks."
       },
@@ -1302,7 +1302,7 @@ window.TPU_RTX_DATA = {
         ecoSub: "点击模块文件名可在 GitHub 查看对应 XLA / Pallas Mosaic 实现。",
         adapters: [
           ["MuJoCo / MJX 与 Menagerie", "mjx_universal.py", "编译标准 MjModel、MJCF XML 与 Menagerie 多网格模型至 Wide-BVH-64 与解析几何，支持穿透 mjx.step 的 jax.grad 视觉伺服。", "266k FPS (4 芯) / 411k FPS (32 芯) · Menagerie 1.9k–4.3k FPS"],
-          ["NVIDIA Isaac Sim & Replicator", "isaac_replicator.py", "实现 TiledCamera（RGB/Depth/Normal/Seg/Flow）、rep.randomizer.* XLA 域随机化、128×2048 激光雷达与 GelSight 视触觉内核。", "RoboTwin 123.9k cam-FPS (+0.32% DR) · 32 芯 LiDAR 63.88B/s"],
+          ["NVIDIA Isaac Sim & Replicator", "isaac_replicator.py", "实现 TiledCamera（RGB/Depth/Normal/Seg/Flow）、rep.randomizer.* XLA 域随机化、128×2048 激光雷达与 GelSight 视触觉内核。", "72 刚体双臂代理 64² 实测 41.3k env / 123.9k cam-FPS · 32 芯 LiDAR 63.88B/s"],
           ["Blender 4.x / Cycles .blend", "blend_compiler.py", "解析 .blend 文件中的 Cycles 材质节点图（Principled/Glass/Glossy/SSS）与 Depsgraph 实例，编译为 TPU ScenePack 与 AgX 输出。", "BMW27 37.65 dB · Monster 36.98 dB · Barbershop 31.00 dB"],
           ["Pixar / Disney OpenUSD", "openusd_loader.py", "解析 .usd / .usda / .usdc / .usdz 中的 UsdGeom.Mesh、PointInstancer 与 BasisCurves，构建两级 Wide-TLAS-64。", "Moana 223 亿面占 4.65 GiB · 4K 5.13 s / 8K 17.24 s"],
           ["NVIDIA OptiX Python 接口", "tpu_optix.py", "实现 OptixDeviceContext、accelBuild(GAS/IAS)、ShaderBindingTable（raygen/miss/closesthit/anyhit）及动态布料 BVH 重拟合。", "布料 BVH Refit 973.3 FPS (0.0 m 误差) · 32 芯 171.8 亿唯一面"],
@@ -1313,7 +1313,7 @@ window.TPU_RTX_DATA = {
         bmkTitle: "基准测试覆盖范围",
         bmkSub: "明确区分已完成 TPU v5p 实测的基准套件与仅完成接口兼容验证的目标套件。",
         benchSupportRows: [
-          ["<strong>RoboTwin</strong>（双臂桌面操控）", "<code>isaac_replicator</code> + <code>mjx_universal</code>", "<span class='badge ok'>已实测</span>", "64×64 解析原语光线投射（72 刚体、<code>fast_dr</code>、1 条硬阴影射线）：<strong>41,286 env-FPS</strong>（3 相机合计 123,858 cam-FPS，DR 开销 +0.32%）。"],
+          ["<strong>双臂桌面代理</strong>（非官方 SAPIEN RoboTwin）", "<code>isaac_replicator</code> + <code>mjx_universal</code>", "<span class='badge ok'>已实测</span>", "64×64 解析原语光线投射（72 解析刚体、<code>fast_dr</code>、1 条硬阴影射线）：<strong>41,286 env-FPS</strong>（3 相机合计 123,858 cam-FPS，DR 开销 +0.32%）。"],
           ["<strong>RoboWild</strong>（3DGS / 4DGS × MJX）", "<code>tpu_gsplat</code> + <code>mjx_universal</code>", "<span class='badge ok'>已实测</span>", "Mip-NeRF kitchen 中 Panda 机械臂推挤 12.56 万乐高推土机高斯（+16.43 cm，1080p 5.32 / 4K 1.30 FPS）。"],
           ["<strong>MuJoCo Menagerie</strong>（DeepMind）", "<code>mjx_universal</code>", "<span class='badge ok'>已实测</span>", "官方未修改 MJCF（Wide-BVH-64 三角网格，64×64，4 芯）：Aero Hand 4,284 FPS、Panda 3,131、宇树 G1 2,546、Go2 1,863。"],
           ["<strong>Sim-to-VLA + GelSight 视触觉</strong>", "<code>isaac_replicator</code> + <code>tactile_kernel</code>", "<span class='badge ok'>已实测</span>", "142.6 s 生成百万帧，ViT-Tiny 在线训练 7,143 FPS（−1.84% 开销），4 路 GelSight 270,625/s。"],
@@ -1383,7 +1383,7 @@ window.TPU_RTX_DATA = {
             desc: "早期局部 tile 累积边界截断了跨 16×16 分块的高斯尾迹，出现方格接缝与黑边。图像已排除，仅保留修正后的 31.31 dB 训练曲线日志。"
           }
         ],
-        honest: "页面中所有性能与精度数字——涵盖单芯、4 芯单机（383 GiB HBM）以及 8 机 32 芯 TPU v5p-64 集群（3.064 TB HBM，v3_pod_v5p64_capstone.json）——均在 Google Cloud TPU v5p 上实测取得，未包含外推估算。须明确区分两项评测口径：(1) 高帧率 Vision RL（32 芯 411k env-FPS、4 芯 266k env-FPS、RoboTwin 41.3k env-FPS / 123.9k cam-FPS）属于 64×64 解析原语光线投射 + 1 条阴影射线；Blender Studio 对齐（BMW27 37.65 dB）基于 Wide-BVH-64 G-Buffer + 神经重打光。而在纯多反弹三角网格蒙特卡洛路径追踪上，GPU 仍快约 100×：Classroom（60.6 万面，3-bounce，360×640）4 芯 TPU 仅 137.9 spm（Lone Monk 561 万面 4-bounce 为 25.7 spm），对比 H100 14,106 spm（exact）与 RTX 5090 19,202 spm（Chai et al., 2026）。(2) XLA gather_ops = 0 指 XLA IR 层无 gather() 算子且无逐光线 HBM 随机查表；MJX 解析投射与 3DGS 可微训练为严格零 gather，3DGS 高速前向在 VMEM 内用 VPU take_along_axis，Wide-BVH-64 在 Pallas 内核中按 8×16（128 光线）tile 发 4 KB / 12 KB pltpu.async_copy 连续块 DMA，并将三角面几何与法线内联打进叶块。未录入单独跑分 JSON 的套件（RoboDojo、MuJoCo Playground、ALOHA、ManiSkill）标注为「接口兼容」。",
+        honest: "页面中所有性能与精度数字——涵盖单芯、4 芯单机（383 GiB HBM）以及 8 机 32 芯 TPU v5p-64 集群（3.064 TB HBM，v3_pod_v5p64_capstone.json）——均在 Google Cloud TPU v5p 上实测取得，未包含外推估算。须明确区分两项评测口径：(1) 高帧率 Vision RL（32 芯 411k env-FPS、4 芯 266k env-FPS、以及 72 解析刚体双臂代理 41.3k env-FPS / 123.9k cam-FPS）属于 64×64 解析原语光线投射 + 1 条阴影射线；Blender Studio 对齐（BMW27 37.65 dB）基于 Wide-BVH-64 G-Buffer + 神经重打光。而在纯多反弹三角网格蒙特卡洛路径追踪上，GPU 仍快约 100×：Classroom（60.6 万面，3-bounce，360×640）4 芯 TPU 仅 137.9 spm（Lone Monk 561 万面 4-bounce 为 25.7 spm），对比 H100 14,106 spm（exact）与 RTX 5090 19,202 spm（Chai et al., 2026）。(2) XLA gather_ops = 0 指 XLA IR 层无 gather() 算子且无逐光线 HBM 随机查表；MJX 解析投射与 3DGS 可微训练为严格零 gather，3DGS 高速前向在 VMEM 内用 VPU take_along_axis，Wide-BVH-64 在 Pallas 内核中按 8×16（128 光线）tile 发 4 KB / 12 KB pltpu.async_copy 连续块 DMA，并将三角面几何与法线内联打进叶块。未录入单独跑分 JSON 的套件（RoboDojo、MuJoCo Playground、ALOHA、ManiSkill、官方 SAPIEN RoboTwin）标注为「接口兼容」或「代理场景」。",
         authorBio: "从事编译器原生图形渲染、可微物理仿真与 ML 加速器高吞吐具身智能系统的研究与工程实现。",
         ack: "第三方资产与参考致谢：Walt Disney Animation Studios Moana Island Scene v2.1（非商业研究许可）；Blender Open Data / Blender Studio 场景（BMW27、Barcelona Pavilion、Barbershop、Classroom、Junkshop、Lone Monk、Monster Under the Bed、Fishy Cat — CC0 / CC-BY）；Mip-NeRF 360 数据集（Barron et al.）；Google DeepMind mujoco_menagerie（Apache-2.0 / BSD）；Chai et al. (2026) wenhaochai/rtx-h100 H100/RTX PRO 6000 Cycles 基准数据。"
       },

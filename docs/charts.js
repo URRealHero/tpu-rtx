@@ -19,7 +19,7 @@ window.TPU_RTX_CHARTS = (function () {
           ${zh ? "第 4 层 · 机器人、具身智能与图形基准" : "Layer 4 · Robotics, Embodied AI &amp; Graphics Benchmarks"}
         </text>
         <text x="24" y="51" class="sub-lbl" style="font-size:10.8px;fill:var(--text-secondary);">
-          ${zh ? "具身仿真：RoboTwin (123.9k FPS) · RoboWild (4DGS × MJX) · MuJoCo Menagerie · 百万帧 VLA + GelSight" : "Embodied AI: RoboTwin (123.9k FPS) · RoboWild (4DGS × MJX) · MuJoCo Menagerie · VLA + GelSight"}
+          ${zh ? "具身仿真：72 刚体双臂代理 (64²: 41.3k env-FPS) · RoboWild · MuJoCo Menagerie · VLA + GelSight" : "Embodied AI: 72-Geom Bimanual Proxy (64²: 41.3k env-FPS) · RoboWild · MuJoCo Menagerie · VLA"}
         </text>
         <text x="24" y="69" class="sub-lbl" style="font-size:10.8px;fill:var(--muted);">
           ${zh ? "感知与渲染：Vision RL · 双 128 线 LiDAR (63.88B/s) · Blender 8 场景 · Moana (223 亿面) · Mip-NeRF 360" : "Sensors &amp; Rendering: Vision RL · Dual 128-Beam LiDAR (63.88B/s) · Blender 8 Scenes · Moana (22.30B) · Mip-NeRF 360"}
