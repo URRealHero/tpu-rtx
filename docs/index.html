@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TPU-RTX: A Systolic Array Can Ray-Trace Like a Graphics Card</title>
+  <title>TPU-RTX: A Systolic Array Can Ray-Trace, Path-Trace &amp; Splat Like a GPU</title>
   <style>
     :root {
       --bg: #080a0f;
@@ -27,8 +27,8 @@
     html { scroll-behavior: smooth; }
     body {
       background:
-        radial-gradient(1200px 600px at 15% -10%, rgba(245, 158, 11, 0.08), transparent 60%),
-        radial-gradient(900px 500px at 85% 0%, rgba(56, 189, 248, 0.08), transparent 60%),
+        radial-gradient(1200px 600px at 15% -10%, rgba(245, 158, 11, 0.09), transparent 60%),
+        radial-gradient(900px 500px at 85% 0%, rgba(56, 189, 248, 0.09), transparent 60%),
         var(--bg);
       color: var(--text);
       font-family: var(--sans);
@@ -39,7 +39,7 @@
     a { color: var(--cyan); text-decoration: none; }
     a:hover { text-decoration: underline; }
 
-    .container { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+    .container { max-width: 1220px; margin: 0 auto; padding: 0 24px; }
 
     /* Nav */
     header {
@@ -47,7 +47,7 @@
       top: 0;
       z-index: 40;
       backdrop-filter: blur(14px);
-      background: rgba(8, 10, 15, 0.78);
+      background: rgba(8, 10, 15, 0.80);
       border-bottom: 1px solid var(--border);
     }
     .nav-inner {
@@ -55,6 +55,7 @@
       align-items: center;
       justify-content: space-between;
       height: 60px;
+      gap: 16px;
     }
     .brand {
       font-family: var(--mono);
@@ -73,7 +74,7 @@
       background: linear-gradient(135deg, var(--amber), var(--cyan));
       box-shadow: 0 0 12px rgba(245, 158, 11, 0.7);
     }
-    nav { display: flex; gap: 22px; font-size: 13.5px; color: var(--muted); }
+    nav { display: flex; flex-wrap: wrap; gap: 18px; font-size: 13.5px; color: var(--muted); }
     nav a { color: var(--muted); transition: color 0.15s; }
     nav a:hover { color: var(--text); text-decoration: none; }
 
@@ -105,7 +106,7 @@
     .lead {
       font-size: clamp(16px, 1.9vw, 19px);
       color: #b7c2d4;
-      max-width: 820px;
+      max-width: 880px;
       margin-bottom: 28px;
     }
     .cta-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 40px; }
@@ -142,7 +143,7 @@
     /* KPI Grid */
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
       gap: 14px;
       margin-bottom: 56px;
     }
@@ -160,7 +161,7 @@
       inset: 0 0 auto 0;
       height: 2px;
       background: linear-gradient(90deg, var(--amber), var(--cyan));
-      opacity: 0.7;
+      opacity: 0.75;
     }
     .kpi-label {
       font-family: var(--mono);
@@ -171,7 +172,7 @@
       margin-bottom: 6px;
     }
     .kpi-val {
-      font-size: 26px;
+      font-size: 25px;
       font-weight: 800;
       letter-spacing: -0.02em;
       color: #fff;
@@ -181,7 +182,7 @@
     .kpi-sub strong { color: var(--cyan); font-weight: 600; }
 
     /* Sections */
-    section { padding: 48px 0; border-top: 1px solid var(--border); }
+    section { padding: 50px 0; border-top: 1px solid var(--border); }
     .section-head { margin-bottom: 26px; }
     .section-tag {
       font-family: var(--mono);
@@ -192,7 +193,7 @@
       margin-bottom: 6px;
     }
     h2 { font-size: clamp(24px, 3vw, 32px); font-weight: 750; letter-spacing: -0.02em; margin-bottom: 8px; }
-    .section-desc { color: var(--muted); max-width: 780px; font-size: 15px; }
+    .section-desc { color: var(--muted); max-width: 820px; font-size: 15px; }
 
     /* Interactive Benchmarks */
     .bench-box {
@@ -204,8 +205,8 @@
     .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
     .tab-btn {
       font-family: var(--mono);
-      font-size: 12.5px;
-      padding: 7px 14px;
+      font-size: 12px;
+      padding: 7px 13px;
       border-radius: 8px;
       background: var(--bg-card);
       color: var(--muted);
@@ -221,8 +222,8 @@
     .chart-title { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
     .chart-note { font-size: 13px; color: var(--muted); margin-bottom: 18px; }
     .bar-list { display: flex; flex-direction: column; gap: 13px; }
-    .bar-row { display: grid; grid-template-columns: 245px 1fr 135px; gap: 14px; align-items: center; }
-    @media (max-width: 720px) {
+    .bar-row { display: grid; grid-template-columns: 265px 1fr 185px; gap: 14px; align-items: center; }
+    @media (max-width: 760px) {
       .bar-row { grid-template-columns: 1fr; gap: 5px; }
     }
     .bar-label { font-size: 13.5px; color: var(--text); font-weight: 500; }
@@ -240,13 +241,13 @@
       transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
     }
     .bar-fill.base { background: rgba(142, 155, 176, 0.45); }
-    .bar-val { font-family: var(--mono); font-size: 13px; text-align: right; color: #fff; }
-    .bar-val span { color: var(--amber); font-size: 11.5px; margin-left: 5px; }
+    .bar-val { font-family: var(--mono); font-size: 12.5px; text-align: right; color: #fff; }
+    .bar-val span { color: var(--amber); font-size: 11px; margin-left: 5px; }
 
     /* Gallery */
     .gallery-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
       gap: 20px;
     }
     .fig-card {
@@ -265,7 +266,7 @@
       background: #05070b;
       cursor: zoom-in;
       overflow: hidden;
-      aspect-ratio: 16 / 9;
+      aspect-ratio: 16 / 10;
     }
     .fig-thumb-wrap img {
       width: 100%;
@@ -281,7 +282,7 @@
       bottom: 10px;
       font-family: var(--mono);
       font-size: 11px;
-      background: rgba(8, 10, 15, 0.78);
+      background: rgba(8, 10, 15, 0.80);
       color: var(--text);
       padding: 3px 8px;
       border-radius: 5px;
@@ -316,9 +317,9 @@
     }
     .card h3 { font-size: 16.5px; margin-bottom: 8px; color: #fff; }
     .card p { font-size: 13.8px; color: var(--muted); }
-    .card code {
+    code {
       font-family: var(--mono);
-      font-size: 12.5px;
+      font-size: 12px;
       color: var(--cyan);
       background: rgba(56, 189, 248, 0.1);
       padding: 1px 5px;
@@ -340,26 +341,37 @@
     tr:last-child td { border-bottom: none; }
     td strong { color: #fff; }
 
-    /* Pipeline / Roadmap */
-    .roadmap-grid {
+    /* Pod Capstone card */
+    .pod-hero {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 14px;
+      grid-template-columns: 1.25fr 1fr;
+      gap: 22px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      align-items: center;
     }
-    .road-item {
+    @media (max-width: 900px) {
+      .pod-hero { grid-template-columns: 1fr; }
+    }
+    .pod-hero img {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      cursor: zoom-in;
+      display: block;
+    }
+    .pod-stats { display: flex; flex-direction: column; gap: 12px; }
+    .pod-item {
       background: var(--bg-elev);
-      border: 1px dashed rgba(56, 189, 248, 0.35);
-      border-radius: 12px;
-      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
     }
-    .road-status {
-      font-family: var(--mono);
-      font-size: 11px;
-      color: var(--amber);
-      margin-bottom: 5px;
-    }
-    .road-item h4 { font-size: 15px; margin-bottom: 5px; }
-    .road-item p { font-size: 13px; color: var(--muted); }
+    .pod-item .k { font-family: var(--mono); font-size: 11px; color: var(--amber); text-transform: uppercase; }
+    .pod-item .v { font-size: 15px; font-weight: 700; color: #fff; margin-top: 2px; }
+    .pod-item .d { font-size: 12.8px; color: var(--muted); margin-top: 2px; }
 
     /* Code block */
     pre {
@@ -379,7 +391,7 @@
       position: fixed;
       inset: 0;
       z-index: 100;
-      background: rgba(4, 6, 10, 0.92);
+      background: rgba(4, 6, 10, 0.93);
       backdrop-filter: blur(8px);
       display: none;
       align-items: center;
@@ -422,9 +434,9 @@
       <nav>
         <a href="#benchmarks">Benchmarks</a>
         <a href="#gallery">Visual Gallery</a>
-        <a href="#architecture">How It Works</a>
+        <a href="#pod">4-Chip HBM Ceiling</a>
+        <a href="#architecture">Architecture</a>
         <a href="#comparison">vs H100 &amp; Isaac</a>
-        <a href="#roadmap">Cinema &amp; Pod</a>
       </nav>
     </div>
   </header>
@@ -432,50 +444,61 @@
   <main class="container">
     <!-- Hero -->
     <section class="hero" style="border-top: none;">
-      <div class="eyebrow">GOOGLE CLOUD TPU v5p · PALLAS MOSAIC · ZERO HOST_CALLBACKS</div>
+      <div class="eyebrow">GOOGLE CLOUD TPU v5p · PALLAS MOSAIC · ZERO HOST_CALLBACKS · ZERO HBM GATHERS</div>
       <h1>A Systolic Array Can Ray-Trace Like a Graphics Card.</h1>
       <p class="lead">
-        <strong>TPU-RTX</strong> is a zero-copy ray tracer, multi-bounce Monte Carlo path tracer, 3D Gaussian Splatting engine,
-        and BF16 neural relighter written natively in <strong>JAX + Pallas Mosaic</strong> for Google Cloud TPU v5p —
-        eliminating host round-trips (<code>host_callbacks = 0</code>) so 100M+ triangle scenes, physics simulation,
-        and Vision RL/VLA policies co-reside inside a single XLA program in HBM.
+        <strong>TPU-RTX</strong> is a zero-copy RTX-class ray tracer, multi-bounce Monte Carlo path tracer,
+        real-world 3D/4D Gaussian Splatting engine, OpenUSD / Blender Cycles compiler, and BF16 neural relighter
+        written natively in <strong>JAX + Pallas Mosaic</strong> for Google Cloud TPU v5p — keeping Disney <em>Moana</em>
+        (22.30B tris), 300M Gaussians, MuJoCo MJX physics, Isaac domain randomization, and Vision/VLA policies inside
+        one fused HBM program (<code>host_callbacks = 0</code>, <code>gather_ops = 0</code>).
       </p>
       <div class="cta-row">
-        <a class="btn btn-primary" href="#gallery">Explore Live TPU Renders</a>
+        <a class="btn btn-primary" href="#gallery">Explore Curated Renders</a>
         <a class="btn" href="#benchmarks">Interactive Benchmarks</a>
-        <span class="pill-verify">Verified Live TPU v5p · HLO host_callbacks = 0 · gather_ops = 0</span>
+        <span class="pill-verify">Every figure visually QA-audited · Hardware TPU v5p (interpret=False)</span>
       </div>
 
       <div class="kpi-grid">
         <div class="kpi">
-          <div class="kpi-label">4-Chip Fused MJX+Render</div>
+          <div class="kpi-label">4-Chip Fused MJX + Render</div>
           <div class="kpi-val">266,209 FPS</div>
-          <div class="kpi-sub"><strong>921,309 FPS</strong> render-only equiv (<code>64×64, B=8192</code>)</div>
+          <div class="kpi-sub"><strong>921,309 FPS</strong> render-equiv (<code>64×64, B=8192</code>)</div>
         </div>
         <div class="kpi">
-          <div class="kpi-label">4-Chip Native 3DGS</div>
-          <div class="kpi-val">142,008 FPS</div>
-          <div class="kpi-sub"><strong>30.1×</strong> over V2 jax_tile (<code>35,916 FPS</code> 1-chip)</div>
+          <div class="kpi-label">Disney Moana OpenUSD v2.1</div>
+          <div class="kpi-val">22.30B Tris</div>
+          <div class="kpi-sub"><strong>4K 5.13 s · 8K 17.24 s</strong> · Underwater Reef + Sunset</div>
         </div>
         <div class="kpi">
-          <div class="kpi-label">Unique Geometry @ 4K UHD</div>
-          <div class="kpi-val">108.23M Tris</div>
-          <div class="kpi-sub"><strong>9.73 GB</strong> on 1 chip · <code>25,648×</code> BVH culling</div>
+          <div class="kpi-label">3DGS Speed &amp; HBM Ceiling</div>
+          <div class="kpi-val">142k FPS / 300M</div>
+          <div class="kpi-sub"><code>142,008 FPS</code> (4c <code>64²</code>) · <strong>300M Splats</strong> @ 4K (4c HBM)</div>
         </div>
         <div class="kpi">
-          <div class="kpi-label">Zero-Shot 4K AgX Relight</div>
-          <div class="kpi-val">30.86 dB</div>
-          <div class="kpi-sub"><code>101.6M</code> tris · <strong>18.5 µm</strong> Z-MAE vs Cycles EXR</div>
+          <div class="kpi-label">Native 8K Real-World 3DGS</div>
+          <div class="kpi-val">7680×4320</div>
+          <div class="kpi-sub"><code>5.83M</code> SH3 <code>garden</code> @ <strong>29.19 MPix/s</strong> · <code>jax.grad</code> 23.4 steps/s</div>
         </div>
         <div class="kpi">
-          <div class="kpi-label">TPU-Native Path Tracer GI</div>
-          <div class="kpi-val">3,121 / 835</div>
-          <div class="kpi-sub">samples/min (1c <code>512²</code> 1/3-bounce GI) · <strong>23 Mrays/s</strong> 4K</div>
+          <div class="kpi-label">TPU-DLSS 3.5 &amp; Relight (4K)</div>
+          <div class="kpi-val">58.9 / 78.6 FPS</div>
+          <div class="kpi-sub"><code>1080p→4K</code> DLSS <strong>3.91×</strong> · Static G-Buf Relight <strong>78.6 FPS</strong> BF16</div>
         </div>
         <div class="kpi">
-          <div class="kpi-label">4-Chip Closed-Loop Vision PPO</div>
-          <div class="kpi-val">60,145 steps/s</div>
-          <div class="kpi-sub"><strong>17.5×</strong> over V2 · Panda <strong>29,267/s</strong> zero-copy</div>
+          <div class="kpi-label">Blender Studio Cycles Parity</div>
+          <div class="kpi-val">37.65 / 36.98 dB</div>
+          <div class="kpi-sub"><code>BMW27</code> <strong>0.9813</strong> SSIM · <code>Monster SSS</code> <strong>0.121 mm</strong> Z-MAE</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Unique Tris @ Native 4K/8K</div>
+          <div class="kpi-val">2.15B / 102B</div>
+          <div class="kpi-sub"><code>2.15B</code> unique (ICI <code>pmin</code>, 4c) · <strong>102.19B</strong> instanced @ 8K</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Diff Physics + Sim-to-VLA</div>
+          <div class="kpi-val">1.63 cm / 1M in 143s</div>
+          <div class="kpi-sub"><code>jax.grad</code> Pixel→Torque <strong>36.08 dB</strong> · Isaac/GelSight <strong>270.6k/s</strong></div>
         </div>
       </div>
     </section>
@@ -483,20 +506,20 @@
     <!-- Benchmarks -->
     <section id="benchmarks">
       <div class="section-head">
-        <div class="section-tag">Telemetry · Live TPU v5p Silicon (interpret=False)</div>
-        <h2>Verified Throughput &amp; Scaling</h2>
+        <div class="section-tag">Telemetry · Live Google Cloud TPU v5p (interpret=False)</div>
+        <h2>Verified Subsystem Throughput &amp; Accuracy</h2>
         <p class="section-desc">
-          Switch across subsystems below. Every measurement compiles with zero CPU callbacks and runs directly inside TPU HBM/VMEM.
+          Switch tracks below. Every metric was measured directly on real TPU v5p hardware with XLA HLO verified at <code>host_callbacks = 0</code> and <code>send_recv_ops = 0</code>.
         </p>
       </div>
 
       <div class="bench-box">
         <div class="tabs" id="bench-tabs">
-          <button class="tab-btn active" data-bench="mjx">MJX + Fused Shader (w0)</button>
-          <button class="tab-btn" data-bench="gs3d">3D Gaussian Splatting (w3)</button>
-          <button class="tab-btn" data-bench="bvh">100M+ Wide-BVH-64 (w2)</button>
-          <button class="tab-btn" data-bench="pt">Monte Carlo Path Tracer (w7)</button>
-          <button class="tab-btn" data-bench="ppo">4-Chip Vision PPO (w7)</button>
+          <button class="tab-btn active" data-bench="mjx">MJX &amp; Robotics (w0/w1/w6)</button>
+          <button class="tab-btn" data-bench="gs3d">3DGS / 4DGS / 300M (w3)</button>
+          <button class="tab-btn" data-bench="cinema">Disney Moana &amp; Blender Studio (w2/w5/w7)</button>
+          <button class="tab-btn" data-bench="dlss">TPU-DLSS 3.5, Denoise &amp; Relight (w4)</button>
+          <button class="tab-btn" data-bench="fx">Path Tracing, ReSTIR &amp; Optical FX (w7/w6)</button>
         </div>
         <div id="bench-content"></div>
       </div>
@@ -505,312 +528,529 @@
     <!-- Gallery -->
     <section id="gallery">
       <div class="section-head">
-        <div class="section-tag">Real Output · Blender Cycles Parity, 100M+ Meshes, 3DGS &amp; GI</div>
-        <h2>Visual Renders from Live TPU v5p</h2>
+        <div class="section-tag">QA-Verified Renders · Every Image Inspected Before Publication</div>
+        <h2>Visual Gallery from Live TPU v5p</h2>
         <p class="section-desc">
-          Click any figure to inspect full resolution. Below are Wave 1 &amp; Wave 2 outputs directly pulled from TPU v5p;
-          cinema-grade <strong>Disney Moana USD</strong>, <strong>Blender Open Data</strong>, and <strong>Amazon Bistro</strong> renders are actively rolling in from the overnight cluster.
+          Click any card to inspect full-resolution PNG output. All panels render natively via Pallas Mosaic BVH / EWA splatting / Cycles shader compilation + AgX tonemapping.
         </p>
       </div>
 
       <div class="tabs" id="gallery-tabs">
-        <button class="tab-btn active" data-filter="all">All Renders</button>
-        <button class="tab-btn" data-filter="neural">Neural Relighting &amp; Cycles</button>
-        <button class="tab-btn" data-filter="gi">Physical Path Tracing GI</button>
-        <button class="tab-btn" data-filter="mesh">100M+ Mesh &amp; 4K</button>
-        <button class="tab-btn" data-filter="gs3d">3DGS (10M Sponza &amp; Chess)</button>
-        <button class="tab-btn" data-filter="rl">In-VMEM Shaders &amp; Vision RL</button>
+        <button class="tab-btn active" data-filter="all">All Verified Renders (22)</button>
+        <button class="tab-btn" data-filter="film">Disney Moana &amp; Studio Cinema</button>
+        <button class="tab-btn" data-filter="gs3d">Real-World 3DGS / 4DGS</button>
+        <button class="tab-btn" data-filter="fx">Physical FX, ReSTIR &amp; Optics</button>
+        <button class="tab-btn" data-filter="dlss">TPU-DLSS 3.5 &amp; Relighting</button>
+        <button class="tab-btn" data-filter="robotics">Menagerie, Isaac DR &amp; Diff Physics</button>
       </div>
 
       <div class="gallery-grid" id="gallery-grid">
-        <article class="fig-card" data-cat="neural">
-          <div class="fig-thumb-wrap" data-full="./assets/v3_w5_blender_100m_comparison.png" data-cap="101.63M Effective Triangles (Blender 5.2 AgX) — 31.69 dB @ 512x512 and 30.86 dB zero-shot @ Native 4K UHD (18.5 um Z-MAE vs Cycles EXR).">
-            <img src="./assets/v3_w5_blender_100m_comparison.png" alt="101.63M Blender 5.2 AgX Comparison" loading="lazy" />
-            <span class="zoom-hint">Click to zoom</span>
+        <!-- Film & Cinema -->
+        <article class="fig-card" data-cat="film">
+          <div class="fig-thumb-wrap" data-full="./assets/v3_w2_moana_sunset_reef_4k.png" data-cap="Disney Moana OpenUSD v2.1 (22.30B effective tris, 4.65 GiB HBM): Motunui Golden-Hour Sunset (5.60 s @ Native 4K) & Way-of-Water Underwater Coral Reef with Beer-Lambert cyan-emerald absorption, Snell's Window, caustics & 16-step HG God Rays (8.72 s @ Native 4K).">
+            <img src="./assets/v3_w2_moana_sunset_reef_4k.png" alt="Disney Moana Sunset and Underwater Coral Reef 4K" loading="lazy" />
+            <span class="zoom-hint">Click to zoom (4K)</span>
           </div>
           <div class="fig-body">
             <div class="fig-badges">
-              <span class="badge hot">101.63M Tris</span>
-              <span class="badge">Native 4K 30.86 dB</span>
-              <span class="badge ok">18.5 um Z-MAE</span>
-            </div>
-            <div class="fig-title">101.63M-Tri Blender 5.2 AgX Showcase vs Cycles 64-spp GT</div>
-            <div class="fig-caption">4.42M unique BLAS × 100 instances (`w5`). Zero-shot Native 4K (`3840×2160`) reaches `+20.14 dB` over Stage 1 at `4.97 s` total S1+S2 on 1 chip.</div>
-          </div>
-        </article>
-
-        <article class="fig-card" data-cat="gi">
-          <div class="fig-thumb-wrap" data-full="./assets/v3_w7_tpu_pathtracer_gi.png" data-cap="Pure TPU-Native 1-Bounce (up to 3,121 samples/min) vs 3-Bounce Physical Monte Carlo Path Tracing GI (835 samples/min) across 1 -> 4 -> 16 -> 64 spp.">
-            <img src="./assets/v3_w7_tpu_pathtracer_gi.png" alt="TPU Native Multi-Bounce GI Path Tracer" loading="lazy" />
-            <span class="zoom-hint">Click to zoom</span>
-          </div>
-          <div class="fig-body">
-            <div class="fig-badges">
-              <span class="badge hot">Pure Physical GI</span>
-              <span class="badge">1–64 spp</span>
-              <span class="badge ok">23.0 Mrays/s @ 4K</span>
-            </div>
-            <div class="fig-title">TPU-Native Multi-Bounce Path Tracer (1- vs 3-Bounce GI)</div>
-            <div class="fig-caption">Real Cosine GI + GGX + NEE + soft area shadows on 4-chip spatial <code>shard_map</code> (`w7`), showing indirect cyan color bleeding and progressive variance reduction.</div>
-          </div>
-        </article>
-
-        <article class="fig-card" data-cat="gs3d">
-          <div class="fig-thumb-wrap" data-full="./assets/v3_w3_gs3d_4k.png" data-cap="10 Million 3D Gaussians Sponza Atrium rendered at Native 4K UHD (3840x2160) on TPU v5p (318.7 ms / 3.1 FPS on 4 chips, host_callbacks=0, gather_ops=0).">
-            <img src="./assets/v3_w3_gs3d_4k.png" alt="10M 3DGS Sponza Atrium Native 4K" loading="lazy" />
-            <span class="zoom-hint">Click to zoom</span>
-          </div>
-          <div class="fig-body">
-            <div class="fig-badges">
-              <span class="badge hot">10M Gaussians</span>
-              <span class="badge">Native 4K UHD</span>
-              <span class="badge ok">318.7 ms (4c)</span>
-            </div>
-            <div class="fig-title">10M-Gaussian Sponza Atrium @ Native 4K (`3840×2160`)</div>
-            <div class="fig-caption">Watertight 10M-splat real Khronos glTF asset rendered purely in JAX/Pallas with zero HBM gathers (`w3`).</div>
-          </div>
-        </article>
-
-        <article class="fig-card" data-cat="gs3d">
-          <div class="fig-thumb-wrap" data-full="./assets/v3_w3_chess_k512.png" data-cap="ABeautifulGame Chess Set (1M textured 3D Gaussians) rendered natively on TPU v5p at 1080p.">
-            <img src="./assets/v3_w3_chess_k512.png" alt="ABeautifulGame Chess 3DGS" loading="lazy" />
-            <span class="zoom-hint">Click to zoom</span>
-          </div>
-          <div class="fig-body">
-            <div class="fig-badges">
-              <span class="badge hot">1M Gaussians</span>
-              <span class="badge">1080p RGB</span>
-              <span class="badge ok">gather_ops = 0</span>
-            </div>
-            <div class="fig-title">ABeautifulGame Chessboard (`1M` Textured 3DGS)</div>
-            <div class="fig-caption">Dense tangent-aligned 3D Gaussian surface sampling of wood marble &amp; gold trim in TPU HBM (`w3`).</div>
-          </div>
-        </article>
-
-        <article class="fig-card" data-cat="mesh">
-          <div class="fig-thumb-wrap" data-full="./assets/v3_w2_mesh_100m_4k.png" data-cap="108.23 Million Unique Non-Instanced Triangles packed in 9.73 GB of single-chip TPU v5p HBM, rendered at Native 4K (3840x2160) with 25,648.4x BVH culling.">
-            <img src="./assets/v3_w2_mesh_100m_4k.png" alt="108.23M Unique Triangles Native 4K" loading="lazy" />
-            <span class="zoom-hint">Click to zoom</span>
-          </div>
-          <div class="fig-body">
-            <div class="fig-badges">
-              <span class="badge hot">108.23M Unique Tris</span>
+              <span class="badge hot">22.30B Instanced Tris</span>
               <span class="badge">Native 4K</span>
-              <span class="badge ok">25,648× Culling</span>
+              <span class="badge ok">Sunset + Underwater FX</span>
             </div>
-            <div class="fig-title">108.23M Unique Non-Instanced Triangles @ Native 4K</div>
-            <div class="fig-caption">Zero instancing tricks — every triangle resides uniquely in a 3-level 64-ary Wide-BVH (`9.73 GB` / 10% of 1 chip HBM, `w2`).</div>
+            <div class="fig-title">Disney <em>Moana</em> OpenUSD: Golden Sunset &amp; Coral Reef Caustics</div>
+            <div class="fig-caption">45.5M unique + 14.0M instanced BLAS tris across `w2` (`4.65 GiB` HBM): Rayleigh sunset glare over ocean waves (<code>5.60 s</code>) and Beer-Lambert submerged coral reef with HG God Rays (<code>8.72 s</code>).</div>
           </div>
         </article>
 
-        <article class="fig-card" data-cat="neural">
-          <div class="fig-thumb-wrap" data-full="./assets/v3_w5_1m_showcase.png" data-cap="1.24M-Triangle Textured Blender 5.2 Showcase @ 512x512 — 30.20 dB PSNR, 0.9553 SSIM, 17.0 um Z-MAE vs Cycles EXR.">
-            <img src="./assets/v3_w5_1m_showcase.png" alt="1.24M Blender 5.2 Showcase 512x512" loading="lazy" />
+        <article class="fig-card" data-cat="film">
+          <div class="fig-thumb-wrap" data-full="./assets/v3_w2_moana_mjx_beach_4k.png" data-cap="Physical AI meets Feature Animation: Live MuJoCo MJX Humanoid & Quadruped grounded directly onto Motunui Beach terrain inside the 22.29B-triangle Disney Moana OpenUSD stage at Native 4K (5.40 s, host_callbacks=0).">
+            <img src="./assets/v3_w2_moana_mjx_beach_4k.png" alt="MJX Humanoid and Quadruped on Moana Motunui Beach 4K" loading="lazy" />
+            <span class="zoom-hint">Click to zoom (4K)</span>
+          </div>
+          <div class="fig-body">
+            <div class="fig-badges">
+              <span class="badge hot">Physical AI × Film</span>
+              <span class="badge">Moana × MJX</span>
+              <span class="badge ok">5.40 s @ Native 4K</span>
+            </div>
+            <div class="fig-title">MJX Humanoid + Quadruped on Motunui Beach (4K)</div>
+            <div class="fig-caption">Single unified TLAS traces both Disney's 22.3B-tri <em>Moana</em> USD world and 45 articulated MJX robot geoms with mutual BVH shadows on sand (<code>w2</code>).</div>
+          </div>
+        </article>
+
+        <article class="fig-card" data-cat="film">
+          <div class="fig-thumb-wrap" data-full="./assets/v3_w2_moana_8k_multiangle.png" data-cap="Disney Moana Island OpenUSD v2.1 Native 8K UHD (7680x4320, 33.18M pixels) multi-angle showcase (17.24 s / 3.85 Mrays/s on 4 TPU v5p chips, zero gather_ops).">
+            <img src="./assets/v3_w2_moana_8k_multiangle.png" alt="Disney Moana Native 8K Multi-Angle" loading="lazy" />
+            <span class="zoom-hint">Click to zoom (8K)</span>
+          </div>
+          <div class="fig-body">
+            <div class="fig-badges">
+              <span class="badge hot">Native 8K (33.18M px)</span>
+              <span class="badge">22.29B Tris</span>
+              <span class="badge ok">3.85 Mrays/s</span>
+            </div>
+            <div class="fig-title">Disney <em>Moana</em> OpenUSD @ Native 8K Multi-Angle</div>
+            <div class="fig-caption">Full <code>7680×4320</code> aerial bay overview + shoreline vista traced directly over OpenUSD point instancers on 4 chips (`17.24 s`, `host_callbacks=0`).</div>
+          </div>
+        </article>
+
+        <article class="fig-card" data-cat="film">
+          <div class="fig-thumb-wrap" data-full="./assets/v3_w5_bmw_barcelona_cinema.png" data-cap="Blender Open Data Studio Cinema: BMW27 (37.65 dB orbit / 0.9813 SSIM / -0.012% LumBias) & Barcelona Pavilion (54.91M unique tris via 128-wide BVH, 27.45 dB, 15.94 mm Z-MAE) vs Cycles GT.">
+            <img src="./assets/v3_w5_bmw_barcelona_cinema.png" alt="BMW27 and Barcelona Pavilion Blender Cinema" loading="lazy" />
             <span class="zoom-hint">Click to zoom</span>
           </div>
           <div class="fig-body">
             <div class="fig-badges">
-              <span class="badge">1.24M Tris + UV</span>
-              <span class="badge">512×512</span>
-              <span class="badge ok">17.0 um Z-MAE</span>
+              <span class="badge hot">BMW27 37.65 dB</span>
+              <span class="badge">Barcelona 54.91M Tris</span>
+              <span class="badge ok">0.9813 SSIM</span>
             </div>
-            <div class="fig-title">1.24M-Tri UV+PBR Showcase vs Cycles 64-spp GT</div>
-            <div class="fig-caption">Includes 5× error heatmap and exact geometric Z-depth parity (`0.0 m` diff vs JAX reference, `w5`).</div>
+            <div class="fig-title">Blender Open Data: <code>BMW27</code> &amp; <code>54.9M</code>-Tri <code>Barcelona Pavilion</code></div>
+            <div class="fig-caption">Automated Cycles Shader Graph compilation (`w5`). `BMW27` hits <code>37.65 dB</code> (<code>-0.012%</code> lum bias); `Barcelona` traces `54.91M` tris at `15.9 mm` Z-MAE.</div>
           </div>
         </article>
 
-        <article class="fig-card" data-cat="neural">
-          <div class="fig-thumb-wrap" data-full="./assets/v3_w5_1m_orbit.png" data-cap="360-Degree Dynamic Camera Orbit + Moving Sculptures on held-out views (256x256): 34.78 dB PSNR, 0.9775 SSIM, -0.21% luminance bias.">
-            <img src="./assets/v3_w5_1m_orbit.png" alt="360 Degree Orbit Moving Sculptures" loading="lazy" />
+        <article class="fig-card" data-cat="film">
+          <div class="fig-thumb-wrap" data-full="./assets/v3_w5_studio_double_cinema.png" data-cap="Blender Studio Double: Monster Under the Bed SSS (1024x1024, 0.121 mm Z-MAE, 36.98 dB orbit / 35.34 dB hero) and Stylized Fishy Cat (28.80 dB orbit, 197k fur strands).">
+            <img src="./assets/v3_w5_studio_double_cinema.png" alt="Monster SSS and Fishy Cat Studio Double" loading="lazy" />
             <span class="zoom-hint">Click to zoom</span>
           </div>
           <div class="fig-body">
             <div class="fig-badges">
-              <span class="badge hot">Dynamic Orbit</span>
-              <span class="badge">34.78 dB / 0.9775 SSIM</span>
-              <span class="badge ok">33.6s TPU Train</span>
+              <span class="badge hot">Monster 36.98 dB</span>
+              <span class="badge">Fishy Cat 28.80 dB</span>
+              <span class="badge ok">0.121 mm Z-MAE</span>
             </div>
-            <div class="fig-title">360° Dynamic Orbit + Moving Object Generalization</div>
-            <div class="fig-caption">Generalizes across unseen 360° camera viewpoints and moving objects after only `33.62 s` of TPU training (`-0.21%` luminance error, `w5`).</div>
+            <div class="fig-title">Blender <code>Monster SSS (1024²)</code> &amp; <code>Fishy Cat</code> Fur/Water</div>
+            <div class="fig-caption">Full `1024×1024` Monster Under the Bed reaches `35.34 dB` hero / `36.98 dB` orbit at `10.07 img/s` (4c); Fishy Cat handles DOF + 7,255 fur instances cleanly (`w5`).</div>
           </div>
         </article>
 
-        <article class="fig-card" data-cat="rl">
-          <div class="fig-thumb-wrap" data-full="./assets/v3_w0_fused_ao_ggx.png" data-cap="Single Pallas Mosaic Kernel on TPU v5p: Blinn-Phong vs In-VMEM GGX PBR + 4-Ray AO + 4-Ray Soft Shadows (9 rays/px) at 44,258 FPS E2E.">
-            <img src="./assets/v3_w0_fused_ao_ggx.png" alt="Single Kernel In-VMEM GGX AO Soft Shadow" loading="lazy" />
+        <article class="fig-card" data-cat="film">
+          <div class="fig-thumb-wrap" data-full="./assets/v3_w7_barbershop_cinema.png" data-cap="Barbershop Interior (8.55M tris, 249 materials, 141 UV textures): 31.00 dB orbit / 26.98 dB hero, 13.77 mm median Z-MAE vs Blender Cycles GT after ENV-Fog and transparent-glass blocker handling.">
+            <img src="./assets/v3_w7_barbershop_cinema.png" alt="Blender Barbershop Interior Cinema" loading="lazy" />
             <span class="zoom-hint">Click to zoom</span>
           </div>
           <div class="fig-body">
             <div class="fig-badges">
-              <span class="badge hot">44,258 FPS (9 rays/px)</span>
-              <span class="badge">In-VMEM PBR+AO</span>
-              <span class="badge ok">Zero HBM Spill</span>
+              <span class="badge hot">8.55M Tris · 141 Tex</span>
+              <span class="badge">31.00 dB Orbit</span>
+              <span class="badge ok">13.8 mm MedAE</span>
             </div>
-            <div class="fig-title">Single-Kernel In-VMEM GGX + 4-AO + 4-Soft-Shadow</div>
-            <div class="fig-caption">9 rays/pixel traced &amp; shaded inside 64 MiB VMEM in one <code>pallas_call</code> (`114.6k` render equiv for 6-ray AO+GGX, `84.0k` for 9-ray soft shadow, `w0`).</div>
+            <div class="fig-title">Blender <code>Barbershop Interior</code> (8.55M Tris, 249 Materials)</div>
+            <div class="fig-caption">Architectural interior with `1,111` instances &amp; `141` packed UV textures (`w7`), reaching `31.00 dB` orbit (`SSIM 0.9285`) and `1.16 img/s` @ 4K.</div>
           </div>
         </article>
 
-        <article class="fig-card" data-cat="neural">
-          <div class="fig-thumb-wrap" data-full="./assets/stage2_cycles_comparison.png" data-cap="MuJoCo MJX PandaPickCube Stage 2 M2_spatial_128 vs Blender 5.2 Cycles GT: 38.35 dB PSNR (+24.52 dB), 0.9889 SSIM, +0.032% luminance error, 8/8 locked quality gates passed.">
-            <img src="./assets/stage2_cycles_comparison.png" alt="PandaPickCube Stage 2 Cycles Parity" loading="lazy" />
+        <article class="fig-card" data-cat="film">
+          <div class="fig-thumb-wrap" data-full="./assets/v3_w5_lone_monk_cinema.png" data-cap="Blender Open Data Lone Monk (5.61M tris, 22 UV textures, 20.14M instanced): 28.83 dB orbit, 26.31 dB hero, 18.91 mm Z-MAE at 1.05 img/s @ 4K.">
+            <img src="./assets/v3_w5_lone_monk_cinema.png" alt="Blender Lone Monk Cinema" loading="lazy" />
             <span class="zoom-hint">Click to zoom</span>
           </div>
           <div class="fig-body">
             <div class="fig-badges">
-              <span class="badge hot">38.35 dB PSNR</span>
-              <span class="badge">0.9889 SSIM</span>
-              <span class="badge ok">8/8 Gates Passed</span>
+              <span class="badge hot">5.61M Tris · 22 Tex</span>
+              <span class="badge">28.83 dB Orbit</span>
+              <span class="badge ok">4K 1.05 img/s</span>
             </div>
-            <div class="fig-title">MJX PandaPickCube Relighting vs Cycles GT (`+0.032%` Lum Bias)</div>
-            <div class="fig-caption">Passes all 8 locked gates (`30.31 dB` contact ROI, `0.157 px` edge alignment, `0.00714` occlusion mismatch).</div>
+            <div class="fig-title">Blender <code>Lone Monk</code> Courtyard &amp; Foliage</div>
+            <div class="fig-caption">Complex foliage &amp; lantern lighting on TPU (`w5`): `18.91 mm` Z-MAE vs Cycles EXR and `3.58 img/s` @ 1080p / `1.05 img/s` @ 4K.</div>
           </div>
         </article>
 
-        <article class="fig-card" data-cat="rl">
-          <div class="fig-thumb-wrap" data-full="./assets/v3_w7_ppo_curve.png" data-cap="Closed-Loop 4-Chip shard_map Vision PPO on live TPU v5p: Cartpole 60,145 env-steps/s, Panda Stage 1 29,267/s & Stage 2 M2 21,123/s with host_callbacks=0.">
-            <img src="./assets/v3_w7_ppo_curve.png" alt="V3 4-Chip Vision PPO Curves" loading="lazy" />
+        <article class="fig-card" data-cat="film">
+          <div class="fig-thumb-wrap" data-full="./assets/v3_w5_opendata_vs_rtxh100.png" data-cap="Head-to-Head vs Blender Open Data & RTX-H100 (monster, junkshop, classroom): Monster 35.23 dB orbit (0.13 mm Z-MAE), Junkshop 30.36 dB, Classroom 20.50 dB (SSIM 0.7136).">
+            <img src="./assets/v3_w5_opendata_vs_rtxh100.png" alt="Open Data vs RTX-H100 Benchmark" loading="lazy" />
             <span class="zoom-hint">Click to zoom</span>
           </div>
           <div class="fig-body">
             <div class="fig-badges">
-              <span class="badge hot">60,145 env-steps/s</span>
-              <span class="badge">4-Chip shard_map</span>
+              <span class="badge hot">OpenData Trio</span>
+              <span class="badge">Monster 35.23 dB</span>
+              <span class="badge ok">Junkshop 30.36 dB</span>
+            </div>
+            <div class="fig-title">Blender Open Data Trio: <code>Monster</code>, <code>Junkshop</code> &amp; <code>Classroom</code></div>
+            <div class="fig-caption">Side-by-side TPU-RTX vs Cycles GT parity (`w5`): `0.13 mm` Monster depth MAE and crisp indoor relighting across all 3 canonical benchmarks.</div>
+          </div>
+        </article>
+
+        <!-- Real-World 3DGS / 4DGS -->
+        <article class="fig-card" data-cat="gs3d">
+          <div class="fig-thumb-wrap" data-full="./assets/v3_w3_realworld_8k_crop.png" data-cap="Real-World Mip-NeRF 360 garden (5,834,784 Gaussians, Full SH3) rendered at Native 8K (7680x4320, 33.18M px) on 4 TPU v5p chips in 1136.6 ms (29.19 MPix/s) with 1:1 native pixel crop (zero upscaling).">
+            <img src="./assets/v3_w3_realworld_8k_crop.png" alt="Mip-NeRF 360 Garden Native 8K with 1:1 Crop" loading="lazy" />
+            <span class="zoom-hint">Click to zoom (1:1 8K)</span>
+          </div>
+          <div class="fig-body">
+            <div class="fig-badges">
+              <span class="badge hot">Native 8K 3DGS</span>
+              <span class="badge">5.83M Real SH3</span>
+              <span class="badge ok">29.19 MPix/s · 0 Gather</span>
+            </div>
+            <div class="fig-title">Real-World Mip-NeRF 360 <code>garden</code> @ Native 8K (1:1 Crop)</div>
+            <div class="fig-caption">Genuine `.ply` photogrammetry capture (`5.83M` splats, `w3`): `382.3 ms` @ 4K (`2.62 FPS`), `1136.6 ms` @ 8K (`0.88 FPS`, `22.8 GB/chip`).</div>
+          </div>
+        </article>
+
+        <article class="fig-card" data-cat="gs3d">
+          <div class="fig-thumb-wrap" data-full="./assets/v3_w3_4dgs_robowild_manipulation.png" data-cap="Dynamic 4DGS x MJX RoboWild Manipulation: Real articulated Franka Panda arm inside a real Mip-NeRF 360 kitchen physically pushing 125,605 rigid-transformed LEGO Dozer Gaussians (+16.43 cm / -17.71 deg) at 5.32 FPS 1080p / 1.30 FPS 4K.">
+            <img src="./assets/v3_w3_4dgs_robowild_manipulation.png" alt="4DGS x MJX Dynamic Manipulation" loading="lazy" />
+            <span class="zoom-hint">Click to zoom</span>
+          </div>
+          <div class="fig-body">
+            <div class="fig-badges">
+              <span class="badge hot">4DGS × MJX Contact</span>
+              <span class="badge">125k Moving Splats</span>
+              <span class="badge ok">5.32 FPS 1080p</span>
+            </div>
+            <div class="fig-title">Dynamic <code>4DGS × MJX</code> RoboWild Manipulation</div>
+            <div class="fig-caption">Live `mjx.step` robot physically collides with and pushes real-world 3DGS objects in HBM (`+16.43 cm`, `host_callbacks=0`) at `1.30 FPS` @ 4K (`w3`).</div>
+          </div>
+        </article>
+
+        <article class="fig-card" data-cat="gs3d">
+          <div class="fig-thumb-wrap" data-full="./assets/v3_w3_realworld_3dgs_robowild_4k.png" data-cap="Real-World Mip-NeRF 360 (garden, bicycle, kitchen, bonsai) @ Native 4K (2.59–4.20 FPS on 4 chips, full SH3, gather_ops=0) + RoboWild Kitchen + MJX Panda.">
+            <img src="./assets/v3_w3_realworld_3dgs_robowild_4k.png" alt="Mip-NeRF 360 Real-World 3DGS 4K Quartet" loading="lazy" />
+            <span class="zoom-hint">Click to zoom (4K)</span>
+          </div>
+          <div class="fig-body">
+            <div class="fig-badges">
+              <span class="badge hot">Mip-NeRF 360 × 4</span>
+              <span class="badge">SH3 · 1.24M–6.13M</span>
+              <span class="badge ok">2.59–4.20 FPS @ 4K</span>
+            </div>
+            <div class="fig-title">Photorealistic Mip-NeRF 360 Quartet @ Native 4K</div>
+            <div class="fig-caption">`bonsai` `4.20 FPS`, `kitchen` `3.98 FPS`, `garden` `2.61 FPS`, `bicycle` `2.59 FPS` @ `3840×2160` (`w3`) with analytical depth compositing.</div>
+          </div>
+        </article>
+
+        <article class="fig-card" data-cat="gs3d">
+          <div class="fig-thumb-wrap" data-full="./assets/v3_w3_bistro_humanoid_4k.png" data-cap="10M-Gaussian Amazon Bistro + Dynamic MJX Humanoid & Mobile Panda composited pixel-accurately at Native 4K (439.3 ms / 2.28 FPS, 5.24x speedup).">
+            <img src="./assets/v3_w3_bistro_humanoid_4k.png" alt="10M Bistro x MJX Humanoid 4K" loading="lazy" />
+            <span class="zoom-hint">Click to zoom (4K)</span>
+          </div>
+          <div class="fig-body">
+            <div class="fig-badges">
+              <span class="badge hot">10M Bistro + MJX</span>
+              <span class="badge">Native 4K 2.28 FPS</span>
+              <span class="badge ok">5.24× Speedup</span>
+            </div>
+            <div class="fig-title"><code>10M</code> Amazon Bistro × MJX Humanoid &amp; Panda @ 4K</div>
+            <div class="fig-caption">Real-to-Sim Z-buffer compositing inside a 10M-Gaussian architectural street (`439.3 ms` @ 4K on 4 chips, `w3`).</div>
+          </div>
+        </article>
+
+        <!-- Physical FX, ReSTIR & Optics -->
+        <article class="fig-card" data-cat="fx">
+          <div class="fig-thumb-wrap" data-full="./assets/v3_w7_thinfilm_mirror_fx.png" data-cap="Airy Thin-Film Spectral Interference (8-bin CIE 1931 on soap bubbles + TiO2), Radial Anisotropic GGX brushed gold & steel, and 2-bounce vs 12-bounce Infinite Mirror Gallery inside a single jax.lax.while_loop (640p 128 spp, host_callbacks=0).">
+            <img src="./assets/v3_w7_thinfilm_mirror_fx.png" alt="Airy Thin-Film, Anisotropic GGX & 12-Bounce Infinite Mirror Gallery" loading="lazy" />
+            <span class="zoom-hint">Click to zoom</span>
+          </div>
+          <div class="fig-body">
+            <div class="fig-badges">
+              <span class="badge hot">Airy Thin-Film</span>
+              <span class="badge">Anisotropic GGX</span>
+              <span class="badge ok">12-Bounce Mirrors</span>
+            </div>
+            <div class="fig-title">Airy Thin-Film, Radial Aniso GGX &amp; 12-Bounce Mirror FX</div>
+            <div class="fig-caption">8-bin CIE 1931 wave-optics iridescence + Heitz VNDF brushed metals (`23.95 s`), plus deep `12-bounce` recursive mirror corridor in one XLA `while_loop` (`w7`).</div>
+          </div>
+        </article>
+
+        <article class="fig-card" data-cat="fx">
+          <div class="fig-thumb-wrap" data-full="./assets/v3_w7_dispersion_sss_fx.png" data-cap="6-Band Cauchy Spectral Prism Dispersion (splitting white beam into RGB+rainbow spectrum on floor) and 16-step Volumetric Random-Walk Subsurface Scattering through jade dragon/sculpture (128 spp, host_callbacks=0).">
+            <img src="./assets/v3_w7_dispersion_sss_fx.png" alt="6-Band Spectral Dispersion and Random-Walk SSS" loading="lazy" />
+            <span class="zoom-hint">Click to zoom</span>
+          </div>
+          <div class="fig-body">
+            <div class="fig-badges">
+              <span class="badge hot">6-Band Cauchy Prism</span>
+              <span class="badge">16-Step Random-Walk SSS</span>
+              <span class="badge ok">128 spp Pure PT</span>
+            </div>
+            <div class="fig-title">Spectral Prism Dispersion &amp; Volumetric Random-Walk SSS</div>
+            <div class="fig-caption">Wavelength-dependent Fresnel refraction splits white light through crown glass into clean spectral caustics alongside translucent jade SSS (`w7`).</div>
+          </div>
+        </article>
+
+        <article class="fig-card" data-cat="fx">
+          <div class="fig-thumb-wrap" data-full="./assets/v3_w7_restir_1024lights.png" data-cap="TPU-ReSTIR DI with 1,024 Dynamic Lights at 1280x720: Naive 2-tap (10.29 dB) -> ReSTIR Spatial+Temporal Reservoir Resampling (15.40 dB) -> ReSTIR + Denoiser (21.89 dB, +11.61 dB, 7.43x HDR variance reduction).">
+            <img src="./assets/v3_w7_restir_1024lights.png" alt="TPU-ReSTIR DI 1024-Light Courtyard" loading="lazy" />
+            <span class="zoom-hint">Click to zoom</span>
+          </div>
+          <div class="fig-body">
+            <div class="fig-badges">
+              <span class="badge hot">TPU-ReSTIR DI</span>
+              <span class="badge">1,024 Dynamic Lights</span>
+              <span class="badge ok">+11.61 dB / 7.43× VarRed</span>
+            </div>
+            <div class="fig-title"><code>TPU-ReSTIR DI</code>: 1,024-Light Night Courtyard (`720p`)</div>
+            <div class="fig-caption">Equal vis-ray reservoir resampling (`M=32`, 2 spatial passes) slashes HDR variance `7.43×` vs naive MIS (`21.89 dB` denoised, `host_callbacks=0`, `w7`).</div>
+          </div>
+        </article>
+
+        <article class="fig-card" data-cat="fx">
+          <div class="fig-thumb-wrap" data-full="./assets/v3_w7_physical_fx_caustics_volumetrics.png" data-cap="Dielectric Beer-Lambert Glass Caustics + Cathedral Volumetric God Rays ray-marched directly in TPU HBM at 192 spp (host_callbacks=0).">
+            <img src="./assets/v3_w7_physical_fx_caustics_volumetrics.png" alt="Beer-Lambert Glass Caustics and Cathedral God Rays" loading="lazy" />
+            <span class="zoom-hint">Click to zoom</span>
+          </div>
+          <div class="fig-body">
+            <div class="fig-badges">
+              <span class="badge hot">Glass Caustics</span>
+              <span class="badge">Volumetric God Rays</span>
               <span class="badge ok">host_callbacks = 0</span>
             </div>
-            <div class="fig-title">Closed-Loop 4-Chip Vision PPO (`MJX → Render → Policy`)</div>
-            <div class="fig-caption">Pixels never leave HBM or synchronize with CPU (`Panda Stage 1: 29.3k/s`, `Panda + M2: 21.1k/s`, smooth policy convergence, `w7`).</div>
+            <div class="fig-title">Beer-Lambert Refractive Caustics &amp; Cathedral God Rays</div>
+            <div class="fig-caption">5-bounce dielectric refraction + Beer-Lambert attenuation paired with BVH-shadowed volumetric crepuscular shafts (`192 spp`, `w7`).</div>
           </div>
         </article>
+
+        <article class="fig-card" data-cat="fx">
+          <div class="fig-thumb-wrap" data-full="./assets/v3_w6_thinlens_bokeh_4k.png" data-cap="Native 4K (3840x2160) Stochastic Thin-Lens Bokeh (55mm f/1.4, Shirley-Chiu concentric disk + Murmur3 R2 sequence, 32 spp in 108.7 ms/frame = 9.20 FPS on 4 chips, 1:1 4K crops showing near vs far focal shift).">
+            <img src="./assets/v3_w6_thinlens_bokeh_4k.png" alt="Native 4K 32-spp Thin-Lens Bokeh" loading="lazy" />
+            <span class="zoom-hint">Click to zoom (1:1 4K)</span>
+          </div>
+          <div class="fig-body">
+            <div class="fig-badges">
+              <span class="badge hot">Native 4K · 32 spp</span>
+              <span class="badge">108.7 ms / 9.20 FPS</span>
+              <span class="badge ok">2,441 MRays/s</span>
+            </div>
+            <div class="fig-title">Native 4K <code>f/1.4</code> Thin-Lens Bokeh (`108.7 ms`)</div>
+            <div class="fig-caption">Zero-gather concentric-disk aperture sampling @ `16 spp` (`56.7 ms / 17.6 FPS`) &amp; `32 spp` (`108.7 ms / 9.20 FPS`) with crisp 1:1 near/far focal shift (`w6`).</div>
+          </div>
+        </article>
+
+        <!-- DLSS & Neural Relight -->
+        <article class="fig-card" data-cat="dlss">
+          <div class="fig-thumb-wrap" data-full="./assets/v3_w4_interactive_relight_quant.png" data-cap="Single Static G-Buffer Interactive Time-of-Day & Material Relighting + TPU v5p MXU Precision Pareto (FP32 37.2 FPS / 20.28 dB -> BF16 78.6 FPS / 20.28 dB -> INT8 W8A8 QAT 78.1 FPS / 20.23 dB at Native 4K, 0 raytrace ops per slider).">
+            <img src="./assets/v3_w4_interactive_relight_quant.png" alt="Interactive Zero-Copy Relighting and MXU Precision Pareto" loading="lazy" />
+            <span class="zoom-hint">Click to zoom</span>
+          </div>
+          <div class="fig-body">
+            <div class="fig-badges">
+              <span class="badge hot">78.6 FPS @ Native 4K BF16</span>
+              <span class="badge">307 FPS @ 1080p</span>
+              <span class="badge ok">0 Raytrace Ops/Slider</span>
+            </div>
+            <div class="fig-title">Interactive Time-of-Day/Material Relight &amp; MXU Pareto</div>
+            <div class="fig-caption">Sweep Morning→Twilight &amp; Clay→Gold→Chrome off ONE static G-buffer (`w4`): `BF16` matches `FP32` PSNR (`20.28 dB`) at `2.11×` speedup (`INT8 QAT` `-0.047 dB`).</div>
+          </div>
+        </article>
+
+        <article class="fig-card" data-cat="dlss">
+          <div class="fig-thumb-wrap" data-full="./assets/v3_w4_tpu_dlss_4k.png" data-cap="TPU-DLSS 3.5 Temporal Reconstruction (1080p 1-spp -> Native 4K): 16.97 ms (58.93 FPS) on 4 chips (3.91x end-to-end 4K speedup, 7.01x temporal flicker reduction, zero grid artifacts).">
+            <img src="./assets/v3_w4_tpu_dlss_4k.png" alt="TPU-DLSS 3.5 1080p to 4K Reconstruction" loading="lazy" />
+            <span class="zoom-hint">Click to zoom</span>
+          </div>
+          <div class="fig-body">
+            <div class="fig-badges">
+              <span class="badge hot">TPU-DLSS 3.5</span>
+              <span class="badge">58.93 FPS @ Native 4K</span>
+              <span class="badge ok">3.91× Speedup · 7.01× Anti-Flicker</span>
+            </div>
+            <div class="fig-title"><code>TPU-DLSS 3.5</code>: <code>1080p 1-spp → Native 4K</code> (`58.9 FPS`)</div>
+            <div class="fig-caption">Exact `4×4` bilinear motion reprojection + BF16 MXU YCoCg reconstruction eliminates shimmering in `5.70 ms` @ 1080p / `16.97 ms` @ 4K (`w4`).</div>
+          </div>
+        </article>
+
+        <article class="fig-card" data-cat="dlss">
+          <div class="fig-thumb-wrap" data-full="./assets/v3_w4_mc_denoiser.png" data-cap="Real-Time Native 4K Monte Carlo AI Denoiser on TPU v5p MXU: 11.39 ms (87.78 FPS) on 4 chips, boosting 1-spp classroom by +15.22 dB (0.24% luminance bias).">
+            <img src="./assets/v3_w4_mc_denoiser.png" alt="4K 87.8 FPS BF16 MXU MC AI Denoiser" loading="lazy" />
+            <span class="zoom-hint">Click to zoom</span>
+          </div>
+          <div class="fig-body">
+            <div class="fig-badges">
+              <span class="badge hot">87.78 FPS @ Native 4K</span>
+              <span class="badge">+15.22 dB (1-spp)</span>
+              <span class="badge ok">0.24% Lum Bias</span>
+            </div>
+            <div class="fig-title"><code>11.39 ms</code> Native 4K BF16 MXU Monte Carlo Denoiser</div>
+            <div class="fig-caption">Albedo-demodulated MXU denoiser transforms fiery 1-spp GI (`9.70 dB`) into clean `24.92 dB` output at nearly `90 Hz` in 4K (`w4`).</div>
+          </div>
+        </article>
+
+        <!-- Robotics & Physical AI -->
+        <article class="fig-card" data-cat="robotics">
+          <div class="fig-thumb-wrap" data-full="./assets/v3_w0_mujoco_menagerie_pbr.png" data-cap="Official google-deepmind/mujoco_menagerie Wide-BVH-64 Gallery & Benchmarks on 4 TPU v5p chips: Aero Hand 4,284 FPS, Franka Panda 3,131 FPS, Unitree G1 2,546 FPS, Unitree Go2 1,863 FPS at 64x64 with 1024x1024 GGX+8-AO+8-SoftShadow renders.">
+            <img src="./assets/v3_w0_mujoco_menagerie_pbr.png" alt="MuJoCo Menagerie 1024p GGX+AO+SoftShadow Gallery" loading="lazy" />
+            <span class="zoom-hint">Click to zoom</span>
+          </div>
+          <div class="fig-body">
+            <div class="fig-badges">
+              <span class="badge hot">MuJoCo Menagerie</span>
+              <span class="badge">Up to 4,284 FPS</span>
+              <span class="badge ok">0 Gather · 0 Host CB</span>
+            </div>
+            <div class="fig-title"><code>google-deepmind/mujoco_menagerie</code> Wide-BVH-64</div>
+            <div class="fig-caption">Single-kernel Multi-Mesh Wide-BVH-64 runs unmodified official MJCF assets (`G1` 393k, `Go2` 398k, `Panda` 135k, `Aero Hand` 85k tris) on TPU (`w0`).</div>
+          </div>
+        </article>
+
+        <article class="fig-card" data-cat="robotics">
+          <div class="fig-thumb-wrap" data-full="./assets/v3_w0_diff_phys_render.png" data-cap="End-to-End Differentiable MJX Physics + Smooth-Visibility PBR Pixel-to-Torque Visual Servoing inside one jax.value_and_grad XLA graph: 17.50 -> 36.08 dB, End-Effector 3D Error 16.81 cm -> 1.63 cm with ZERO state supervision at 27.9 grad-steps/s.">
+            <img src="./assets/v3_w0_diff_phys_render.png" alt="End-to-End Differentiable MJX + PBR Visual Servoing" loading="lazy" />
+            <span class="zoom-hint">Click to zoom</span>
+          </div>
+          <div class="fig-body">
+            <div class="fig-badges">
+              <span class="badge hot">End-to-End Diff Physics</span>
+              <span class="badge">36.08 dB / 1.63 cm EE</span>
+              <span class="badge ok">Zero State Labels</span>
+            </div>
+            <div class="fig-title">Pixel-to-Torque Servoing via <code>jax.grad</code>(<code>mjx.step</code> + PBR)</div>
+            <div class="fig-caption">Pure RGB L2 loss backpropagates cleanly through 12 `mjx.step` physics steps and smooth GGX raytracing to recover 7-DOF joint torques (`27.9 grad-steps/s`, `w0`).</div>
+          </div>
+        </article>
+
+        <article class="fig-card" data-cat="robotics">
+          <div class="fig-thumb-wrap" data-full="./assets/v3_w1_isaac_replicator_dr.png" data-cap="Isaac Sim Replicator & TiledCamera Parity in XLA on 4-Chip TPU v5p: RoboTwin Bimanual 3-cam 5-mod 41,286 env-steps/s (123,858 cam-FPS, +0.32% DR overhead), RoboDojo G=1004 17,579 env-steps/s.">
+            <img src="./assets/v3_w1_isaac_replicator_dr.png" alt="Isaac Replicator & TiledCamera DR on TPU v5p" loading="lazy" />
+            <span class="zoom-hint">Click to zoom</span>
+          </div>
+          <div class="fig-body">
+            <div class="fig-badges">
+              <span class="badge hot">Isaac Replicator DR</span>
+              <span class="badge">123,858 cam-FPS</span>
+              <span class="badge ok">+0.32% DR Overhead</span>
+            </div>
+            <div class="fig-title"><code>Isaac Replicator</code> Domain Randomization (`w1`)</div>
+            <div class="fig-caption">`rep.randomizer` texture/light/pose shifts compile inside Pallas VMEM with `0.32%` overhead (`RoboTwin`), followed by `1,001,472` `G=2048` factory frames in `142.6 s` &amp; `270.6k/s` GelSight Visuo-Tactile (`w1` Wave 4).</div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- 4-Chip Extreme Limits -->
+    <section id="pod">
+      <div class="section-head">
+        <div class="section-tag">Cluster Scaling · Verified 4-Chip HBM Ceiling &amp; Multi-Host Harness</div>
+        <h2>4-Chip Single-Host TPU v5p Ceiling &amp; Pod Suite</h2>
+        <p class="section-desc">
+          While our 8-host (32-chip) cross-node run hit multi-host <code>libtpu</code> handoff limits just before our scheduled cluster return deadline, the full 5-benchmark Pod Capstone suite completed end-to-end on 4 live TPU v5p chips (<code>383 GB</code> HBM, <code>total_runtime = 246.4 s</code>, <code>host_callbacks = 0</code>).
+        </p>
+      </div>
+
+      <div class="pod-hero">
+        <img src="./assets/v3_w6_pod_dryrun_scaling.png" alt="4-Chip TPU v5p Pod Capstone Dry-Run Scaling" onclick="openLightbox(this.src, '4-Chip TPU v5p Pod Capstone Dry-Run (246.4 s): 51,548 FPS E2E MJX+Render, 155,858 FPS 3DGS, 31,460 env-FPS 128-Beam LiDAR (8.25B rays/s), 2.15B Unique Triangles (147 GB HBM), and Native 8K 3-Bounce PT (218.9 samples/min).')" />
+        <div class="pod-stats">
+          <div class="pod-item">
+            <div class="k">Bench 1 &amp; 2 · Embodied Physics + 3DGS</div>
+            <div class="v">51,548 FPS MJX+RTX &nbsp;|&nbsp; 155,858 FPS 3DGS</div>
+            <div class="d">Plus distributed <code>132.7M</code> splats @ 1080p composited via ICI <code>all_gather</code> (`3.30 FPS`, `438.1 MSplats/s`).</div>
+          </div>
+          <div class="pod-item">
+            <div class="k">Bench 3 · 128×2048 Batch 360° LiDAR</div>
+            <div class="v">31,460 env-FPS &nbsp;|&nbsp; 8.25 Billion Rays/s</div>
+            <div class="d">`B=4,096` parallel `128×2048` LiDAR scans in `130.2 ms` (`host_callbacks=0`, `gather_ops=0`).</div>
+          </div>
+          <div class="pod-item">
+            <div class="k">Bench 4 · Geometry-Sharded Unique Triangles</div>
+            <div class="v">2.15B Unique Non-Instanced Tris (`147 GB` HBM)</div>
+            <div class="d">Constructed on-device in <code>1.89 s</code> and traversed via ICI <code>jax.lax.pmin</code> @ 4K (`4.47 s`) &amp; 8K (`8.54 s`).</div>
+          </div>
+          <div class="pod-item">
+            <div class="k">Bench 5 · Spatial-Sharded Native 8K 3-Bounce PT</div>
+            <div class="v">218.9 samples/min @ 7680×4320 (`726.3 MRays/s`)</div>
+            <div class="d">Unbiased 3-bounce Monte Carlo GI @ `33.18M` pixels (`host_callbacks=0`, `send_recv_ops=0`).</div>
+          </div>
+        </div>
       </div>
     </section>
 
     <!-- Engineering Architecture -->
     <section id="architecture">
       <div class="section-head">
-        <div class="section-tag">Systems Engineering · Why Naive JAX Fails on TPU</div>
+        <div class="section-tag">Systems Architecture · Built for 128-Lane MXU/VPU &amp; 64 MiB VMEM</div>
         <h2>How We Made a Matrix Chip Ray-Trace</h2>
         <p class="section-desc">
-          Treating a TPU like a CUDA SIMT GPU hits 50× memory stalls immediately. Every speedup came from aligning geometry &amp; light transport directly with 128-lane MXU/VPU vectors and 64 MiB VMEM.
+          Treating a TPU like a CUDA SIMT GPU stalls immediately on HBM gather latency. Every order-of-magnitude gain came from aligning traversal, splatting, and shading directly with TPU vector registers and 64 MiB VMEM.
         </p>
       </div>
       <div class="cards-3">
         <div class="card">
-          <h3>1. 64 MiB VMEM Kernel Fusion (15× Render Gain)</h3>
+          <h3>1. Zero-Gather 3-Level 64-Ary Wide-BVH</h3>
           <p>
-            Fusing ray generation, branchless ray-primitive intersection, GGX/AO/soft-shadow shading, and material deduplication into one Pallas block eliminates G-buffer round-trips — driving 4-chip <code>64×64</code> render throughput to <code>921,309 FPS</code> (<code>266k FPS</code> E2E with MJX physics).
+            Packing 64 bounding boxes per <code>(8, 128)</code> TPU vector block lets Pallas Mosaic test 64 children in single VPU instructions with <code>pltpu.async_copy</code> leaf streaming — scaling cleanly from <code>MuJoCo Menagerie</code> to <code>22.30B</code>-tri Disney <em>Moana</em> and <code>2.15B</code> unique triangles.
           </p>
         </div>
         <div class="card">
-          <h3>2. Zero-Gather 3DGS &amp; Per-Body EWA (30× Gain)</h3>
+          <h3>2. In-VMEM Kernel Fusion &amp; Chunked 3DGS</h3>
           <p>
-            Profiling exposed 13 separate dynamic HBM gathers taking &gt;90% of V2 3DGS latency. Replacing them with chunked <code>take_along_axis</code> inside VMEM and zero-bloat <code>t_grp=16</code> tile accumulation pushed 1-chip to <code>35,916 FPS</code> and 4-chip to <code>142,008 FPS</code> with <code>gather_ops = 0</code>.
+            Fusing ray generation, intersection, GGX/AO/shadows, and material deduplication removes G-buffer round-trips (<code>921k FPS</code> render-equiv), while chunked VMEM <code>take_along_axis</code> pushes 3DGS from <code>1.2k</code> to <code>142k FPS</code> and fits <code>300M</code> Gaussians into 4-chip HBM.
           </p>
         </div>
         <div class="card">
-          <h3>3. 3-Level 64-ary Wide-BVH &amp; Async DMA</h3>
+          <h3>3. Native MXU Relighting, DLSS &amp; Diff Physics</h3>
           <p>
-            Using <code>95.74 GiB</code> HBM per chip + <code>pltpu.async_copy</code> on-demand leaf streaming, a 3-level 64-wide BVH indexes <code>108.23M</code> unique non-instanced triangles in <code>9.73 GB</code> with <code>25,648×</code> traversal culling and <code>17 µm</code> depth agreement vs Blender Cycles EXR.
+            Keeping pixels in TPU HBM lets BF16 MXU networks denoise 4K GI in <code>11.39 ms</code>, run <code>TPU-DLSS 3.5</code> at <code>58.9 FPS</code> 4K, relight static G-buffers at <code>78.6 FPS</code> 4K, fuse <code>Sim-to-VLA</code> with <code>-1.84%</code> overhead, and backprop pixel gradients through <code>mjx.step</code>.
           </p>
         </div>
       </div>
 
-      <pre><code>import tpu_rtx  # Standardized Zero-Copy TPU SDK (host_callbacks == 0 across 1..1000+ Pod chips)
+      <pre><code>import tpu_rtx
+from tpu_mjx_render import adapters  # mjx_universal, isaac_replicator, openusd_loader, blend_compiler, tpu_gsplat, tpu_optix, tpu_dlss, tpu_restir
 
-scene = tpu_rtx.compile("scene.usd", shader="fused_ao_ggx", res=(128, 128), sharding="auto")
-obs = tpu_rtx.render(mjx_data, scene)  # -> {"rgb", "depth", "normal", "seg_id", "flow"} directly in HBM</code></pre>
+scene = tpu_rtx.compile(mj_model, shader="fused_ao_ggx", res=(128, 128), sharding="auto")
+obs = tpu_rtx.render(mjx_data, scene)  # -> {"rgb", "depth", "normal", "seg_id", "flow"} zero-copy in TPU HBM</code></pre>
     </section>
 
     <!-- Honest Comparison -->
     <section id="comparison">
       <div class="section-head">
-        <div class="section-tag">Honest Engineering Positioning</div>
-        <h2>TPU-RTX vs. H100 Cycles (<code>rtx-h100</code>) vs. Isaac Sim / OptiX</h2>
+        <div class="section-tag">Honest Engineering Assessment</div>
+        <h2>TPU-RTX vs. H100 Cycles (<code>rtx-h100</code>) vs. NVIDIA Isaac Sim / OptiX</h2>
         <p class="section-desc">
-          Different silicon excels at different workloads. Here is where TPU v5p leads by orders of magnitude and where GPU RT cores retain an edge.
+          Measured hardware strengths and practical boundaries after testing every major robotics &amp; cinema workload.
         </p>
       </div>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Dimension</th>
+              <th>Workload</th>
               <th>TPU-RTX (Google TPU v5p)</th>
-              <th><code>wenhaochai/rtx-h100</code> (1× H100)</th>
-              <th>NVIDIA Isaac Sim / MuJoCo Warp</th>
+              <th>GPU Cycles (<code>rtx-h100</code>)</th>
+              <th>NVIDIA Isaac Sim / OptiX</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td><strong>Embodied Vision RL Closed Loop</strong></td>
-              <td><strong>Zero-Copy Native</strong>: <code>266k FPS</code> E2E, <code>60k+ env-steps/s</code> Vision PPO, <code>host_callbacks=0</code></td>
-              <td>Static offline frame rendering (no physics loop)</td>
-              <td>CUDA GPU native (requires NVIDIA Warp/Isaac stack)</td>
+              <td><strong>Embodied Vision RL, VLA &amp; Tactile</strong></td>
+              <td><strong>Zero-Copy Single XLA Graph</strong>: <code>266k FPS</code> E2E, <code>1M</code> factory frames in <code>142.6s</code>, <code>270.6k/s</code> GelSight, <code>-1.84%</code> Sim-to-VLA overhead</td>
+              <td>Static offline rendering (no interactive RL loop)</td>
+              <td>Mature CUDA Warp/Isaac ecosystem on RTX/L40S/H100</td>
             </tr>
             <tr>
-              <td><strong>3DGS + Physics Real-to-Sim</strong></td>
-              <td><strong>142k FPS</strong> (4c) + <code>10M</code> 4K Sponza, unified with MJX in XLA</td>
-              <td>N/A (Cycles triangle mesh + NRC)</td>
-              <td>Separate CUDA <code>gsplat</code> + Warp/OptiX integration</td>
+              <td><strong>Real-to-Sim 3DGS / 4DGS + Physics</strong></td>
+              <td><strong>Zero-Gather Native TPU</strong>: <code>142k FPS</code> (<code>64²</code>), <code>300M</code> splats @ 4K (4c HBM), <code>8K garden 29.2 MPix/s</code>, <code>23.4 steps/s</code> 32-view <code>jax.grad</code>, live <code>4DGS × MJX</code> push</td>
+              <td>Cycles mesh + NRC only</td>
+              <td>Requires separate CUDA <code>gsplat</code> + USD/PhysX bridge</td>
             </tr>
             <tr>
-              <td><strong>HBM Capacity &amp; Pod Scaling</strong></td>
-              <td><strong>95.74 GiB / chip</strong> (<code>383 GB</code> / host, <code>3.06 TB</code> / v5p-64 Pod over ICI)</td>
-              <td>80 GB HBM3 per H100 SXM</td>
-              <td>32 GB (RTX 5090) – 80 GB (H100); multi-node needs IB</td>
+              <td><strong>End-to-End Diff Physics + Render</strong></td>
+              <td><strong>36.08 dB / 1.63 cm EE Error</strong> via <code>jax.value_and_grad(mjx.step + PBR)</code> at <code>27.9 grad-steps/s</code></td>
+              <td>Non-differentiable offline path tracer</td>
+              <td>Separate Warp diff-sim / Nvdiffrast integration</td>
             </tr>
             <tr>
-              <td><strong>Dynamic Views &amp; Radiance Accuracy</strong></td>
-              <td><strong>34.78 dB / -0.21% lum bias</strong> after <code>33.6s</code> train on 360° moving orbit</td>
-              <td>Per-scene 9–18 min static bake (<code>9–16%</code> lum shift at bar)</td>
-              <td>Exact RT at frame time; slower high-bounce path tracing</td>
+              <td><strong>Film OpenUSD &amp; Blender Studio Scenes</strong></td>
+              <td><strong>Compiles Direct from Source</strong>: Disney <em>Moana</em> (<code>22.30B</code> tris, 4K/8K/Sunset/Underwater Reef), <code>BMW27 37.65 dB</code>, <code>Monster SSS 36.98 dB</code>, <code>Barcelona 54.9M</code>, <code>Barbershop 31.0 dB</code></td>
+              <td><strong>Full Native Blender 5.3 Cycles</strong> (<code>55k spm</code> / mature BSDF library)</td>
+              <td><strong>Mature Omniverse Kit + MaterialX</strong> + dedicated RT Cores</td>
             </tr>
             <tr>
-              <td><strong>Full Film Asset Ecosystem (Today)</strong></td>
-              <td>Emerging (OpenUSD / <code>.blend</code> compilers &amp; Disney Moana in live testing)</td>
-              <td><strong>Mature Blender 5.3 Cycles</strong> (<code>55,148 spm</code> / <code>40.4 img/s</code>)</td>
-              <td><strong>Mature Omniverse Kit + MaterialX</strong> + HW RT Core</td>
+              <td><strong>AI Relighting, Denoising &amp; DLSS</strong></td>
+              <td><strong>Native MXU BF16/INT8</strong>: 4K Denoise <code>87.8 FPS</code>, 4K DLSS <code>58.9 FPS</code>, Static Relight <code>78.6 FPS</code> 4K / <code>307 FPS</code> 1080p</td>
+              <td>External denoiser / Optix OIDN</td>
+              <td>Hardware Tensor Core DLSS 3.5 + Ray Reconstruction</td>
             </tr>
           </tbody>
         </table>
       </div>
     </section>
 
-    <!-- Overnight Cinema & Pod Pipeline -->
-    <section id="roadmap">
-      <div class="section-head">
-        <div class="section-tag">Active Overnight Cluster Pipeline (8 Hosts · 32 TPU v5p Chips)</div>
-        <h2>Next Landing on This Page</h2>
-        <p class="section-desc">
-          All 8 hosts of <code>tpu-v5p-64-2</code> are running live upgrades right now; this page will refresh as cinema-grade scenes &amp; the full 32-chip Pod benchmark land.
-        </p>
-      </div>
-      <div class="roadmap-grid">
-        <div class="road-item">
-          <div class="road-status">STAGED ON W2 (/dev/shm/zaychik-moana · 17 GB UNPACKED)</div>
-          <h4>Disney Animation's <em>Moana</em> Island Scene</h4>
-          <p>Official OpenUSD v2.1 dataset unpacked over GCP internal network onto <code>w2</code> for Native 4K/8K Wide-BVH + Nishita sky + AgX compilation.</p>
-        </div>
-        <div class="road-item">
-          <div class="road-status">RUNNING ON W5 &amp; W7</div>
-          <h4>Head-to-Head: Blender Open Data (<code>classroom</code>, <code>monster</code>, <code>junkshop</code>)</h4>
-          <p>Direct apple-to-apple comparison against Blender 5.3.0 Cycles GT &amp; <code>wenhaochai/rtx-h100</code> (samples/min, PSNR, dynamic orbit).</p>
-        </div>
-        <div class="road-item">
-          <div class="road-status">RUNNING ON W2, W3 &amp; W7</div>
-          <h4>Cinema PBR, Glass Caustics, God Rays &amp; Cloth Refit</h4>
-          <p><code>Bistro</code> + Nishita Golden-Hour 3DGS + Hybrid <code>MJX × 3DGS</code> + XLA deformable cloth BVH refit + dielectric refraction/volumetrics + <code>jax.grad</code> inverse rendering.</p>
-        </div>
-        <div class="road-item">
-          <div class="road-status">FINAL POD CAPSTONE (ALL 32 CHIPS · 3.06 TB HBM)</div>
-          <h4>Full <code>tpu-v5p-64</code> Multi-Host Limit</h4>
-          <p>Distributed <code>shard_map</code> over 3D Torus ICI targeting multi-million FPS E2E MJX/Isaac sensors &amp; 10B–100B instanced / multi-billion unique triangles @ 8K.</p>
-        </div>
-      </div>
-    </section>
-
     <footer>
-      <span><strong>TPU-RTX</strong> · Google Cloud TPU v5p (JAX + Pallas Mosaic)</span>
+      <span><strong>TPU-RTX</strong> · Google Cloud TPU v5p (JAX + Pallas Mosaic · Zero <code>host_callbacks</code> · Zero HBM Gathers)</span>
       <span>Repo: <a href="https://github.com/ZaychikLiu/tpu-rtx" target="_blank" rel="noopener">github.com/ZaychikLiu/tpu-rtx</a></span>
     </footer>
   </main>
@@ -826,60 +1066,62 @@ obs = tpu_rtx.render(mjx_data, scene)  # -> {"rgb", "depth", "normal", "seg_id",
   <script>
     const BENCH_DATA = {
       mjx: {
-        title: "MJX Physics + In-VMEM Fused Shader End-to-End Throughput (PandaPickCube, host_callbacks=0)",
-        note: "Single Pallas Mosaic kernel with zero G-buffer HBM round-trips. At 64x64 B=8192 4-chip, MJX physics (21.88 ms) is 71% of E2E while render takes only 8.89 ms (= 921,309 render-only equiv FPS).",
+        title: "Embodied Robotics, Isaac Replicator DR, Menagerie, Tactile & Sim-to-VLA (host_callbacks=0)",
+        note: "Single-XLA-program physics + rendering + domain randomization + VLA training directly in TPU HBM.",
         rows: [
-          { label: "V2 Pallas 1c (64×64, B=4096)", val: 12844, unit: "FPS", pct: 5, extra: "baseline", base: true },
-          { label: "V2 Pallas 4c shard_map (64×64)", val: 50131, unit: "FPS", pct: 19, extra: "V2 peak", base: true },
-          { label: "V3 In-VMEM 9-Ray GGX+4AO+4SS (1c)", val: 44258, unit: "FPS E2E", pct: 17, extra: "84.0k render" },
-          { label: "V3 Fused 1c (64×64, B=4096)", val: 68058, unit: "FPS E2E", pct: 26, extra: "15.2× render" },
-          { label: "V3 Fused 4c (128×128, B=4096)", val: 153032, unit: "FPS E2E", pct: 57, extra: "282.0k render" },
-          { label: "V3 Fused 4c (64×64, B=8192)", val: 266209, unit: "FPS E2E", pct: 100, extra: "921,309 render-equiv" }
+          { label: "V3 Fused 4c MJX+Render (64×64, B=8192)", val: 266209, unit: "FPS E2E", pct: 98, extra: "921,309 render-equiv" },
+          { label: "4-Sensor Visuo-Tactile GelSight+Cams (4c)", val: 270625, unit: "sensor-FPS", pct: 100, extra: "67,656 env-steps/s (0.15% DR)" },
+          { label: "Isaac Replicator RoboTwin 3-Cam+DR (4c)", val: 123858, unit: "cam-FPS", pct: 46, extra: "41,286 env/s (+0.32% DR)" },
+          { label: "V3 Closed-Loop Vision PPO Cartpole (4c)", val: 60145, unit: "env-steps/s", pct: 23, extra: "Panda 29,267/s · host_cb=0" },
+          { label: "Factory G=2048 Sim-to-VLA ViT-Tiny (4c)", val: 7143, unit: "frames/s", pct: 12, extra: "1M frames/142.6s · -1.84% VLA" },
+          { label: "MuJoCo Menagerie Wide-BVH-64 (Aero/Panda/G1)", val: 4284, unit: "FPS (64²)", pct: 8, extra: "3,131 Panda / 2,546 G1" },
+          { label: "End-to-End Diff MJX+PBR Servoing (w0)", val: 28, unit: "grad-steps/s", pct: 4, extra: "36.08 dB · 1.63 cm EE err" }
         ]
       },
       gs3d: {
-        title: "3D Gaussian Splatting Throughput & 4K Scaling (zero HBM gathers, host_callbacks=0)",
-        note: "Chunked VMEM take_along_axis + zero-bloat t_grp=16 eliminated >90% gather bottleneck from V2.",
+        title: "Native 3DGS / 4DGS × MJX & 300M-Splat 4-Chip HBM Scaling (gather_ops=0)",
+        note: "Zero dynamic HBM gathers; scales from 142k FPS (N=2048) to 300M Gaussians (79.44% of 4-chip 380 GB HBM) and 8K photogrammetry.",
         rows: [
-          { label: "V2 pallas_v2 (1c 64×64, N=2048)", val: 658, unit: "FPS", pct: 2, extra: "baseline", base: true },
-          { label: "V2 jax_tile (1c 64×64, N=2048)", val: 1194, unit: "FPS", pct: 3, extra: "baseline", base: true },
-          { label: "V3 gs3d_v3 FP32 (1c 64×64, N=2048)", val: 34177, unit: "FPS", pct: 24, extra: "28.6× V2" },
-          { label: "V3 gs3d_v3 BF16-MXU (1c 64×64)", val: 35916, unit: "FPS", pct: 25, extra: "30.1× V2" },
-          { label: "V3 gs3d_v3 FP32 (4c shard_map)", val: 135237, unit: "FPS", pct: 95, extra: "0 gather" },
-          { label: "V3 gs3d_v3 BF16-MXU (4c shard_map)", val: 142008, unit: "FPS", pct: 100, extra: "Sponza 10M 4K: 3.1 FPS" }
+          { label: "V2 jax_tile Baseline (1c 64×64, N=2048)", val: 1194, unit: "FPS", pct: 2, extra: "baseline", base: true },
+          { label: "V3 gs3d_v3 BF16-MXU (1c 64×64, N=2048)", val: 35916, unit: "FPS", pct: 25, extra: "30.1× V2" },
+          { label: "V3 gs3d_v3 BF16-MXU (4c shard_map, 64×64)", val: 142008, unit: "FPS", pct: 100, extra: "155,858 FPS @ 128²" },
+          { label: "Fast 4c 32-View jax.grad Training (garden)", val: 749, unit: "view-steps/s", pct: 18, extra: "23.4 steps/s -> 31.3 dB" },
+          { label: "Mip-NeRF 360 4K Quartet (bonsai/kitchen/garden)", val: 4.20, unit: "FPS @ 4K", pct: 12, extra: "SH3 · 8K garden 29.2 MPix/s" },
+          { label: "4DGS × MJX Dynamic Push (125.6k LEGO splats)", val: 5.32, unit: "FPS @ 1080p", pct: 14, extra: "1.30 FPS @ 4K (+16.4 cm push)" },
+          { label: "Single-Host 300,000,000 Gaussians @ 4K (4c)", val: 301.87, unit: "GB HBM", pct: 80, extra: "0.25 FPS · 1,171,875:1 cull" }
         ]
       },
-      bvh: {
-        title: "3-Level 64-ary Wide-BVH-64 Real Mesh Raytracing (depth_mae=0.0 m vs JAX ref)",
-        note: "108.23M unique non-instanced triangles fit in just 9.73 GB (10% of 1 chip's 95.74 GiB HBM) and trace Native 4K with 25,648.4× culling.",
+      cinema: {
+        title: "Disney Moana OpenUSD v2.1 (22.30B Tris) & Blender Studio Scenes on TPU v5p",
+        note: "Compiled directly from official OpenUSD and .blend files into Wide-BVH-64 packs + AgX tonemapping.",
         rows: [
-          { label: "4,620 tris (4c 64×64)", val: 16051, unit: "FPS", pct: 100, extra: "8.7 µm Z-MAE" },
-          { label: "4,620 tris (1c 64×64)", val: 4090, unit: "FPS", pct: 26, extra: "2.27× V2" },
-          { label: "1.18M tris (4c 64×64)", val: 2305, unit: "FPS", pct: 15, extra: "913 FPS @ 128²" },
-          { label: "10.64M tris (4c 64×64)", val: 640, unit: "FPS", pct: 5, extra: "4K: 27.3 Mrays/s" },
-          { label: "108.23M Unique Tris (1c 64×64)", val: 55, unit: "FPS", pct: 2, extra: "4K UHD: 0.40 FPS / 25,648× cull" }
+          { label: "BMW27 Clearcoat (Orbit PSNR)", val: 37.65, unit: "dB PSNR", pct: 100, extra: "0.9813 SSIM · -0.012% lum" },
+          { label: "Monster Under the Bed SSS 1024² (Orbit)", val: 36.98, unit: "dB PSNR", pct: 98, extra: "35.34 dB hero · 0.121 mm Z-MAE" },
+          { label: "Barbershop Interior 8.55M Tris (141 Tex)", val: 31.00, unit: "dB PSNR", pct: 82, extra: "13.8 mm MedAE · 4K 1.16 img/s" },
+          { label: "Junkshop / Lone Monk / Fishy Cat (Orbit)", val: 30.36, unit: "dB PSNR", pct: 80, extra: "28.83 Monk / 28.80 Fishy Cat" },
+          { label: "Barcelona Pavilion (54.91M Unique Tris)", val: 27.45, unit: "dB PSNR", pct: 73, extra: "15.94 mm Z-MAE · 4K 1.11 img/s" },
+          { label: "Disney Moana OpenUSD (22.30B Tris, 4K)", val: 5130, unit: "ms / frame", pct: 60, extra: "8K 17.2s · Underwater 8.7s" }
         ]
       },
-      pt: {
-        title: "TPU-Native Multi-Bounce Monte Carlo Path Tracing (1.18M Tris, 4-chip spatial shard_map)",
-        note: "Unbiased Cosine GI + GGX + NEE + soft area shadows compiled natively on TPU (host_callbacks=0).",
+      dlss: {
+        title: "TPU-DLSS 3.5, 4K MC Denoiser & Zero-Copy Static G-Buffer Relighting (4-Chip MXU)",
+        note: "Exact 4×4 bilinear reprojection + optimization-barrier BF16/INT8 MXU inference at 1080p and Native 4K.",
         rows: [
-          { label: "4-Bounce GI (512×512)", val: 706, unit: "samples/min", pct: 23, extra: "full GI" },
-          { label: "3-Bounce GI (512×512, 16–64 spp)", val: 835, unit: "samples/min", pct: 27, extra: "21.9 Mrays/s" },
-          { label: "3-Bounce GI @ Native 4K (3840×2160)", val: 28, unit: "samples/min", pct: 12, extra: "23.02 Mrays/s (2.16s/spp)" },
-          { label: "2-Bounce GI (512×512)", val: 1225, unit: "samples/min", pct: 39, extra: "host_callbacks=0" },
-          { label: "1-Bounce GI (512×512, 16 spp)", val: 3121, unit: "samples/min", pct: 100, extra: "27.3 Mrays/s" }
+          { label: "Interactive Static G-Buffer Relight (4c 1080p BF16)", val: 307.4, unit: "FPS", pct: 100, extra: "20.28 dB · 0 raytrace ops" },
+          { label: "4K BF16 MXU MC AI Denoiser (4c 3840×2160)", val: 87.8, unit: "FPS @ 4K", pct: 35, extra: "11.39 ms · +15.22 dB (1-spp)" },
+          { label: "Interactive Relight Native 4K BF16 (vs 37.2 FP32)", val: 78.6, unit: "FPS @ 4K", pct: 31, extra: "2.11× FP32 · INT8 78.1 FPS" },
+          { label: "TPU-DLSS 3.5 Native 4K (from 1080p 1-spp, 4c)", val: 58.9, unit: "FPS @ 4K", pct: 25, extra: "16.97 ms · 3.91× E2E speedup" }
         ]
       },
-      ppo: {
-        title: "Closed-Loop 4-Chip shard_map Vision PPO (MJX Step → TPU Render → Flax Policy, zero CPU copy)",
-        note: "Eliminates GPU/CPU round-trips completely; pixels stay resident in HBM throughout rollout + GAE + PPO update.",
+      fx: {
+        title: "TPU-Native Monte Carlo GI, ReSTIR DI (1,024 Lights), Thin-Lens Bokeh & Physical FX",
+        note: "100% pure ray/path transport & wave optics compiled with zero host callbacks.",
         rows: [
-          { label: "V2 Panda Vision PPO (1c, 64×64)", val: 3445, unit: "env-steps/s", pct: 6, extra: "V2 baseline", base: true },
-          { label: "V3 Panda Stage 2 M2 (4c, B=512)", val: 21123, unit: "env-steps/s", pct: 35, extra: "Neural PBR obs" },
-          { label: "V3 Panda Stage 1 (4c, B=1024)", val: 29267, unit: "env-steps/s", pct: 49, extra: "success_rate 0.279" },
-          { label: "V3 Cartpole Stage 2 M2 (4c, B=512)", val: 45273, unit: "env-steps/s", pct: 75, extra: "host_callbacks=0" },
-          { label: "V3 Cartpole Stage 1 (4c, B=512)", val: 60145, unit: "env-steps/s", pct: 100, extra: "17.5× V2" }
+          { label: "Native 4K 16-spp f/16 Thin-Lens Bokeh (4c)", val: 18.28, unit: "FPS @ 4K", pct: 100, extra: "54.7 ms · 32-spp f/1.4: 9.20 FPS" },
+          { label: "3-Bounce Native 8K Path Tracer (4c Pod Dry-Run)", val: 218.9, unit: "spm @ 8K", pct: 68, extra: "726.3 MRays/s · host_cb=0" },
+          { label: "1-Bounce / 3-Bounce Physical GI (512², 1c)", val: 3121, unit: "spm @ 512²", pct: 85, extra: "835 spm 3-bounce (64 spp)" },
+          { label: "TPU-ReSTIR DI 1,024-Light Courtyard (720p, 4c)", val: 21.89, unit: "dB PSNR", pct: 60, extra: "+11.61 dB · 7.43× HDR VarRed" },
+          { label: "Airy Thin-Film (8-bin) + 12-Bounce Mirrors (4c)", val: 12, unit: "bounces", pct: 50, extra: "128 spp · single XLA while_loop" }
         ]
       }
     };
@@ -894,8 +1136,8 @@ obs = tpu_rtx.render(mjx_data, scene)  # -> {"rgb", "depth", "normal", "seg_id",
           ${d.rows.map(r => `
             <div class="bar-row">
               <div class="bar-label">${r.label}</div>
-              <div class="bar-track"><div class="bar-fill ${r.base ? 'base' : ''}" style="width:${Math.max(r.pct, 2)}%"></div></div>
-              <div class="bar-val">${r.val.toLocaleString()} ${r.unit} <span>(${r.extra})</span></div>
+              <div class="bar-track"><div class="bar-fill ${r.base ? 'base' : ''}" style="width:${Math.max(r.pct, 3)}%"></div></div>
+              <div class="bar-val">${typeof r.val === 'number' ? r.val.toLocaleString() : r.val} ${r.unit} <span>(${r.extra})</span></div>
             </div>
           `).join("")}
         </div>
@@ -925,12 +1167,15 @@ obs = tpu_rtx.render(mjx_data, scene)  # -> {"rgb", "depth", "normal", "seg_id",
     const lb = document.getElementById("lightbox");
     const lbImg = document.getElementById("lb-img");
     const lbCap = document.getElementById("lb-cap");
+    function openLightbox(src, cap) {
+      lbImg.src = src;
+      lbCap.textContent = cap;
+      lb.classList.add("open");
+    }
     document.getElementById("gallery-grid").addEventListener("click", (e) => {
       const w = e.target.closest(".fig-thumb-wrap");
       if (!w) return;
-      lbImg.src = w.dataset.full;
-      lbCap.textContent = w.dataset.cap;
-      lb.classList.add("open");
+      openLightbox(w.dataset.full, w.dataset.cap);
     });
     const closeLb = () => lb.classList.remove("open");
     document.getElementById("lb-close").addEventListener("click", closeLb);

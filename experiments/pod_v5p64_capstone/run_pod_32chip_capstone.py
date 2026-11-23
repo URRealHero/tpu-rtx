@@ -95,14 +95,16 @@ def run_bench1_tpu_rtx(
     proc_idx: int,
 ) -> List[Dict[str, Any]]:
   m = mujoco.MjModel.from_xml_string(PANDA_PICK_CUBE_XML)
-  mx = mjx.put_model(m, impl="jax")
   spec_64 = RenderSceneSpec.from_mjmodel(m, cam_id=0, height=64, width=64, use_shadows=True)
 
   d_host = mujoco.MjData(m)
   if m.nkey > 0:
     mujoco.mj_resetDataKeyframe(m, d_host, 0)
   mujoco.mj_forward(m, d_host)
-  dx0 = mjx.put_data(m, d_host, impl="jax")
+  with jax.default_device(local_devs[0]):
+    mx_np = jax.tree_util.tree_map(np.asarray, mjx.put_model(m, device=local_devs[0], impl="jax"))
+    dx0_np = jax.tree_util.tree_map(np.asarray, mjx.put_data(m, d_host, device=local_devs[0], impl="jax"))
+  ctrl0_np = np.asarray(dx0_np.ctrl, dtype=np.float32)
 
   sm_kw = _sm_kwargs()
   rep_sharding = NamedSharding(mesh_dp, P())
@@ -110,23 +112,24 @@ def run_bench1_tpu_rtx(
       lambda x: jax.make_array_from_single_device_arrays(
           x.shape, rep_sharding, [jax.device_put(x, d) for d in local_devs]
       ),
-      mx,
+      mx_np,
   )
 
   rows: List[Dict[str, Any]] = []
   for b_local in (2048, 4096):
     b_global = b_local * n_chips
+    phases_np = np.linspace(-0.25, 0.25, b_local, dtype=np.float32)[:, None]
+    u_np = ctrl0_np[None, :] + phases_np * np.linspace(1.0, 0.3, m.nu, dtype=np.float32)[None, :]
 
     def _build_local_dx(dev):
-      dx_l = jax.tree_util.tree_map(
-          lambda x: jnp.broadcast_to(x[None, ...], (b_local, *x.shape)).copy(),
-          jax.device_put(dx0, dev),
-      )
-      phases = jnp.linspace(-0.25, 0.25, b_local, dtype=jnp.float32)[:, None]
-      u_l = jnp.asarray(dx0.ctrl, jnp.float32)[None, :] + phases * jnp.linspace(1.0, 0.3, m.nu, dtype=jnp.float32)[None, :]
-      return dx_l, jax.device_put(u_l, dev)
+      with jax.default_device(dev):
+        dx_l = jax.tree_util.tree_map(
+            lambda x: jax.device_put(np.broadcast_to(x[None, ...], (b_local, *x.shape)).copy(), dev),
+            dx0_np,
+        )
+        return dx_l, jax.device_put(u_np.copy(), dev)
 
-    local_pairs = [jax.jit(_build_local_dx, device=d)() if False else _build_local_dx(d) for d in local_devs]
+    local_pairs = [_build_local_dx(d) for d in local_devs]
     # Assemble global sharded dx_b and ctrl with zero cross-host data broadcast
     dx_b = jax.tree_util.tree_map(
         lambda *leaves: _make_global_from_local_shards(
@@ -697,7 +700,6 @@ def run_bench3_lidar(
     proc_idx: int,
 ) -> List[Dict[str, Any]]:
   m = mujoco.MjModel.from_xml_string(PANDA_PICK_CUBE_XML)
-  mx = mjx.put_model(m, impl="jax")
   spec_l = RenderSceneSpec.from_mjmodel(m, cam_id=0, height=64, width=64, use_shadows=False)
   ldir_np = _build_lidar_rays(128, 2048)
   lray_np = np.zeros((8, 128 * 2048), dtype=np.float32)
@@ -707,7 +709,10 @@ def run_bench3_lidar(
   if m.nkey > 0:
     mujoco.mj_resetDataKeyframe(m, d_host, 0)
   mujoco.mj_forward(m, d_host)
-  dx0 = mjx.put_data(m, d_host, impl="jax")
+  with jax.default_device(local_devs[0]):
+    mx_np = jax.tree_util.tree_map(np.asarray, mjx.put_model(m, device=local_devs[0], impl="jax"))
+    dx0_np = jax.tree_util.tree_map(np.asarray, mjx.put_data(m, d_host, device=local_devs[0], impl="jax"))
+  ctrl0_np = np.asarray(dx0_np.ctrl, dtype=np.float32)
 
   sm_kw = _sm_kwargs()
   rep_sharding = NamedSharding(mesh_dp, P())
@@ -715,7 +720,7 @@ def run_bench3_lidar(
       lambda x: jax.make_array_from_single_device_arrays(
           x.shape, rep_sharding, [jax.device_put(x, d) for d in local_devs]
       ),
-      mx,
+      mx_np,
   )
   lray_rep = jax.make_array_from_single_device_arrays(
       lray_np.shape, rep_sharding, [jax.device_put(lray_np, d) for d in local_devs]
@@ -724,18 +729,18 @@ def run_bench3_lidar(
   rows: List[Dict[str, Any]] = []
   for b_local in (512, 1024):
     b_global = b_local * n_chips
+    u_np = (
+        ctrl0_np[None, :]
+        + np.linspace(-0.25, 0.25, b_local, dtype=np.float32)[:, None] * np.linspace(1.0, 0.3, m.nu, dtype=np.float32)[None, :]
+    )
     local_dx = [
-        jax.tree_util.tree_map(lambda x: jnp.broadcast_to(x[None, ...], (b_local, *x.shape)).copy(), jax.device_put(dx0, d))
-        for d in local_devs
-    ]
-    local_u = [
-        jax.device_put(
-            jnp.asarray(dx0.ctrl, jnp.float32)[None, :]
-            + jnp.linspace(-0.25, 0.25, b_local, dtype=jnp.float32)[:, None] * jnp.linspace(1.0, 0.3, m.nu, dtype=jnp.float32)[None, :],
-            d,
+        jax.tree_util.tree_map(
+            lambda x: jax.device_put(np.broadcast_to(x[None, ...], (b_local, *x.shape)).copy(), d),
+            dx0_np,
         )
         for d in local_devs
     ]
+    local_u = [jax.device_put(u_np.copy(), d) for d in local_devs]
     dx_b = jax.tree_util.tree_map(
         lambda *leaves: _make_global_from_local_shards(mesh_dp, P("dp"), leaves, (b_global, *leaves[0].shape[1:])),
         *local_dx,
@@ -914,7 +919,8 @@ def _build_bvh_shard_core(cid_i32: jax.Array, k_obj: int) -> Tuple[jax.Array, ..
 
 
 def _generate_unique_macro_bvh_shard(chip_id: int, k_obj: int, dev: jax.Device) -> Tuple[jax.Array, ...]:
-  out = jax.jit(lambda cid: _build_bvh_shard_core(cid, k_obj))(jax.device_put(np.int32(chip_id), dev))
+  with jax.default_device(dev):
+    out = jax.jit(lambda cid: _build_bvh_shard_core(cid, k_obj))(jax.device_put(np.int32(chip_id), dev))
   jax.block_until_ready(out)
   return out
 
@@ -1392,7 +1398,11 @@ def run_bench5_8k_pathtracer(
   l2_rep = _make_global_from_local_shards(mesh_sp, P(), [s[1] for s in shards], shards[0][1].shape)
   l0_rep = _make_global_from_local_shards(mesh_sp, P(), [s[2] for s in shards], shards[0][2].shape)
   leaf_rep = _make_global_from_local_shards(mesh_sp, P(), [s[3] for s in shards], shards[0][3].shape)
-  ob_rep = _make_global_from_local_shards(mesh_sp, P(), [_pack_obj_aabbs_chunks(s[4]) for s in shards], (1, 8, 128))
+  ob_rep = _make_global_from_local_shards(
+      mesh_sp, P(),
+      [jax.device_put(np.asarray(_pack_obj_aabbs_chunks(s[4])), d) for s, d in zip(shards, local_devs)],
+      (1, 8, 128),
+  )
 
   sm_kw = _sm_kwargs()
   # Build per-chip spatial ray strips (1, H_8K * W_LOCAL, 3)

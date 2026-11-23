@@ -1,58 +1,74 @@
 # TPU-RTX
 
-**Zero-Copy RTX-Class Ray Tracing, Multi-Bounce Monte Carlo Path Tracing, 3D Gaussian Splatting, and Photorealistic Physical AI Rendering natively on Google Cloud TPU v5p (JAX + Pallas Mosaic).**
+**Zero-Copy RTX-Class Ray Tracing, Multi-Bounce Monte Carlo Path Tracing, 3D/4D Gaussian Splatting, OpenUSD/Blender Studio Compilation, and Photorealistic Physical AI Rendering natively on Google Cloud TPU v5p (JAX + Pallas Mosaic).**
 
-> Every number and visual render in this repository is measured natively on real Google Cloud **TPU v5p** silicon (`interpret=False`) with XLA HLO verified at **`host_callbacks = 0`**, **`send_recv_ops = 0`**, and **`gather_ops = 0`**.
+Interactive Project Showcase (GitHub Pages): [docs/index.html](docs/index.html)
+
+> Every benchmark, render, and parity check in this repository was executed natively on real Google Cloud **TPU v5p** silicon (`interpret=False`, `95.74 GiB` HBM/chip, `383 GiB`/host) with XLA HLO verified at **`host_callbacks = 0`**, **`send_recv_ops = 0`**, and **`gather_ops = 0`**.
 
 ---
 
-## Live TPU v5p Highlights (Verified V1–V3 Wave 1/2)
+## Key Verified Highlights on Live Google Cloud TPU v5p
 
-| Capability / Track | Live TPU v5p Result | Verification Details |
+| Domain | Verified Live TPU v5p Result | Details & Module |
 |---|---|---|
-| **End-to-End MJX + Render (4-chip `shard_map`, `64×64`)** | **`240,737 FPS`** (`17.01 ms`, `B=4096`) | `w0` Fused In-VMEM Shader (`4.80×` E2E / `14.61×` render vs `pallas_v2`, `depth_mae = 3.35e-10 m`, `host_callbacks = 0`) |
-| **End-to-End MJX + Render (1-chip, `64×64` / `128×128`)** | **`68,058 FPS`** / **`39,175 FPS`** | `w0` (`15.15×` / `18.06×` render speedup vs `pallas_v2`) |
-| **Native 3D Gaussian Splatting (1-chip, `64×64`, `2048` GS)** | **`35,915.8 FPS`** (`gs3d_v3_bf16_mxu`) | `w3` (`~30.1×` over V2 `1,193.9 FPS`, `host_callbacks = 0`, `gather_ops = 0`) |
-| **Real Blender 5.2 `1.24M`-Tri Dynamic Orbit + Relighting** | **`34.78 dB` PSNR / `0.9775` SSIM** (`256²`), **`30.20 dB`** (`512²`) | `w5` 360° held-out dynamic views (`33.6s` TPU train, `17.04 µm` Z-MAE vs Cycles EXR, `-0.21%` lum bias) |
-| **100M+ Unique Non-Instanced Triangles @ Native 4K UHD** | **`100M+` unique tris (`3840 × 2160`)** | `w2` 3-Level 64-ary Wide-BVH-64 directly in TPU HBM |
-| **TPU-Native Multi-Bounce Monte Carlo Path Tracing GI** | **1-Bounce (`3,121/min`) & 3-Bounce GI (`835/min`, `1–64 spp`)** | `w7` pure physical Cosine GI + GGX + NEE + soft shadows on TPU v5p |
-| **Closed-Loop 4-Chip `shard_map` Vision PPO (`host_callbacks=0`)** | **`60,145.3 env-steps/s`** (`Cartpole`), **`29,267.4/s`** (`Panda`) | `w7` Stage 1 & Stage 2 M2 (`17.5×` over V2 1-chip) |
+| **Zero-Copy MJX + Fused Pallas Shader** | **`266,209 FPS`** E2E (`64×64`, `B=8,192`, 4c) · **`921,309 FPS`** render-equiv | `w0` Fused In-VMEM GGX+AO+Shadows (`depth_mae = 3.35e-10 m`) |
+| **Native 3D Gaussian Splatting + `300M` Scale** | **`142,008 FPS`** (`4c, 64×64`) · **`300,000,000` Gaussians** in 4c HBM @ 4K (`0.25 FPS`) | `w3` `tpu_gsplat` (`301.87 GB / 380 GB`, `1,171,875:1` cull, `gather_ops = 0`) |
+| **Real-World Mip-NeRF 360 3DGS + `4DGS × MJX`** | **Native 8K `garden` (`5.83M` SH3) `0.88 FPS` (`29.19 MPix/s`)** · `4DGS × MJX` **`5.32 FPS` 1080p** | `w3` `32`-view `jax.grad` `23.42 steps/s` (`30.62 dB`, peak `31.31 dB`) |
+| **Disney *Moana* Island OpenUSD v2.1 (`22.30B` Tris)** | **4K `5.13 s`** / **8K `17.24 s`** · **Sunset `5.60 s`** · **Underwater Reef Caustics `8.72 s`** | `w2` `openusd_loader` (`4.653 GiB` HBM) + *Moana Beach × MJX* @ 4K (`5.40 s`) |
+| **Blender Cinema (`BMW27`, `Barcelona 54.9M`, `Barbershop`, `Monster SSS`, `Lone Monk`, `Fishy Cat`)** | `BMW27` **`37.65 dB`** (`0.9813` SSIM) · `Monster SSS` **`36.98 dB`** (`0.121 mm` Z-MAE) · `Barbershop` (`8.55M`, 141 tex) **`31.00 dB`** | `w5` / `w7` `blend_compiler` Cycles Shader Graph -> Wide-BVH-64 + AgX |
+| **Billion-Triangle Unique Geometry @ 4K / 8K** | **`1.020B` Unique Tris** (`61.29 GB` 4c HBM) · **`102.19B` Instanced Tris** @ 8K (`5.02 s`) | `w2` (`4c` dry-run `2.15B` unique tris, `shard_map` + `jax.lax.pmin`) |
+| **`TPU-DLSS 3.5` & 4K BF16 MXU Denoiser** | **`58.93 FPS` Native 4K** (`1080p -> 4K`, `3.91×` E2E speedup) · **`87.78 FPS` 4K Denoise** (`11.39 ms`) | `w4` `tpu_dlss` (`4×4` exact bilinear warp, `7.01×` flicker cut, `+15.22 dB`) |
+| **Zero-Copy Time-of-Day/Material Relight & MXU Pareto** | **`78.60 FPS` Native 4K BF16** / **`307.44 FPS` 1080p** (0 raytrace ops/slider) | `w4` `FP32 20.28 dB` / `BF16 20.28 dB` (`2.11×`) / `INT8 QAT 20.23 dB` |
+| **`TPU-ReSTIR DI`, Thin-Film, Dispersion, Caustics & Bokeh** | **`1,024`-Light ReSTIR** (`21.89 dB`, `7.43×` HDR VarRed) · **4K 32-spp Bokeh `108.7 ms`** (`9.20 FPS`) | `w7` / `w6` 8-bin Airy interference, aniso GGX, 12-bounce mirrors, 6-band prism, 16-step SSS |
+| **`MuJoCo Menagerie` & End-to-End Diff Physics+Render** | `Aero Hand` **`4,284 FPS`**, `Panda` **`3,131 FPS`**, `G1` **`2,546 FPS`** · **Pixel->Torque `36.08 dB` (`1.63 cm` EE)** | `w0` `mjx_universal` (`27.87 grad-steps/s`, zero state supervision) |
+| **Isaac `Replicator`, `128`-Beam LiDAR, `GelSight` & `Sim-to-VLA`** | `RoboTwin` **`123,858 cam-FPS`** (`+0.32%` DR) · **`1M` Factory Frames `142.6 s`** · **`270.6k` Visuo-Tactile/s** | `w1` / `w6` `isaac_replicator` (`4.59e-8 m` LiDAR parity, `-1.84%` `Sim-to-VLA` overhead) |
 
 ---
 
-## Visual Renders from Live TPU v5p
+## Visual Highlights (All Audited via Visual QA Gate)
 
-### `1.24M`-Triangle Textured Blender 5.2 Scene @ `512×512` & Dynamic 360° Orbit (`w5`)
-![V3 Live TPU v5p Showcase](out/figures/v3_w5_1m_showcase.png)
-![Dynamic 360-Degree Orbit](out/figures/v3_w5_1m_orbit.png)
+### Disney *Moana* OpenUSD v2.1 (`22.30B` Tris) — Golden Sunset & Way-of-Water Underwater Coral Reef (4K)
+![Disney Moana Sunset and Underwater Reef 4K](docs/assets/v3_w2_moana_sunset_reef_4k.png)
 
-### TPU-Native Multi-Bounce Path Tracer (`1 -> 64 spp`, `w7`) & `100M+` Unique Triangles @ Native 4K (`w2`)
-![TPU Native Multi-Bounce GI](out/figures/v3_w7_tpu_pathtracer_gi.png)
-![100M+ Unique Triangles Native 4K](out/figures/v3_w2_mesh_100m_4k.png)
+### Real-World Mip-NeRF 360 `garden` Native 8K (`7680×4320`, 1:1 Crop) & Dynamic `4DGS × MJX` RoboWild
+![Real-World 8K 3DGS Crop](docs/assets/v3_w3_realworld_8k_crop.png)
+![Dynamic 4DGS x MJX Manipulation](docs/assets/v3_w3_4dgs_robowild_manipulation.png)
 
-### Closed-Loop 4-Chip Vision PPO (`w7`)
-![V3 4-Chip Vision PPO Curves](out/figures/v3_w7_ppo_curve.png)
+### Blender Studio Parity (`BMW27`, `Barcelona 54.9M`, `Monster SSS`, `Fishy Cat`, `Barbershop`)
+![BMW27 and Barcelona Pavilion](docs/assets/v3_w5_bmw_barcelona_cinema.png)
+![Monster SSS and Fishy Cat](docs/assets/v3_w5_studio_double_cinema.png)
+![Barbershop Interior](docs/assets/v3_w7_barbershop_cinema.png)
+
+### Physical FX (`Airy Thin-Film`, `12-Bounce Mirrors`, `Spectral Dispersion`, `SSS`, `TPU-ReSTIR DI`, `4K Thin-Lens Bokeh`)
+![Thin-Film Anisotropic GGX and 12-Bounce Mirror Gallery](docs/assets/v3_w7_thinfilm_mirror_fx.png)
+![Spectral Dispersion and Random-Walk SSS](docs/assets/v3_w7_dispersion_sss_fx.png)
+![Native 4K Thin-Lens Bokeh](docs/assets/v3_w6_thinlens_bokeh_4k.png)
+
+### `TPU-DLSS 3.5` (58.9 FPS 4K), Interactive Relighting (`78.6 FPS` 4K BF16), `MuJoCo Menagerie` & Diff Physics-Render Servoing
+![Interactive Zero-Copy Relighting and MXU Quantization Pareto](docs/assets/v3_w4_interactive_relight_quant.png)
+![MuJoCo Menagerie Wide-BVH-64](docs/assets/v3_w0_mujoco_menagerie_pbr.png)
+![End-to-End Differentiable Physics and PBR Servoing](docs/assets/v3_w0_diff_phys_render.png)
+
+---
+
+## Quickstart SDK
+
+```python
+import tpu_rtx
+
+scene = tpu_rtx.compile(mj_model, shader="fused_ao_ggx", res=(128, 128), sharding="auto")
+obs = tpu_rtx.render(mjx_data, scene)  # -> {"rgb", "depth", "normal", "seg_id", "flow"} in HBM
+```
+
+Ecosystem adapters live under `tpu_mjx_render.adapters`:
+`mjx_universal`, `isaac_replicator`, `openusd_loader`, `blend_compiler`, `tpu_gsplat`, `tpu_optix`, `tpu_dlss`, `tpu_restir`.
 
 ---
 
 ## Repository Layout
 
-- `tpu_mjx_render/`: Core Pallas Mosaic kernels, Wide-BVH-64 mesh raytracer, 3DGS rasterizer, MJX analytic primitives, Stage 2 BF16 MXU neural relighters, and adapter modules
-- `experiments/`: Parallel 8-host TPU v5p (`w0`–`w7`) experimental harnesses
-- `scripts/`: Live TPU benchmarks, HLO zero-copy verifiers, and Blender Cycles ground-truth generators
-- `tests/`: Parity tests against MuJoCo `mj_multiRay`, Blender Cycles EXR depth, and XLA HLO invariants
+- `tpu_rtx/` & `tpu_mjx_render/`: Core Pallas Mosaic kernels (`host_callbacks = 0`, `gather_ops = 0`), Wide-BVH-64, 3DGS/4DGS rasterizers, thin-film/dispersion/volumetric FX, and ecosystem adapters
+- `experiments/`: Live TPU v5p experimental suites (`w0`–`w7`) + `pod_v5p64_capstone/` (4-chip verified dry-run + multi-host Pod scaling harness)
+- `docs/`: Interactive static web showcase (`docs/index.html`) + curated visually verified PNGs (`docs/assets/`)
 - `out/metrics/` & `out/figures/`: Verified TPU telemetry JSONs and rendered figures
-- [REPORT.md](REPORT.md) & [V2-ARCHITECTURE-AND-STATUS.md](V2-ARCHITECTURE-AND-STATUS.md) & [EXPERIMENTS.md](EXPERIMENTS.md)
-
----
-
-## Active Roadmap (Multi-Host Wave 2–4 on TPU v5p-64-2)
-
-- **Head-to-Head vs Blender Open Data (`classroom`, `monster`, `junkshop`)**: Apple-to-apple TPU Wide-BVH + Stage 2 neural relighting and TPU-native multi-bounce path tracing benchmarks against Cycles 5.3.0 and `rtx-h100`.
-- **Ecosystem Adapters**:
-  - Universal `MuJoCo MJX` zero-copy wrapper (`tpu-rtx` one-liner SDK: `obs = tpu_rtx.render(mjx_data, scene)` + Pod `shard_map` scaling)
-  - `OpenUSD` (`.usd/.usda/.usdc/.usdz`) & `.blend` Shader Graph Auto-Compiler
-  - `Isaac Sim` `TiledCamera` & `Omniverse Replicator` zero-copy XLA domain randomization + 128-beam batch LiDAR
-  - `OptiX`-style `GAS/IAS/SBT/optixLaunch` SDK + `jax.grad` differentiable inverse rendering
-  - `tpu_gsplat` + hybrid `MJX Robot + 10M 3DGS` Real-to-Sim Z-buffer compositor
-- **Physical FX**: XLA live deformable cloth Wide-BVH refit, dielectric glass refraction/caustics, and ray-marched volumetric fog / God Rays, plus a real-time BF16 MXU 4K MC denoiser.

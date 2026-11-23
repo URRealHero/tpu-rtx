@@ -1,0 +1,442 @@
+{
+  "backend": "tpu",
+  "device_kind": "TPU v5",
+  "n_devices_visible": 4,
+  "parity_checks": [
+    {
+      "check": "factory_G160_cluster1_vs_v2_soa",
+      "n_enabled_geoms": 160,
+      "geom_match": 0.999969482421875,
+      "depth_mae_m": 4.357265424914658e-06,
+      "normal_mae": 1.9350789443706162e-05,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 3591,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      },
+      "passed": true
+    },
+    {
+      "check": "factory_G2048_cluster1_vs_hlo_and_render_smoke",
+      "n_enabled_geoms": 2048,
+      "geom_match": 1.0,
+      "depth_mae_m": 0.0,
+      "normal_mae": 0.0,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 3591,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      },
+      "passed": true
+    },
+    {
+      "check": "factory_G4096_cluster1_vs_hlo_and_render_smoke",
+      "n_enabled_geoms": 4096,
+      "geom_match": 1.0,
+      "depth_mae_m": 0.0,
+      "normal_mae": 0.0,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 3591,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      },
+      "passed": true
+    },
+    {
+      "check": "gelsight_tactile_cube_parity",
+      "target_shape": "cube",
+      "left_depth_mae_m": 8.596998668508604e-10,
+      "left_depth_max_err_m": 8.381903171539307e-09,
+      "right_depth_mae_m": 2.496562956366688e-10,
+      "right_depth_max_err_m": 8.381903171539307e-09,
+      "left_normal_mae": 0.0,
+      "right_normal_mae": 5.153803599167173e-12,
+      "max_penetration_mm": 1.864,
+      "contact_area_frac": 0.3571,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 606,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      },
+      "passed": true
+    },
+    {
+      "check": "gelsight_tactile_cylinder_parity",
+      "target_shape": "cylinder",
+      "left_depth_mae_m": 5.302354111336172e-10,
+      "left_depth_max_err_m": 3.259629011154175e-08,
+      "right_depth_mae_m": 2.336037141503766e-09,
+      "right_depth_max_err_m": 6.05359673500061e-08,
+      "left_normal_mae": 3.9229288262276896e-08,
+      "right_normal_mae": 1.4205168952230451e-07,
+      "max_penetration_mm": 4.231,
+      "contact_area_frac": 0.267,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 606,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      },
+      "passed": true
+    },
+    {
+      "check": "gelsight_tactile_sphere_parity",
+      "target_shape": "sphere",
+      "left_depth_mae_m": 7.562448445241898e-10,
+      "left_depth_max_err_m": 2.7939677238464355e-08,
+      "right_depth_mae_m": 8.176357368938625e-10,
+      "right_depth_max_err_m": 2.9802322387695312e-08,
+      "left_normal_mae": 5.8851007622706675e-08,
+      "right_normal_mae": 6.197091551030098e-08,
+      "max_penetration_mm": 2.2051,
+      "contact_area_frac": 0.2036,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 0,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 606,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      },
+      "passed": true
+    }
+  ],
+  "task_b_visuo_tactile_runs": [
+    {
+      "name": "panda_visuo_tactile_4sensor_1c_B1024",
+      "n_chips": 1,
+      "batch_size": 1024,
+      "n_sensors": 4,
+      "sensors": [
+        "head_camera",
+        "wrist_camera",
+        "left_tactile",
+        "right_tactile"
+      ],
+      "resolution": "64x64",
+      "with_dr": false,
+      "with_physics": true,
+      "dt_e2e_ms": 57.248,
+      "env_steps_per_s": 17887.0,
+      "sensor_fps": 71547.9,
+      "compile_s": 21.82,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 21711,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      }
+    },
+    {
+      "name": "panda_visuo_tactile_4sensor_1c_B1024",
+      "n_chips": 1,
+      "batch_size": 1024,
+      "n_sensors": 4,
+      "sensors": [
+        "head_camera",
+        "wrist_camera",
+        "left_tactile",
+        "right_tactile"
+      ],
+      "resolution": "64x64",
+      "with_dr": true,
+      "with_physics": true,
+      "dt_e2e_ms": 57.364,
+      "env_steps_per_s": 17851.0,
+      "sensor_fps": 71404.2,
+      "compile_s": 28.61,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 24268,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      }
+    },
+    {
+      "name": "panda_visuo_tactile_4sensor_4c_B1024",
+      "n_chips": 4,
+      "batch_size": 1024,
+      "n_sensors": 4,
+      "sensors": [
+        "head_camera",
+        "wrist_camera",
+        "left_tactile",
+        "right_tactile"
+      ],
+      "resolution": "64x64",
+      "with_dr": false,
+      "with_physics": true,
+      "dt_e2e_ms": 16.485,
+      "env_steps_per_s": 62117.5,
+      "sensor_fps": 248470.0,
+      "compile_s": 38.07,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 21682,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      }
+    },
+    {
+      "name": "panda_visuo_tactile_4sensor_4c_B1024",
+      "n_chips": 4,
+      "batch_size": 1024,
+      "n_sensors": 4,
+      "sensors": [
+        "head_camera",
+        "wrist_camera",
+        "left_tactile",
+        "right_tactile"
+      ],
+      "resolution": "64x64",
+      "with_dr": true,
+      "with_physics": true,
+      "dt_e2e_ms": 16.528,
+      "env_steps_per_s": 61954.7,
+      "sensor_fps": 247819.0,
+      "compile_s": 56.98,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 24239,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      }
+    },
+    {
+      "name": "panda_visuo_tactile_4sensor_4c_B2048",
+      "n_chips": 4,
+      "batch_size": 2048,
+      "n_sensors": 4,
+      "sensors": [
+        "head_camera",
+        "wrist_camera",
+        "left_tactile",
+        "right_tactile"
+      ],
+      "resolution": "64x64",
+      "with_dr": false,
+      "with_physics": true,
+      "dt_e2e_ms": 30.271,
+      "env_steps_per_s": 67656.2,
+      "sensor_fps": 270624.8,
+      "compile_s": 43.97,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 21682,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      }
+    },
+    {
+      "name": "panda_visuo_tactile_4sensor_4c_B2048",
+      "n_chips": 4,
+      "batch_size": 2048,
+      "n_sensors": 4,
+      "sensors": [
+        "head_camera",
+        "wrist_camera",
+        "left_tactile",
+        "right_tactile"
+      ],
+      "resolution": "64x64",
+      "with_dr": true,
+      "with_physics": true,
+      "dt_e2e_ms": 30.288,
+      "env_steps_per_s": 67617.3,
+      "sensor_fps": 270469.3,
+      "compile_s": 62.78,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 24285,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      }
+    }
+  ],
+  "export_npz": "/dev/shm/zaychik-tpu-mjx-w1/out/wave4_showcase.npz",
+  "task_a_factory_scaling": [
+    {
+      "name": "factory_G2048_3cam_6mod",
+      "n_chips": 4,
+      "n_enabled_geoms": 2048,
+      "n_cameras": 3,
+      "n_modalities": 6,
+      "batch_size": 2048,
+      "resolution": "64x64",
+      "cull_mode": "cluster1_hbm",
+      "block_b": 8,
+      "with_dr": true,
+      "with_physics": true,
+      "dt_e2e_ms": 876.269,
+      "env_steps_per_s": 2337.2,
+      "cam_frames_per_s": 7011.5,
+      "est_s_per_1m_frames": 142.62,
+      "compile_s": 8.05,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 26640,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      }
+    },
+    {
+      "name": "factory_G4096_3cam_6mod",
+      "n_chips": 4,
+      "n_enabled_geoms": 4096,
+      "n_cameras": 3,
+      "n_modalities": 6,
+      "batch_size": 2048,
+      "resolution": "64x64",
+      "cull_mode": "cluster1_hbm",
+      "block_b": 8,
+      "with_dr": true,
+      "with_physics": true,
+      "dt_e2e_ms": 1606.096,
+      "env_steps_per_s": 1275.1,
+      "cam_frames_per_s": 3825.4,
+      "est_s_per_1m_frames": 261.41,
+      "compile_s": 155.05,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 0,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 26596,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      }
+    }
+  ],
+  "task_a_1m_frames": [
+    {
+      "name": "factory_G2048_1M_frames",
+      "n_chips": 4,
+      "n_enabled_geoms": 2048,
+      "n_cameras": 3,
+      "n_modalities": 6,
+      "batch_size": 2048,
+      "steps_executed": 163,
+      "total_frames_generated": 1001472,
+      "wall_clock_s": 142.575,
+      "seconds_per_1m_frames": 142.365,
+      "env_steps_per_s": 2341.4,
+      "cam_frames_per_s": 7024.2,
+      "hlo_zero_copy": true
+    }
+  ],
+  "task_a_sim_to_vla": [
+    {
+      "name": "factory_G2048_sim2vla_vit_tiny",
+      "n_chips": 4,
+      "n_enabled_geoms": 2048,
+      "n_cameras": 3,
+      "batch_size": 2048,
+      "vla_params": 1024154,
+      "vla_dtype": "bfloat16",
+      "dt_step_ms": 860.13,
+      "grad_steps_per_s": 1.16,
+      "env_steps_per_s": 2381.0,
+      "frames_per_s": 7143.1,
+      "vla_overhead_pct_vs_sim": -1.84,
+      "loss_start": 0.23781,
+      "loss_end": 0.03321,
+      "grad_norm_end": 0.31728,
+      "compile_s": 129.63,
+      "hlo_zero_copy": true,
+      "hlo_ops": {
+        "host_callbacks": 0,
+        "dot_ops": 0,
+        "conv_ops": 2,
+        "while_ops": 2,
+        "gather_ops": 0,
+        "custom_calls": 0,
+        "hlo_lines": 27340,
+        "send_recv_ops": 0,
+        "zero_copy_verified": true
+      }
+    }
+  ]
+}
