@@ -30,8 +30,7 @@
         var params = new URLSearchParams(window.location.search);
         var urlLang = params.get("lang");
         var savedLang = localStorage.getItem("tpu_rtx_lang");
-        var navLang = (navigator.language || "").toLowerCase().startsWith("zh") ? "zh" : "en";
-        var lang = (urlLang === "zh" || urlLang === "en") ? urlLang : ((savedLang === "zh" || savedLang === "en") ? savedLang : navLang);
+        var lang = (urlLang === "zh" || urlLang === "en") ? urlLang : ((savedLang === "zh" || savedLang === "en") ? savedLang : "en");
         var savedTheme = localStorage.getItem("tpu_rtx_theme");
         var sysDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
         var theme = (savedTheme === "dark" || savedTheme === "light") ? savedTheme : (sysDark ? "dark" : "light");
