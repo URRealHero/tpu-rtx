@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TPU-RTX — A Systolic Array Can Ray-Trace, Path-Trace &amp; Splat Like a GPU | Feiyang Liu</title>
+  <title>TPU-RTX — Native Ray Tracing, Path Tracing &amp; 3DGS on Google TPU | Feiyang Liu</title>
   <meta name="author" content="Feiyang Liu" />
-  <meta name="description" content="Zero-copy RTX-class ray tracing, multi-bounce Monte Carlo path tracing, 300M-splat / 8K 3DGS, Disney Moana OpenUSD (22.30B tris), TPU-DLSS 3.5, and 266k FPS Physical AI rendering natively on Google Cloud TPU v5p by Feiyang Liu." />
+  <meta name="description" content="TPU-RTX: Native Google Cloud TPU v5p ray tracing, path tracing, 1.06B-splat 3DGS, 22.30B-tri Moana OpenUSD, 17.18B unique tris &amp; 411k FPS Physical AI by Feiyang Liu." />
 
   <!-- OpenGraph / Social Cards -->
   <meta property="og:type" content="article" />
-  <meta property="og:title" content="TPU-RTX: A Systolic Array Can Ray-Trace, Path-Trace &amp; Splat Like a GPU" />
-  <meta property="og:description" content="Disney Moana 22.30B tris in 4.65 GiB HBM, Native 8K Real-World 3DGS, 58.9 FPS 4K TPU-DLSS 3.5, and 266,209 FPS MJX+Render — natively on Google Cloud TPU v5p by Feiyang Liu." />
+  <meta property="og:title" content="TPU-RTX: Turning Google TPUs into Real-Time Ray-Tracing Engines" />
+  <meta property="og:description" content="Native Google TPU v5p (up to 32 chips, 3.064 TB HBM): 22.30B-tri Moana in 4.65 GiB HBM, 1.06B-splat 3DGS, 63.88B LiDAR rays/s, and 411k FPS MJX+Render." />
   <meta property="og:image" content="https://zaychikliu.github.io/tpu-rtx/assets/og-cover.jpg" />
   <meta property="og:url" content="https://zaychikliu.github.io/tpu-rtx/" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="TPU-RTX by Feiyang Liu — Native RTX-Class Rendering on Google Cloud TPU v5p" />
-  <meta name="twitter:description" content="Zero host callbacks. Zero HBM gathers. From 266k FPS MuJoCo MJX to 22.30B-tri Disney Moana &amp; 8K 3DGS on TPU v5p." />
+  <meta name="twitter:title" content="TPU-RTX by Feiyang Liu — Native Ray Tracing on Google Cloud TPU v5p" />
+  <meta name="twitter:description" content="GPU vs TPU architecture & tradeoffs, rtx-h100-grade profiling, 19 split-slider comparisons, 23 uncropped standalone scenes &amp; traceable JSON ledger." />
   <meta name="twitter:image" content="https://zaychikliu.github.io/tpu-rtx/assets/og-cover.jpg" />
 
   <!-- Fonts -->
@@ -55,13 +55,13 @@
       </a>
 
       <nav class="nav-links" aria-label="Chapters">
-        <a href="#ch-01" data-nav="ch-01" data-i18n="nav.c1">01 Silicon</a>
-        <a href="#ch-02" data-nav="ch-02" data-i18n="nav.c2">02 Film USD</a>
-        <a href="#ch-03" data-nav="ch-03" data-i18n="nav.c3">03 Optics</a>
-        <a href="#ch-04" data-nav="ch-04" data-i18n="nav.c4">04 3DGS</a>
-        <a href="#ch-05" data-nav="ch-05" data-i18n="nav.c5">05 Neural</a>
-        <a href="#ch-06" data-nav="ch-06" data-i18n="nav.c6">06 Robotics</a>
-        <a href="#ch-07" data-nav="ch-07" data-i18n="nav.c7">07 Telemetry</a>
+        <a href="#ch-01" data-nav="ch-01" data-i18n="nav.c1">01 GPU vs TPU</a>
+        <a href="#ch-02" data-nav="ch-02" data-i18n="nav.c2">02 Evolution</a>
+        <a href="#ch-03" data-nav="ch-03" data-i18n="nav.c3">03 Film &amp; Optics</a>
+        <a href="#ch-04" data-nav="ch-04" data-i18n="nav.c4">04 3DGS &amp; Neural</a>
+        <a href="#ch-05" data-nav="ch-05" data-i18n="nav.c5">05 Training &amp; AI</a>
+        <a href="#ch-06" data-nav="ch-06" data-i18n="nav.c6">06 Post-Mortems</a>
+        <a href="#ch-07" data-nav="ch-07" data-i18n="nav.c7">07 Ledger &amp; Index</a>
         <a href="#ch-08" data-nav="ch-08" data-i18n="nav.c8">08 Limits</a>
       </nav>
 
@@ -69,7 +69,7 @@
         <button class="pill-btn" id="lang-toggle" type="button" aria-label="Switch Language">EN / 中文</button>
         <button class="pill-btn" id="theme-toggle" type="button" aria-label="Toggle Light or Dark Theme">
           <span id="theme-icon" aria-hidden="true"></span>
-          <span id="theme-label">Night</span>
+          <span id="theme-label">Obsidian</span>
         </button>
         <a class="pill-btn gh" href="https://github.com/ZaychikLiu/tpu-rtx" target="_blank" rel="noopener">GitHub ↗</a>
       </div>
@@ -95,34 +95,34 @@
         <p class="hero-lead" id="hero-lead"></p>
         <div class="hero-actions">
           <div class="btn-row">
-            <a class="cta-btn primary" href="#ch-07" data-i18n="hero.ctaGallery">Inspect 24 Verified Plates</a>
-            <a class="cta-btn" href="#ch-07-bench" data-i18n="hero.ctaBench">Telemetry Console</a>
+            <a class="cta-btn primary" href="#ch-01" data-i18n="hero.ctaStart">GPU vs TPU Architecture</a>
+            <a class="cta-btn" href="#ch-07" data-i18n="hero.ctaGallery">Ledger &amp; Plate Index</a>
           </div>
-          <span class="verify-stamp" data-i18n="hero.stamp">QA-Audited Monograph · Every frame run &amp; inspected on live TPU v5p (interpret=False)</span>
+          <span class="verify-stamp" data-i18n="hero.stamp">Pure Single-Scene Cinema Monograph · Zero Cropped Frames · Zero Collages</span>
         </div>
       </div>
 
-      <!-- Cinema 3-Plate Stage -->
+      <!-- Uncropped Single-Scene 3-Plate Cinema Hero Stage -->
       <div class="cinema-stage">
-        <div class="cinema-viewport" id="hero-stage-view" title="Click to open 4K/8K Darkroom Lightbox">
-          <img id="hero-stage-img" src="./assets/web/v3_w2_moana_sunset_reef_4k.webp" alt="TPU-RTX Feature Render" />
-          <div class="cinema-hud">
-            <div class="hud-chip" id="hero-hud-left"></div>
-            <div class="hud-chip" id="hero-hud-right"></div>
-          </div>
+        <div class="cinema-viewport" id="hero-stage-view" title="Click to open Darkroom Lightbox">
+          <img id="hero-stage-img" src="./assets/singles/moana_sunset.webp" alt="Disney Moana Island Sunset Lagoon 4K on TPU v5p" />
+        </div>
+        <div class="cinema-hud-bar">
+          <span id="hero-hud-left"></span>
+          <span id="hero-hud-right"></span>
         </div>
         <div class="cinema-tabs" id="hero-tabs">
           <button class="cinema-tab active" data-hero="0" type="button">
-            <span class="cinema-tab-idx" data-i18n="hero.t0i">PLATE 01 · OPENUSD v2.1</span>
-            <span class="cinema-tab-title" data-i18n="hero.t0t">Disney Moana (22.30B Tris): Sunset &amp; Underwater Reef</span>
+            <span class="cinema-tab-idx" data-i18n="hero.t0i">SCENE 01 · OPENUSD SUNSET</span>
+            <span class="cinema-tab-title" data-i18n="hero.t0t">Disney Moana Lagoon Sunset (22.30B Tris, 4K)</span>
           </button>
           <button class="cinema-tab" data-hero="1" type="button">
-            <span class="cinema-tab-idx" data-i18n="hero.t1i">PLATE 02 · NATIVE 8K 3DGS</span>
-            <span class="cinema-tab-title" data-i18n="hero.t1t">Mip-NeRF 360 garden (5.83M SH3) @ 7680×4320 1:1 Crop</span>
+            <span class="cinema-tab-idx" data-i18n="hero.t1i">SCENE 02 · FILM × MJX</span>
+            <span class="cinema-tab-title" data-i18n="hero.t1t">Live MJX Robots on Moana Beach (Native 4K)</span>
           </button>
           <button class="cinema-tab" data-hero="2" type="button">
-            <span class="cinema-tab-idx" data-i18n="hero.t2i">PLATE 03 · 4K PHYSICAL OPTICS</span>
-            <span class="cinema-tab-title" data-i18n="hero.t2t">Native 4K f/1.4 32-spp Thin-Lens Bokeh (108.7 ms)</span>
+            <span class="cinema-tab-idx" data-i18n="hero.t2i">SCENE 03 · REAL-WORLD 3DGS</span>
+            <span class="cinema-tab-title" data-i18n="hero.t2t">Mip-NeRF 360 Garden @ Native 4K (SH3, 0 Gather)</span>
           </button>
         </div>
       </div>
@@ -131,16 +131,40 @@
       <div class="kpi-ledger" id="kpi-ledger"></div>
     </section>
 
-    <!-- 01. SILICON THESIS & ARCHITECTURE -->
+    <!-- 01. GPU VS TPU ARCHITECTURE, TRADEOFFS & SILICON DESIGN (UPFRONT) -->
     <section class="chapter reveal" id="ch-01">
       <div class="chapter-grid">
         <aside class="chapter-rail">
-          <div class="chapter-num" data-i18n="c1.num">01 / 08 · SILICON THESIS</div>
-          <div class="chapter-kicker" data-i18n="c1.rail">Why naive SIMT raytracing stalls on systolic arrays — and how 64-ary VMEM alignment turns a TPU into an RTX engine.</div>
+          <div class="chapter-num" data-i18n="c1.num">01 / 08 · GPU VS TPU</div>
+          <div class="chapter-kicker" data-i18n="c1.rail">First principles: how SIMT RTX GPUs and Systolic TPU MXUs execute ray tracing differently — and where each wins or loses.</div>
         </aside>
         <div>
           <h2 class="chapter-title" id="c1-title"></h2>
           <p class="chapter-lead" id="c1-lead"></p>
+
+          <div class="chart-card" style="margin-bottom: 22px;">
+            <div class="chart-card-head">
+              <div>
+                <div class="chart-card-tag" data-i18n="c1.gvtTag">SILICON &amp; DATAFLOW COMPARISON</div>
+                <div class="chart-card-title" data-i18n="c1.gvtTitle">SIMT RTX GPU vs. Systolic Google TPU v5p Execution Pipeline</div>
+                <div class="chart-card-sub" data-i18n="c1.gvtSub">Why CUDA-style pointer chasing stalls on TPU HBM, and how VMEM 64-ary Wide-BVH unlocks systolic ray tracing.</div>
+              </div>
+            </div>
+            <div id="chart-gpu-vs-tpu"></div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th data-i18n="gvt.h1">Dimension</th>
+                  <th data-i18n="gvt.h2">Google Cloud TPU v5p (TPU-RTX)</th>
+                  <th data-i18n="gvt.h3">NVIDIA GPU (RTX / H100 / Isaac)</th>
+                </tr>
+              </thead>
+              <tbody id="gvt-tbody"></tbody>
+            </table>
+          </div>
 
           <div class="pillar-grid" id="c1-pillars"></div>
 
@@ -154,54 +178,45 @@
                   <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--cyan)" />
                 </marker>
               </defs>
-              <!-- Outer HBM enclosure -->
               <rect x="8" y="8" width="944" height="234" rx="8" fill="none" stroke="var(--hairline-strong)" stroke-dasharray="6 4" />
               <text x="24" y="30" class="sub" id="svg-hbm-banner">SINGLE XLA HLO GRAPH · ZERO HOST_CALLBACK · ZERO HBM GATHER_OPS</text>
 
-              <!-- Box 1: Physics / Asset State -->
               <rect x="24" y="48" width="190" height="118" rx="6" class="box" />
-              <text x="38" y="74" class="lbl" id="svg-b1-t">HBM STATE / ASSETS</text>
+              <text x="38" y="74" class="lbl">HBM STATE / ASSETS</text>
               <text x="38" y="96" class="sub">mjx.Data (B=8192)</text>
               <text x="38" y="114" class="sub">OpenUSD / .blend Packs</text>
               <text x="38" y="132" class="sub">3DGS / 4DGS (up to 300M)</text>
               <text x="38" y="150" class="sub">95.74 GiB HBM / chip</text>
 
-              <!-- Arrow 1->2 -->
               <line x1="214" y1="107" x2="254" y2="107" class="arrow" marker-end="url(#arr-a)" />
 
-              <!-- Box 2: VMEM Pallas Kernel -->
               <rect x="256" y="48" width="230" height="118" rx="6" class="box-accent" />
-              <text x="270" y="74" class="lbl" id="svg-b2-t">PALLAS MOSAIC (64 MiB VMEM)</text>
+              <text x="270" y="74" class="lbl">PALLAS MOSAIC (64 MiB VMEM)</text>
               <text x="270" y="96" class="sub">3-Level 64-Ary Wide-BVH</text>
               <text x="270" y="114" class="sub">pltpu.async_copy Leaf Stream</text>
               <text x="270" y="132" class="sub">Fused GGX+AO+Shadows / EWA</text>
               <text x="270" y="150" class="sub">Zero HBM G-Buffer Roundtrip</text>
 
-              <!-- Arrow 2->3 -->
               <line x1="486" y1="107" x2="526" y2="107" class="arrow" marker-end="url(#arr-a)" />
 
-              <!-- Box 3: BF16/INT8 MXU -->
               <rect x="528" y="48" width="196" height="118" rx="6" class="box-cyan" />
-              <text x="542" y="74" class="lbl" id="svg-b3-t">BF16 / INT8 MXU</text>
+              <text x="542" y="74" class="lbl">BF16 / INT8 MXU</text>
               <text x="542" y="96" class="sub">TPU-DLSS 3.5 (58.9 FPS 4K)</text>
               <text x="542" y="114" class="sub">4K Denoiser (11.39 ms)</text>
               <text x="542" y="132" class="sub">Static Relight (78.6 FPS 4K)</text>
               <text x="542" y="150" class="sub">459 TFLOP/s · barrier()</text>
 
-              <!-- Arrow 3->4 -->
               <line x1="724" y1="107" x2="764" y2="107" class="arrow" marker-end="url(#arr-a)" />
 
-              <!-- Box 4: Outputs / Policy / Grad -->
               <rect x="766" y="48" width="170" height="118" rx="6" class="box" />
-              <text x="780" y="74" class="lbl" id="svg-b4-t">OUTPUT / POLICY</text>
+              <text x="780" y="74" class="lbl">OUTPUT / POLICY</text>
               <text x="780" y="96" class="sub">4K/8K Cinema EXR/AgX</text>
               <text x="780" y="114" class="sub">PPO / ViT-Tiny VLA</text>
               <text x="780" y="132" class="sub">128×2048 LiDAR + GelSight</text>
               <text x="780" y="150" class="sub">jax.grad Pixel→Torque</text>
 
-              <!-- Gradient feedback loop -->
               <path d="M 851 166 L 851 206 L 119 206 L 119 169" class="arrow-cyan" marker-end="url(#arr-c)" />
-              <text x="330" y="224" class="sub" id="svg-grad-lbl">END-TO-END jax.value_and_grad · MULTI-CHIP shard_map + ICI pmin / all_gather</text>
+              <text x="330" y="224" class="sub">END-TO-END jax.value_and_grad · MULTI-CHIP shard_map + ICI pmin / all_gather</text>
             </svg>
             <div class="diagram-cap" id="c1-diag-cap"></div>
           </div>
@@ -221,87 +236,234 @@ obs = tpu_rtx.render(mjx_data, scene)  # -&gt; {"rgb", "depth", "normal", "seg_i
       </div>
     </section>
 
-    <!-- 02. FEATURE-FILM OPENUSD & BLENDER STUDIO -->
+    <!-- 02. SYSTEM EVOLUTION, GENERALIZATION & HARDWARE PROFILING -->
     <section class="chapter reveal" id="ch-02">
       <div class="chapter-grid">
         <aside class="chapter-rail">
-          <div class="chapter-num" data-i18n="c2.num">02 / 08 · FEATURE FILM &amp; STUDIO</div>
-          <div class="chapter-kicker" data-i18n="c2.rail">Disney Moana OpenUSD v2.1 (22.30B tris) &amp; canonical Blender Studio scenes compiled straight into Wide-BVH-64 + AgX.</div>
+          <div class="chapter-num" data-i18n="c2.num">02 / 08 · EVOLUTION &amp; PROFILING</div>
+          <div class="chapter-kicker" data-i18n="c2.rail">Chronological step-envelope optimization log (including negative runs), 3DGS pivot, 64 MiB VMEM cliff, MXU Pareto, and Hero vs. Held-Out Orbit PSNR.</div>
         </aside>
         <div>
           <h2 class="chapter-title" id="c2-title"></h2>
           <p class="chapter-lead" id="c2-lead"></p>
-          <div id="c2-plates"></div>
+
+          <!-- Full-width rtx-h100 style Chronological Optimization Envelope -->
+          <div class="chart-card">
+            <div class="chart-card-head">
+              <div>
+                <div class="chart-card-tag" data-i18n="ch.evoTag">CHRONOLOGICAL STEP-ENVELOPE · NEGATIVE RUNS EXPOSED</div>
+                <div class="chart-card-title" data-i18n="ch.evoTitle">587× Optimization Trajectory (453 → 266,209 FPS)</div>
+                <div class="chart-card-sub" data-i18n="ch.evoSub">Every new throughput envelope plus negative/flat runs plotted on live TPU v5p (inspired by wenhaochai/rtx-h100).</div>
+              </div>
+            </div>
+            <div id="chart-evolution"></div>
+            <div class="chart-foot"><span>Source: v2_live_*.json, v3_w0_wave2_100k_fps.json</span><span>host_callbacks = 0</span></div>
+          </div>
+
+          <div class="charts-2col">
+            <div class="chart-card">
+              <div>
+                <div class="chart-card-tag" data-i18n="ch.gsTag">LOG-SCALE PIVOT · 3D GAUSSIAN SPLATTING</div>
+                <div class="chart-card-title" data-i18n="ch.gsTitle">3DGS Trajectory: Negative Pallas (-1.81×) → 142k FPS / 300M</div>
+                <div class="chart-card-sub" data-i18n="ch.gsSub">Replacing padded Pallas DMA writes with chunked VMEM EWA unlocks 142,008 FPS &amp; 300M splats in 4c HBM.</div>
+              </div>
+              <div id="chart-gs3d-evo"></div>
+              <div class="chart-foot"><span>Source: v2_live_assets_1c.json, v3_w3_gs3d_v3.json, v3_w3_wave6_4dgs_300m.json</span><span>gather_ops = 0</span></div>
+            </div>
+
+            <div class="chart-card">
+              <div>
+                <div class="chart-card-tag" data-i18n="ch.vmemTag">HARDWARE BOUNDARY · LIVE TPU SWEEP</div>
+                <div class="chart-card-title" data-i18n="ch.vmemTitle">64 MiB VMEM Spill Cliff at tile_size = 512 (-24%)</div>
+                <div class="chart-card-sub" data-i18n="ch.vmemSub">Measured E2E FPS as ray tile size sweeps 64 → 128 → 256 → 512 on 1 TPU v5p chip (B=1024).</div>
+              </div>
+              <div id="chart-vmem-cliff"></div>
+              <div class="chart-foot"><span>Source: live_tpu_tile_sweep_1c.json</span><span>Peak @ tile_size = 64</span></div>
+            </div>
+
+            <div class="chart-card">
+              <div>
+                <div class="chart-card-tag" data-i18n="ch.mxuTag">MXU QUANTIZATION · ACCURACY VS FPS</div>
+                <div class="chart-card-title" data-i18n="ch.mxuTitle">FP32 vs BF16 vs INT8 W8A8 MXU Precision Pareto</div>
+                <div class="chart-card-sub" data-i18n="ch.mxuSub">BF16 doubles throughput (2.11× @ 4K: 78.6 vs 37.2 FPS) with exact 20.276 dB PSNR parity; INT8 QAT costs only -0.047 dB.</div>
+              </div>
+              <div id="chart-mxu-pareto"></div>
+              <div class="chart-foot"><span>Source: v3_w4_wave5_relight_quant.json</span><span>24 held-out 512² GT states</span></div>
+            </div>
+
+            <div class="chart-card">
+              <div>
+                <div class="chart-card-tag" data-i18n="ch.orbTag">GENERALIZATION CHECK · CYCLES EXR</div>
+                <div class="chart-card-title" data-i18n="ch.orbTitle">Hero Camera vs. Held-Out Orbit Camera PSNR</div>
+                <div class="chart-card-sub" data-i18n="ch.orbSub">Reporting both hero-view and full multi-angle held-out orbit parity across 7 Blender Studio scenes.</div>
+              </div>
+              <div id="chart-quality-orbit"></div>
+              <div class="chart-foot"><span>Source: v3_w5_wave5/6*.json, v3_w7_barbershop_cinema.json</span><span>AgX Tonemap</span></div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- 03. WAVE OPTICS, RESTIR & BOKEH -->
+    <!-- 03. FEATURE-FILM OPENUSD, BLENDER STUDIO, CLOTH & OPTICS -->
     <section class="chapter reveal" id="ch-03">
       <div class="chapter-grid">
         <aside class="chapter-rail">
-          <div class="chapter-num" data-i18n="c3.num">03 / 08 · PHYSICAL OPTICS</div>
-          <div class="chapter-kicker" data-i18n="c3.rail">Spectral interference, anisotropic brushed metals, 12-bounce mirrors, Cauchy dispersion, volumetric SSS, 1,024-light ReSTIR, and 4K thin-lens bokeh.</div>
+          <div class="chapter-num" data-i18n="c3.num">03 / 08 · FILM, CLOTH &amp; OPTICS</div>
+          <div class="chapter-kicker" data-i18n="c3.rail">Two interactive left/right sliders (6 Blender Cycles scenes + 8 optical/cloth effects) plus 5 full-width standalone 4K/8K Moana &amp; Caustics plates.</div>
         </aside>
         <div>
           <h2 class="chapter-title" id="c3-title"></h2>
           <p class="chapter-lead" id="c3-lead"></p>
-          <div id="c3-plates"></div>
+
+          <!-- Slider Lab 1: TPU-RTX vs Blender Cycles Ground Truth (6 Scenes) -->
+          <div class="compare-lab" id="compare-blender"></div>
+
+          <!-- Slider Lab 2: Physical Optics, Bokeh, ReSTIR & Deformable Cloth (8 Effects) -->
+          <div class="compare-lab" id="compare-optics"></div>
+
+          <!-- Full-Width Standalone Single-Scene Plates (ZERO Collages) -->
+          <div class="spread-stack" id="spread-ch3"></div>
         </div>
       </div>
     </section>
 
-    <!-- 04. 3DGS / 4DGS / 300M CEILING -->
+    <!-- 04. REAL-WORLD 3DGS / 4DGS & NEURAL SILICON -->
     <section class="chapter reveal" id="ch-04">
       <div class="chapter-grid">
         <aside class="chapter-rail">
-          <div class="chapter-num" data-i18n="c4.num">04 / 08 · 3DGS &amp; 4DGS</div>
-          <div class="chapter-kicker" data-i18n="c4.rail">Eliminating scatter/gather unlocks 142k FPS splatting, 300M Gaussians in 4-chip HBM, Native 8K photogrammetry, and live MJX collision push.</div>
+          <div class="chapter-num" data-i18n="c4.num">04 / 08 · 3DGS &amp; NEURAL SILICON</div>
+          <div class="chapter-kicker" data-i18n="c4.rail">Interactive 4K Single-Scene Mip-NeRF 360 + Bistro switcher + 5-preset 4DGS / DLSS / Denoiser / Relight split slider.</div>
         </aside>
         <div>
           <h2 class="chapter-title" id="c4-title"></h2>
           <p class="chapter-lead" id="c4-lead"></p>
-          <div id="c4-plates"></div>
+
+          <!-- Full-Width Standalone 4K 3DGS Stage Switcher (5 Scenes) -->
+          <div class="cinema-stage" id="stage-3dgs">
+            <div class="cinema-viewport" id="stage-3dgs-view" title="Click to inspect full 4K scene in Darkroom Lightbox">
+              <img id="stage-3dgs-img" src="./assets/singles/garden_4k.webp" alt="Mip-NeRF 360 Garden Native 4K" />
+            </div>
+            <div class="cinema-hud-bar">
+              <span id="stage-3dgs-hudL"></span>
+              <span id="stage-3dgs-hudR"></span>
+            </div>
+            <div class="cinema-tabs cols-5" id="stage-3dgs-tabs"></div>
+          </div>
+
+          <!-- Slider Lab 3: 4DGS Push, TPU-DLSS 3.5, 4K Denoiser & Relighting (5 Presets) -->
+          <div class="compare-lab" id="compare-neural"></div>
         </div>
       </div>
     </section>
 
-    <!-- 05. NEURAL SILICON (DLSS, DENOISER, RELIGHT) -->
+    <!-- 05. EMBODIED PHYSICAL AI & LIVE TRAINING CURVES -->
     <section class="chapter reveal" id="ch-05">
       <div class="chapter-grid">
         <aside class="chapter-rail">
-          <div class="chapter-num" data-i18n="c5.num">05 / 08 · NEURAL SILICON</div>
-          <div class="chapter-kicker" data-i18n="c5.rail">Putting 459 TFLOP/s BF16 MXUs to work on temporal reconstruction (TPU-DLSS 3.5), 4K denoising, and zero-raytrace relighting.</div>
+          <div class="chapter-num" data-i18n="c5.num">05 / 08 · TRAINING &amp; PHYSICAL AI</div>
+          <div class="chapter-kicker" data-i18n="c5.rail">Four live TPU convergence &amp; throughput plots + full-width MuJoCo Menagerie PBR robot stage (G1, Go2, Panda, Aero Hand).</div>
         </aside>
         <div>
           <h2 class="chapter-title" id="c5-title"></h2>
           <p class="chapter-lead" id="c5-lead"></p>
-          <div id="c5-plates"></div>
+
+          <div class="charts-2col">
+            <div class="chart-card">
+              <div>
+                <div class="chart-card-tag" data-i18n="ch.dpTag">PIXEL-TO-TORQUE · ZERO STATE LABELS</div>
+                <div class="chart-card-title" data-i18n="ch.dpTitle">End-to-End jax.grad(mjx.step + PBR) Servoing (240 iters in 8.61 s)</div>
+                <div class="chart-card-sub" data-i18n="ch.dpSub">Pure RGB L2 pixel loss drives 7-DOF joint torques from 17.55 dB -> 36.08 dB while cutting EE 3D error from 16.03 cm -> 1.63 cm.</div>
+              </div>
+              <div id="chart-train-diffphys"></div>
+              <div class="chart-foot"><span>Source: v3_w0_taskB.json</span><span>27.87 grad-steps/s</span></div>
+            </div>
+
+            <div class="chart-card">
+              <div>
+                <div class="chart-card-tag" data-i18n="ch.ppoTag">ZERO-COPY VISION PPO · 4 TPU CHIPS</div>
+                <div class="chart-card-title" data-i18n="ch.ppoTitle">Closed-Loop Policy Training in Single-Graph HBM</div>
+                <div class="chart-card-sub" data-i18n="ch.ppoSub">Cartpole (656.4k steady env-steps/s), PandaPickCube (173.5k/s), and Humanoid-21DOF (221.7k/s) all train end-to-end on TPU pixels.</div>
+              </div>
+              <div id="chart-train-ppo"></div>
+              <div class="chart-foot"><span>Source: v3_w0_wave4_rl_sdk.json</span><span>hlo_zero_copy = true</span></div>
+            </div>
+
+            <div class="chart-card">
+              <div>
+                <div class="chart-card-tag" data-i18n="ch.g3dTag">32-VIEW 3DGS GRADIENT CONVERGENCE</div>
+                <div class="chart-card-title" data-i18n="ch.g3dTitle">Real-World Mip-NeRF 360 garden (25.5 s Wall Clock)</div>
+                <div class="chart-card-sub" data-i18n="ch.g3dSub">4-chip data-parallel jax.grad hits 28.56 dB in 3.22 s, 30.30 dB in 7.50 s, and 31.31 dB peak @ 23.42 steps/s (749.4 view-steps/s).</div>
+              </div>
+              <div id="chart-train-3dgs"></div>
+              <div class="chart-foot"><span>Source: v3_w3_wave7_8k_and_gradtrain.json</span><span>50k Gaussians · 128²</span></div>
+            </div>
+
+            <div class="chart-card">
+              <div>
+                <div class="chart-card-tag" data-i18n="ch.vlaTag">SIM-TO-VLA, GELSIGHT &amp; AUTONOMOUS RIG</div>
+                <div class="chart-card-title" data-i18n="ch.vlaTitle">1M VLA Frames (142.6s), ViT-Tiny VLA &amp; 8×1080p+LiDAR Rig</div>
+                <div class="chart-card-sub" data-i18n="ch.vlaSub">Measured end-to-end multimodal factory data generation, online transformer training, and autonomous perception parity.</div>
+              </div>
+              <div id="chart-vla-surround"></div>
+              <div class="chart-foot"><span>Source: v3_w1_wave4_vla_tactile_factory.json, v3_w6_wave5_surround_bokeh.json</span><span>0 host callbacks</span></div>
+            </div>
+          </div>
+
+          <!-- Full-Width Standalone Menagerie PBR Stage Switcher (4 Robots) -->
+          <div class="cinema-stage" id="stage-menagerie">
+            <div class="cinema-viewport" id="stage-menagerie-view" title="Click to inspect Menagerie PBR render in Darkroom Lightbox">
+              <img id="stage-menagerie-img" src="./assets/singles/menagerie_g1.webp" alt="Unitree G1 Humanoid in TPU-RTX Wide-BVH-64" />
+            </div>
+            <div class="cinema-hud-bar">
+              <span id="stage-menagerie-hudL"></span>
+              <span id="stage-menagerie-hudR"></span>
+            </div>
+            <div class="cinema-tabs cols-4" id="stage-menagerie-tabs"></div>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- 06. EMBODIED PHYSICAL AI & DIFF PHYSICS -->
+    <!-- 06. ENGINEERING POST-MORTEMS & QA-REJECTED FAILURE CASES -->
     <section class="chapter reveal" id="ch-06">
       <div class="chapter-grid">
         <aside class="chapter-rail">
-          <div class="chapter-num" data-i18n="c6.num">06 / 08 · PHYSICAL AI</div>
-          <div class="chapter-kicker" data-i18n="c6.rail">From 266,209 FPS MJX vision RL and MuJoCo Menagerie to 1M factory frames in 142.6 s, GelSight visuo-tactile, and pixel-to-torque gradients.</div>
+          <div class="chapter-num" data-i18n="c6.num">06 / 08 · POST-MORTEMS</div>
+          <div class="chapter-kicker" data-i18n="c6.rail">Real bottlenecks, negative Pallas benchmarks, neural shader ablations, multi-host pitfalls, and full-width QA-rejected renders.</div>
         </aside>
         <div>
           <h2 class="chapter-title" id="c6-title"></h2>
           <p class="chapter-lead" id="c6-lead"></p>
-          <div id="c6-plates"></div>
+
+          <div class="postmortem-grid" id="postmortem-grid"></div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th data-i18n="ab.h1">Stage-2 Neural Shader Ablation</th>
+                  <th data-i18n="ab.h2">PSNR (dB)</th>
+                  <th data-i18n="ab.h3">ROI Contact PSNR</th>
+                  <th data-i18n="ab.h4">Occ Mismatch</th>
+                  <th data-i18n="ab.h5">Gate &amp; Root Cause</th>
+                </tr>
+              </thead>
+              <tbody id="ablation-tbody"></tbody>
+            </table>
+          </div>
+
+          <div class="rejected-pair" id="rejected-pair"></div>
         </div>
       </div>
     </section>
 
-    <!-- 07. TELEMETRY CONSOLE & FULL 24-PLATE CONTACT INDEX -->
+    <!-- 07. TELEMETRY CONSOLE, ZERO-OVERFLOW JSON LEDGER & PLATE DIRECTORY -->
     <section class="chapter reveal" id="ch-07">
       <div class="chapter-grid">
         <aside class="chapter-rail">
-          <div class="chapter-num" data-i18n="c7.num">07 / 08 · TELEMETRY &amp; INDEX</div>
-          <div class="chapter-kicker" data-i18n="c7.rail">Switch subsystem telemetry tracks or filter all 24 QA-audited PNG plates. Click any image for the full-res Darkroom Lightbox &amp; 1:1 Pixel Loupe.</div>
+          <div class="chapter-num" data-i18n="c7.num">07 / 08 · TELEMETRY &amp; LEDGER</div>
+          <div class="chapter-kicker" data-i18n="c7.rail">Interactive subsystem bars, zero-overflow 20-row JSON telemetry ledger, and quick-jump directory for all 25 standalone renders (no tiny thumbnail clutter).</div>
         </aside>
         <div>
           <h2 class="chapter-title" id="c7-title"></h2>
@@ -318,16 +480,42 @@ obs = tpu_rtx.render(mjx_data, scene)  # -&gt; {"rgb", "depth", "normal", "seg_i
             <div id="bench-content"></div>
           </div>
 
-          <div class="tab-strip" id="gallery-tabs">
-            <button class="tab-btn active" data-filter="all" type="button" data-i18n="gal.all">All Audited Plates (24)</button>
-            <button class="tab-btn" data-filter="film" type="button" data-i18n="gal.film">Film &amp; Blender Studio (8)</button>
-            <button class="tab-btn" data-filter="optics" type="button" data-i18n="gal.optics">Optical FX &amp; ReSTIR (5)</button>
-            <button class="tab-btn" data-filter="gs3d" type="button" data-i18n="gal.gs3d">Real-World 3DGS / 4DGS (4)</button>
-            <button class="tab-btn" data-filter="dlss" type="button" data-i18n="gal.dlss">TPU-DLSS 3.5 &amp; Relight (3)</button>
-            <button class="tab-btn" data-filter="robotics" type="button" data-i18n="gal.robotics">Menagerie, Isaac &amp; Diff Phys (3)</button>
-            <button class="tab-btn" data-filter="pod" type="button" data-i18n="gal.pod">4-Chip HBM Ceiling (1)</button>
+          <div class="ledger-box">
+            <div class="ledger-controls">
+              <input class="ledger-search" id="ledger-search" type="search" placeholder="Search experiments, scenes, JSON..." aria-label="Search Experiment Ledger" />
+              <div class="tab-strip" id="ledger-tabs" style="margin-bottom:0;">
+                <button class="tab-btn active" data-ld="all" type="button" data-i18n="ld.all">All (21)</button>
+                <button class="tab-btn" data-ld="robotics" type="button" data-i18n="ld.rob">Robotics</button>
+                <button class="tab-btn" data-ld="film" type="button" data-i18n="ld.film">Film &amp; Cloth</button>
+                <button class="tab-btn" data-ld="gs3d" type="button" data-i18n="ld.gs">3DGS/4DGS</button>
+                <button class="tab-btn" data-ld="neural" type="button" data-i18n="ld.nn">Neural/Optics</button>
+              </div>
+            </div>
+            <div class="table-wrap" style="margin-bottom:0;">
+              <table>
+                <thead>
+                  <tr>
+                    <th data-i18n="lt.h1">Experiment</th>
+                    <th data-i18n="lt.h2">Config / Scale</th>
+                    <th data-i18n="lt.h3">Throughput</th>
+                    <th data-i18n="lt.h4">Accuracy / Parity</th>
+                    <th data-i18n="lt.h5">JSON</th>
+                  </tr>
+                </thead>
+                <tbody id="ledger-tbody"></tbody>
+              </table>
+            </div>
           </div>
-          <div class="contact-grid" id="gallery-grid"></div>
+
+          <div class="tab-strip" id="plate-filters">
+            <button class="tab-btn active" data-filter="all" type="button" data-i18n="gal.all">All Standalone Plates (25)</button>
+            <button class="tab-btn" data-filter="film" type="button" data-i18n="gal.film">Moana &amp; Blender Studio (10)</button>
+            <button class="tab-btn" data-filter="optics" type="button" data-i18n="gal.optics">Physical Optics &amp; Caustics (4)</button>
+            <button class="tab-btn" data-filter="gs3d" type="button" data-i18n="gal.gs3d">Real-World 3DGS / Bistro (5)</button>
+            <button class="tab-btn" data-filter="robotics" type="button" data-i18n="gal.robotics">Menagerie PBR Robots (4)</button>
+            <button class="tab-btn" data-filter="rejected" type="button" data-i18n="gal.rej">QA-Rejected (2)</button>
+          </div>
+          <div class="plate-directory" id="plate-directory"></div>
         </div>
       </div>
     </section>
@@ -337,32 +525,16 @@ obs = tpu_rtx.render(mjx_data, scene)  # -&gt; {"rgb", "depth", "normal", "seg_i
       <div class="chapter-grid">
         <aside class="chapter-rail">
           <div class="chapter-num" data-i18n="c8.num">08 / 08 · LIMITS &amp; COLOPHON</div>
-          <div class="chapter-kicker" data-i18n="c8.rail">Single-host 4-chip ceiling, honest notes on what failed QA or stayed unrun before handback, hardware tradeoff table, and BibTeX.</div>
+          <div class="chapter-kicker" data-i18n="c8.rail">Single-host 4-chip ceiling, honest 32-chip pod queue status, hardware comparison citing wenhaochai/rtx-h100, Feiyang Liu colophon &amp; BibTeX.</div>
         </aside>
         <div>
           <h2 class="chapter-title" id="c8-title"></h2>
           <p class="chapter-lead" id="c8-lead"></p>
 
-          <div class="pod-split">
-            <div class="plate">
-              <div class="plate-media" id="pod-fig-trigger">
-                <img src="./assets/web/v3_w6_pod_dryrun_scaling.webp" alt="4-Chip TPU v5p Capstone Dry-Run Scaling" loading="lazy" />
-                <span class="plate-zoom" data-i18n="common.zoom4k">Inspect PNG</span>
-              </div>
-              <div class="plate-body">
-                <div class="plate-badges">
-                  <span class="badge hot" data-i18n="c8.podBadge1">4-Chip Single-Host Verified</span>
-                  <span class="badge ok">246.4 s Runtime</span>
-                </div>
-                <div class="plate-title" data-i18n="c8.podFigTitle">4-Chip Capstone Suite (383 GB HBM, host_callbacks = 0)</div>
-                <div class="plate-desc" data-i18n="c8.podFigDesc">Measured end-to-end across all 5 ceiling benchmarks on 4 live chips. Multi-host 32-chip harness is patched cleanly for a future reservation window.</div>
-              </div>
-            </div>
-            <div class="pod-list" id="pod-stats"></div>
-          </div>
+          <div class="pod-list" id="pod-list"></div>
 
           <div class="honest-box">
-            <h3 data-i18n="c8.honestHead">TRANSPARENCY NOTE · VISUAL QA GATE &amp; CLUSTER BOUNDARIES</h3>
+            <h3 data-i18n="c8.honestHead">TRANSPARENCY NOTE · VERIFIED 4-CHIP SCOPE &amp; 32-CHIP QUEUE STATUS</h3>
             <p id="c8-honest-body"></p>
           </div>
 
@@ -418,15 +590,15 @@ obs = tpu_rtx.render(mjx_data, scene)  # -&gt; {"rgb", "depth", "normal", "seg_i
     </footer>
   </main>
 
-  <!-- DARKROOM LIGHTBOX + 1:1 PIXEL LOUPE -->
+  <!-- DARKROOM LIGHTBOX + 1:1 NATIVE PIXEL LOUPE -->
   <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="High-Resolution Image Inspector">
     <div class="lb-topbar">
-      <span class="lb-counter" id="lb-counter">01 / 24</span>
+      <span class="lb-counter" id="lb-counter">01 / 25</span>
       <div class="lb-controls">
         <button class="lb-btn" id="lb-prev" type="button">← Prev</button>
         <button class="lb-btn" id="lb-next" type="button">Next →</button>
         <button class="lb-btn" id="lb-loupe-btn" type="button" data-i18n="lb.loupe">1:1 Pixel Loupe (L)</button>
-        <a class="lb-btn" id="lb-raw" href="#" target="_blank" rel="noopener" data-i18n="lb.raw">Open Raw PNG ↗</a>
+        <a class="lb-btn" id="lb-raw" href="#" target="_blank" rel="noopener" data-i18n="lb.raw">Open Full Image ↗</a>
         <button class="lb-btn" id="lb-close" type="button">ESC / Close</button>
       </div>
     </div>
@@ -438,6 +610,7 @@ obs = tpu_rtx.render(mjx_data, scene)  # -&gt; {"rgb", "depth", "normal", "seg_i
   </div>
 
   <script src="./content.js"></script>
+  <script src="./charts.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>

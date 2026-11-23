@@ -1,19 +1,28 @@
 /* ==========================================================================
-   TPU-RTX Interactive Engine
-   Bilingual (EN / 中文) · Dual-Theme (Obsidian / Paper) · 1:1 Pixel Loupe
+   TPU-RTX Interactive Monograph Engine
+   Bilingual (EN / 中文) · Dual-Theme (Obsidian / Paper) ·
+   3 Split Sliders (19 Presets) · 2 Single-Scene Stages · 10 Vector SVG Charts ·
+   Zero-Overflow Searchable JSON Ledger · 25-Plate Quick-Jump Directory · 1:1 Loupe
    Author: Feiyang Liu
    ========================================================================== */
 
 (function () {
   const DATA = window.TPU_RTX_DATA;
   const platesById = Object.fromEntries(DATA.plates.map((p) => [p.id, p]));
+  const GITHUB_METRICS_BASE = "https://github.com/ZaychikLiu/tpu-rtx/blob/main/out/metrics/";
 
   let state = {
     lang: document.documentElement.getAttribute("data-lang") === "zh" ? "zh" : "en",
     theme: document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark",
     heroIdx: 0,
+    stage3dgsIdx: 0,
+    stageMenagerieIdx: 0,
     benchKey: "mjx",
-    galleryFilter: "all",
+    dirFilter: "all",
+    ledgerCat: "all",
+    ledgerQuery: "",
+    cmpIdx: { blender: 0, optics: 0, neural: 0 },
+    cmpPos: { blender: 50, optics: 50, neural: 50 },
     lbIdx: 0,
     loupeOn: false
   };
@@ -40,20 +49,22 @@
     btn.textContent = state.lang === "en" ? "中文 / EN" : "EN / 中文";
   }
 
-  function renderPlateCard(plate, extraClass) {
+  function renderPlateCard(plate) {
     const lang = state.lang;
     const t = getT();
     const badges = plate.badges[lang]
       .map(([cls, txt]) => `<span class="badge ${cls}">${txt}</span>`)
       .join("");
     return `
-      <article class="plate ${extraClass || ""}" data-cat="${plate.cat}" data-plate-id="${plate.id}">
-        <div class="plate-media ${plate.layout === "wide" ? "ultra" : ""}" data-open-id="${plate.id}">
+      <article class="plate" data-cat="${plate.cat}" data-plate-id="${plate.id}">
+        <div class="plate-media" data-open-id="${plate.id}">
           <img src="${plate.web}" alt="${plate.title[lang]}" loading="lazy" />
-          <span class="plate-zoom">${t.ui.zoom4k}</span>
         </div>
         <div class="plate-body">
-          <div class="plate-badges">${badges}</div>
+          <div class="plate-meta-bar">
+            <div class="plate-badges">${badges}</div>
+            <button class="plate-inspect" type="button" data-open-id="${plate.id}">${t.ui.zoom4k}</button>
+          </div>
           <div class="plate-title">${plate.title[lang]}</div>
           <div class="plate-desc">${plate.desc[lang]}</div>
         </div>
@@ -61,47 +72,14 @@
     `;
   }
 
-  function renderChapterSpreads() {
-    const renderSpread = (targetId, chapters) => {
-      const el = document.getElementById(targetId);
-      if (!el) return;
-      const list = DATA.plates.filter((p) => p.chapter === chapters);
-      const wide = list.filter((p) => p.layout === "wide");
-      const rest = list.filter((p) => p.layout !== "wide");
-
-      let html = "";
-      if (wide.length) {
-        html += `<div class="spread-wide">${wide.map((p) => renderPlateCard(p)).join("")}</div>`;
-      }
-      if (rest.length === 3) {
-        html += `<div class="spread-three">${rest.map((p) => renderPlateCard(p)).join("")}</div>`;
-      } else if (rest.length > 0) {
-        html += `<div class="spread-two">${rest.map((p) => renderPlateCard(p)).join("")}</div>`;
-      }
-      el.innerHTML = html;
-    };
-
-    renderSpread("c2-plates", "ch-02");
-    renderSpread("c3-plates", "ch-03");
-    renderSpread("c4-plates", "ch-04");
-    renderSpread("c5-plates", "ch-05");
-    renderSpread("c6-plates", "ch-06");
-  }
-
-  function renderContactGrid() {
-    const grid = document.getElementById("gallery-grid");
-    grid.innerHTML = DATA.plates.map((p) => renderPlateCard(p)).join("");
-    applyGalleryFilter(state.galleryFilter);
-  }
-
-  function applyGalleryFilter(filter) {
-    state.galleryFilter = filter;
-    document.querySelectorAll("#gallery-tabs .tab-btn").forEach((b) => {
-      b.classList.toggle("active", b.dataset.filter === filter);
-    });
-    document.querySelectorAll("#gallery-grid .plate").forEach((c) => {
-      c.classList.toggle("hidden", filter !== "all" && c.dataset.cat !== filter);
-    });
+  function renderCh3Spreads() {
+    const el = document.getElementById("spread-ch3");
+    if (!el) return;
+    el.innerHTML = DATA.spreadCh3
+      .map((id) => platesById[id])
+      .filter(Boolean)
+      .map((plate) => renderPlateCard(plate))
+      .join("");
   }
 
   function renderHeroStage(idx) {
@@ -118,6 +96,186 @@
 
     document.querySelectorAll("#hero-tabs .cinema-tab").forEach((b) => {
       b.classList.toggle("active", Number(b.dataset.hero) === idx);
+    });
+  }
+
+  function renderSingleStage(prefix, items, idx, dataAttr) {
+    const item = items[idx];
+    const plate = platesById[item.plateId];
+    const lang = state.lang;
+    const img = document.getElementById(`${prefix}-img`);
+    const view = document.getElementById(`${prefix}-view`);
+    const hudL = document.getElementById(`${prefix}-hudL`);
+    const hudR = document.getElementById(`${prefix}-hudR`);
+    const tabsEl = document.getElementById(`${prefix}-tabs`);
+    if (!img || !view || !tabsEl || !plate) return;
+
+    img.src = plate.web;
+    img.alt = plate.title[lang];
+    view.dataset.openId = plate.id;
+    hudL.innerHTML = item.hudL[lang];
+    hudR.innerHTML = item.hudR[lang];
+
+    tabsEl.innerHTML = items
+      .map(
+        (it, i) => `
+        <button class="cinema-tab ${i === idx ? "active" : ""}" data-${dataAttr}="${i}" type="button">
+          <span class="cinema-tab-idx">${it.tabIdx[lang]}</span>
+          <span class="cinema-tab-title">${it.tabTitle[lang]}</span>
+        </button>`
+      )
+      .join("");
+  }
+
+  function renderCompareLab(containerId, labKey) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const lab = DATA.compareLabs[labKey];
+    const lang = state.lang;
+    const idx = state.cmpIdx[labKey];
+    const pos = state.cmpPos[labKey];
+    const preset = lab.presets[idx];
+
+    el.innerHTML = `
+      <div class="compare-head">
+        <span class="compare-head-title">${lab.title[lang]}</span>
+        <div class="compare-presets">
+          ${lab.presets
+            .map(
+              (pr, i) => `<button type="button" class="tab-btn ${i === idx ? "active" : ""}" data-cmp-lab="${labKey}" data-cmp-idx="${i}">${pr.tab[lang]}</button>`
+            )
+            .join("")}
+        </div>
+      </div>
+      <div class="compare-stage" style="--pos:${pos}%">
+        <div class="compare-inner">
+          <img class="compare-img-base" src="${preset.bImg}" alt="${preset.bLbl[lang]}" />
+          <img class="compare-img-top" src="${preset.aImg}" alt="${preset.aLbl[lang]}" />
+          <div class="compare-divider"><div class="compare-handle">&#8249;&#8250;</div></div>
+          <input class="compare-range" type="range" min="2" max="98" value="${pos}" aria-label="${preset.tab[lang]}" data-cmp-range="${labKey}" />
+        </div>
+      </div>
+      <div class="compare-bar">
+        <span class="compare-side-a">${preset.aLbl[lang]}</span>
+        <span class="compare-pct" data-cmp-pct="${labKey}">${pos}% / ${100 - pos}%</span>
+        <span class="compare-side-b">${preset.bLbl[lang]}</span>
+      </div>
+    `;
+  }
+
+  function renderPostMortems() {
+    const t = getT();
+    document.getElementById("postmortem-grid").innerHTML = t.c6.pmCards
+      .map(
+        ([tag, id, title, cause, fix]) => `
+        <div class="pm-card">
+          <div class="pm-head">
+            <span class="pm-tag ${tag.includes("NEG") || tag.includes("负") || tag.includes("FAIL") ? "fail" : "fix"}">${tag}</span>
+            <span class="pm-id">${id}</span>
+          </div>
+          <h3>${title}</h3>
+          <p class="pm-row"><strong>${state.lang === "zh" ? "现象/根因:" : "Root Cause:"}</strong>${cause}</p>
+          <p class="pm-row"><strong>${state.lang === "zh" ? "修复与结论:" : "Fix & Outcome:"}</strong>${fix}</p>
+        </div>`
+      )
+      .join("");
+
+    document.getElementById("ablation-tbody").innerHTML = t.c6.ablationRows
+      .map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`)
+      .join("");
+
+    document.getElementById("rejected-pair").innerHTML = t.c6.rejected
+      .map(
+        (rj) => `
+        <article class="plate rejected">
+          <div class="rejected-banner">${rj.banner}</div>
+          <div class="plate-media" data-open-id="${rj.id}">
+            <img src="${rj.img}" alt="${rj.title}" loading="lazy" />
+          </div>
+          <div class="plate-body">
+            <div class="plate-meta-bar">
+              <div class="plate-badges"><span class="badge fail">${state.lang === "zh" ? "QA 淘汰存档" : "QA Rejected Archive"}</span></div>
+              <button class="plate-inspect" type="button" data-open-id="${rj.id}">${t.ui.zoom4k}</button>
+            </div>
+            <div class="plate-title">${rj.title}</div>
+            <div class="plate-desc">${rj.desc}</div>
+          </div>
+        </article>`
+      )
+      .join("");
+  }
+
+  function renderLedger() {
+    const q = state.ledgerQuery.trim().toLowerCase();
+    const cat = state.ledgerCat;
+    const rows = DATA.ledger.filter((r) => {
+      if (cat !== "all" && r.cat !== cat) return false;
+      if (!q) return true;
+      return `${r.name} ${r.scale} ${r.speed} ${r.acc} ${r.file}`.toLowerCase().includes(q);
+    });
+
+    const tbody = document.getElementById("ledger-tbody");
+    if (!rows.length) {
+      tbody.innerHTML = `<tr><td colspan="5" style="color:var(--muted);text-align:center;">${state.lang === "zh" ? "无匹配实验记录" : "No matching experiments."}</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = rows
+      .map(
+        (r) => `
+        <tr>
+          <td><strong>${r.name}</strong></td>
+          <td><code>${r.scale}</code></td>
+          <td class="tbl-num">${r.speed}</td>
+          <td class="tbl-num">${r.acc}</td>
+          <td><a class="json-link" href="${GITHUB_METRICS_BASE}${r.file}" target="_blank" rel="noopener" title="${r.file}">JSON ↗</a></td>
+        </tr>`
+      )
+      .join("");
+  }
+
+  function renderPlateDirectory() {
+    const dir = document.getElementById("plate-directory");
+    if (!dir) return;
+    const lang = state.lang;
+    const t = getT();
+    const catLabels = {
+      film: { en: "Moana & Studio", zh: "电影/Studio" },
+      optics: { en: "Optics", zh: "物理光学" },
+      gs3d: { en: "Real 3DGS", zh: "实景 3DGS" },
+      robotics: { en: "Menagerie", zh: "机器人" },
+      rejected: { en: "QA-Rejected", zh: "QA 淘汰" }
+    };
+
+    dir.innerHTML = DATA.plates
+      .map((p, i) => {
+        const badgeCls = p.cat === "rejected" ? "fail" : "cyan";
+        return `
+        <div class="dir-row" data-cat="${p.cat}">
+          <div class="dir-main">
+            <div class="dir-meta">
+              <span>#${String(i + 1).padStart(2, "0")}</span>
+              <span class="badge ${badgeCls}">${catLabels[p.cat][lang]}</span>
+            </div>
+            <div class="dir-title">${p.title[lang]}</div>
+          </div>
+          <div class="dir-actions">
+            <button class="plate-inspect" type="button" data-open-id="${p.id}">${t.ui.zoom4k}</button>
+          </div>
+        </div>`;
+      })
+      .join("");
+
+    applyDirectoryFilter(state.dirFilter);
+  }
+
+  function applyDirectoryFilter(filter) {
+    state.dirFilter = filter;
+    document.querySelectorAll("#plate-filters .tab-btn").forEach((b) => {
+      b.classList.toggle("active", b.dataset.filter === filter);
+    });
+    document.querySelectorAll("#plate-directory .dir-row").forEach((row) => {
+      row.classList.toggle("hidden", filter !== "all" && row.dataset.cat !== filter);
     });
   }
 
@@ -139,8 +297,7 @@
             <div class="bar-label">${r.label[lang]}</div>
             <div class="bar-track"><div class="bar-fill ${r.base ? "base" : ""}" style="width:${Math.max(r.pct, 3)}%"></div></div>
             <div class="bar-val">${typeof r.val === "number" ? r.val.toLocaleString() : r.val} ${r.unit} <span>(${r.extra[lang]})</span></div>
-          </div>
-        `
+          </div>`
           )
           .join("")}
       </div>
@@ -153,16 +310,15 @@
     document.documentElement.setAttribute("data-lang", state.lang);
     document.documentElement.setAttribute("lang", state.lang === "zh" ? "zh-CN" : "en");
 
-    // Nav & Hero simple i18n keys
     const mapI18n = {
       "nav.c1": t.nav.c1, "nav.c2": t.nav.c2, "nav.c3": t.nav.c3, "nav.c4": t.nav.c4,
       "nav.c5": t.nav.c5, "nav.c6": t.nav.c6, "nav.c7": t.nav.c7, "nav.c8": t.nav.c8,
       "hero.kicker": t.hero.kicker, "hero.by": t.hero.by, "hero.license": t.hero.license,
-      "hero.ctaGallery": t.hero.ctaGallery, "hero.ctaBench": t.hero.ctaBench, "hero.stamp": t.hero.stamp,
+      "hero.ctaStart": t.hero.ctaStart, "hero.ctaGallery": t.hero.ctaGallery, "hero.stamp": t.hero.stamp,
       "hero.t0i": t.hero.t0i, "hero.t0t": t.hero.t0t,
       "hero.t1i": t.hero.t1i, "hero.t1t": t.hero.t1t,
       "hero.t2i": t.hero.t2i, "hero.t2t": t.hero.t2t,
-      "c1.num": t.c1.num, "c1.rail": t.c1.rail, "c1.sdkBar": t.c1.sdkBar,
+      "c1.num": t.c1.num, "c1.rail": t.c1.rail, "c1.gvtTag": t.c1.gvtTag, "c1.gvtTitle": t.c1.gvtTitle, "c1.gvtSub": t.c1.gvtSub, "c1.sdkBar": t.c1.sdkBar,
       "c2.num": t.c2.num, "c2.rail": t.c2.rail,
       "c3.num": t.c3.num, "c3.rail": t.c3.rail,
       "c4.num": t.c4.num, "c4.rail": t.c4.rail,
@@ -170,17 +326,27 @@
       "c6.num": t.c6.num, "c6.rail": t.c6.rail,
       "c7.num": t.c7.num, "c7.rail": t.c7.rail,
       "c8.num": t.c8.num, "c8.rail": t.c8.rail,
-      "c8.podBadge1": state.lang === "zh" ? "单机 4 芯已实测" : "4-Chip Single-Host Verified",
-      "c8.podFigTitle": state.lang === "zh" ? "4 芯 Capstone 极限压测 (383 GB HBM, host_callbacks = 0)" : "4-Chip Capstone Suite (383 GB HBM, host_callbacks = 0)",
-      "c8.podFigDesc": state.lang === "zh" ? "单机 4 芯全套 5 项极限基准真机实测结果；多机 32 芯脚本已修补就绪。" : "Measured end-to-end across all 5 ceiling benchmarks on 4 live chips. Multi-host 32-chip harness is patched cleanly for a future reservation window.",
-      "c8.honestHead": state.lang === "zh" ? "透明度声明 · 视觉 QA 门禁淘汰与多机集群边界" : "TRANSPARENCY NOTE · VISUAL QA GATE & CLUSTER BOUNDARIES",
+      "c8.honestHead": state.lang === "zh" ? "透明度声明 · 已实测 4 芯边界与 32 芯排队进展" : "TRANSPARENCY NOTE · VERIFIED 4-CHIP SCOPE & 32-CHIP QUEUE STATUS",
       "c8.authorRole": state.lang === "zh" ? "作者与系统架构" : "AUTHOR & ARCHITECT",
       "c8.bibBar": state.lang === "zh" ? "BibTeX 引用 · Apache-2.0 协议" : "BibTeX Citation · Apache-2.0",
       "bench.t_mjx": t.ui.b_mjx, "bench.t_gs3d": t.ui.b_gs3d, "bench.t_cinema": t.ui.b_cinema,
       "bench.t_dlss": t.ui.b_dlss, "bench.t_fx": t.ui.b_fx,
       "gal.all": t.ui.g_all, "gal.film": t.ui.g_film, "gal.optics": t.ui.g_optics,
-      "gal.gs3d": t.ui.g_gs3d, "gal.dlss": t.ui.g_dlss, "gal.robotics": t.ui.g_robotics, "gal.pod": t.ui.g_pod,
+      "gal.gs3d": t.ui.g_gs3d, "gal.robotics": t.ui.g_robotics, "gal.rej": t.ui.g_rej,
       "tbl.h1": t.ui.th1, "tbl.h2": t.ui.th2, "tbl.h3": t.ui.th3, "tbl.h4": t.ui.th4,
+      "gvt.h1": t.ui.gvt1, "gvt.h2": t.ui.gvt2, "gvt.h3": t.ui.gvt3,
+      "ab.h1": t.ui.ab1, "ab.h2": t.ui.ab2, "ab.h3": t.ui.ab3, "ab.h4": t.ui.ab4, "ab.h5": t.ui.ab5,
+      "ld.all": t.ui.ld_all, "ld.rob": t.ui.ld_rob, "ld.film": t.ui.ld_film, "ld.gs": t.ui.ld_gs, "ld.nn": t.ui.ld_nn,
+      "lt.h1": t.ui.lt1, "lt.h2": t.ui.lt2, "lt.h3": t.ui.lt3, "lt.h4": t.ui.lt4, "lt.h5": t.ui.lt5,
+      "ch.evoTag": t.ui.ev_t, "ch.evoTitle": t.ui.ev_h, "ch.evoSub": t.ui.ev_s,
+      "ch.gsTag": t.ui.gs_t, "ch.gsTitle": t.ui.gs_h, "ch.gsSub": t.ui.gs_s,
+      "ch.vmemTag": t.ui.vm_t, "ch.vmemTitle": t.ui.vm_h, "ch.vmemSub": t.ui.vm_s,
+      "ch.mxuTag": t.ui.mx_t, "ch.mxuTitle": t.ui.mx_h, "ch.mxuSub": t.ui.mx_s,
+      "ch.orbTag": t.ui.orb_t, "ch.orbTitle": t.ui.orb_h, "ch.orbSub": t.ui.orb_s,
+      "ch.dpTag": t.ui.dp_t, "ch.dpTitle": t.ui.dp_h, "ch.dpSub": t.ui.dp_s,
+      "ch.ppoTag": t.ui.pp_t, "ch.ppoTitle": t.ui.pp_h, "ch.ppoSub": t.ui.pp_s,
+      "ch.g3dTag": t.ui.g3_t, "ch.g3dTitle": t.ui.g3_h, "ch.g3dSub": t.ui.g3_s,
+      "ch.vlaTag": t.ui.vl_t, "ch.vlaTitle": t.ui.vl_h, "ch.vlaSub": t.ui.vl_s,
       "common.copy": t.ui.copy, "common.zoom4k": t.ui.zoom4k,
       "lb.loupe": t.ui.loupe, "lb.raw": t.ui.raw
     };
@@ -190,7 +356,7 @@
       if (mapI18n[k] !== undefined) el.textContent = mapI18n[k];
     });
 
-    // Rich HTML blocks
+    document.getElementById("ledger-search").placeholder = t.ui.searchPlaceholder;
     document.getElementById("hero-title").innerHTML = t.hero.title;
     document.getElementById("hero-lead").innerHTML = t.hero.lead;
 
@@ -205,8 +371,15 @@
       )
       .join("");
 
-    document.getElementById("c1-title").innerHTML = t.c1.title;
-    document.getElementById("c1-lead").innerHTML = t.c1.lead;
+    ["c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"].forEach((id) => {
+      document.getElementById(`${id}-title`).innerHTML = t[id].title;
+      document.getElementById(`${id}-lead`).innerHTML = t[id].lead;
+    });
+
+    document.getElementById("gvt-tbody").innerHTML = t.c1.gvtRows
+      .map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`)
+      .join("");
+
     document.getElementById("c1-pillars").innerHTML = t.c1.pillars
       .map(
         ([tag, h3, p]) => `
@@ -219,12 +392,7 @@
       .join("");
     document.getElementById("c1-diag-cap").textContent = t.c1.diagCap;
 
-    ["c2", "c3", "c4", "c5", "c6", "c7", "c8"].forEach((id) => {
-      document.getElementById(`${id}-title`).innerHTML = t[id].title;
-      document.getElementById(`${id}-lead`).innerHTML = t[id].lead;
-    });
-
-    document.getElementById("pod-stats").innerHTML = t.podStats
+    document.getElementById("pod-list").innerHTML = t.podStats
       .map(
         ([k, v, d]) => `
         <div class="pod-item">
@@ -237,24 +405,33 @@
 
     document.getElementById("c8-honest-body").innerHTML = t.c8.honest;
     document.getElementById("comp-tbody").innerHTML = t.compRows
-      .map(
-        (row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`
-      )
+      .map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`)
       .join("");
 
     document.getElementById("c8-author-bio").textContent = t.c8.authorBio;
     document.getElementById("c8-ack").textContent = t.c8.ack;
     document.getElementById("footer-left").textContent = t.ui.footerL;
 
+    if (window.TPU_RTX_CHARTS) {
+      window.TPU_RTX_CHARTS.renderAll(state.lang);
+    }
+
     renderHeroStage(state.heroIdx);
-    renderChapterSpreads();
+    renderCompareLab("compare-blender", "blender");
+    renderCompareLab("compare-optics", "optics");
+    renderCompareLab("compare-neural", "neural");
+    renderCh3Spreads();
+    renderSingleStage("stage-3dgs", DATA.stage3dgs, state.stage3dgsIdx, "s3d");
+    renderSingleStage("stage-menagerie", DATA.stageMenagerie, state.stageMenagerieIdx, "mng");
+    renderPostMortems();
     renderBench(state.benchKey);
-    renderContactGrid();
+    renderLedger();
+    renderPlateDirectory();
     updateThemeButton();
     updateLangButton();
   }
 
-  // Lightbox + 1:1 Pixel Loupe
+  // Darkroom Lightbox + 1:1 Pixel Loupe
   const lb = document.getElementById("lightbox");
   const lbImg = document.getElementById("lb-img");
   const lbStage = document.getElementById("lb-stage");
@@ -333,7 +510,7 @@
     lbLoupe.style.display = "none";
   });
 
-  // Event wiring
+  // Event delegation & interactive controls
   document.getElementById("lang-toggle").addEventListener("click", () => {
     state.lang = state.lang === "en" ? "zh" : "en";
     try {
@@ -360,9 +537,18 @@
     renderHeroStage(Number(btn.dataset.hero));
   });
 
-  document.getElementById("hero-stage-view").addEventListener("click", (e) => {
-    const id = e.currentTarget.dataset.openId;
-    if (id) openLightboxById(id);
+  document.getElementById("stage-3dgs-tabs").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-s3d]");
+    if (!btn) return;
+    state.stage3dgsIdx = Number(btn.dataset.s3d);
+    renderSingleStage("stage-3dgs", DATA.stage3dgs, state.stage3dgsIdx, "s3d");
+  });
+
+  document.getElementById("stage-menagerie-tabs").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-mng]");
+    if (!btn) return;
+    state.stageMenagerieIdx = Number(btn.dataset.mng);
+    renderSingleStage("stage-menagerie", DATA.stageMenagerie, state.stageMenagerieIdx, "mng");
   });
 
   document.getElementById("bench-tabs").addEventListener("click", (e) => {
@@ -371,21 +557,52 @@
     renderBench(btn.dataset.bench);
   });
 
-  document.getElementById("gallery-tabs").addEventListener("click", (e) => {
+  document.getElementById("ledger-tabs").addEventListener("click", (e) => {
     const btn = e.target.closest(".tab-btn");
     if (!btn) return;
-    applyGalleryFilter(btn.dataset.filter);
+    state.ledgerCat = btn.dataset.ld;
+    document.querySelectorAll("#ledger-tabs .tab-btn").forEach((b) => {
+      b.classList.toggle("active", b === btn);
+    });
+    renderLedger();
   });
 
-  document.getElementById("pod-fig-trigger").addEventListener("click", () => {
-    openLightboxById("pod_dryrun");
+  document.getElementById("ledger-search").addEventListener("input", (e) => {
+    state.ledgerQuery = e.target.value;
+    renderLedger();
+  });
+
+  document.getElementById("plate-filters").addEventListener("click", (e) => {
+    const btn = e.target.closest(".tab-btn");
+    if (!btn) return;
+    applyDirectoryFilter(btn.dataset.filter);
   });
 
   document.addEventListener("click", (e) => {
+    const cmpBtn = e.target.closest("[data-cmp-lab]");
+    if (cmpBtn) {
+      const labKey = cmpBtn.dataset.cmpLab;
+      state.cmpIdx[labKey] = Number(cmpBtn.dataset.cmpIdx);
+      renderCompareLab(`compare-${labKey}`, labKey);
+      return;
+    }
+
     const media = e.target.closest("[data-open-id]");
-    if (media && media.id !== "hero-stage-view") {
+    if (media && media.dataset.openId) {
       openLightboxById(media.dataset.openId);
     }
+  });
+
+  document.addEventListener("input", (e) => {
+    const rng = e.target.closest("[data-cmp-range]");
+    if (!rng) return;
+    const labKey = rng.dataset.cmpRange;
+    const val = Number(rng.value);
+    state.cmpPos[labKey] = val;
+    const stage = rng.closest(".compare-stage");
+    if (stage) stage.style.setProperty("--pos", `${val}%`);
+    const pct = document.querySelector(`[data-cmp-pct="${labKey}"]`);
+    if (pct) pct.textContent = `${val}% / ${100 - val}%`;
   });
 
   document.getElementById("lb-close").addEventListener("click", closeLightbox);
@@ -420,7 +637,6 @@
   wireCopy("copy-sdk-btn", "sdk-code");
   wireCopy("copy-bib-btn", "bib-code");
 
-  // Scroll progress + section observer
   const prog = document.getElementById("progress-fill");
   window.addEventListener(
     "scroll",
@@ -431,16 +647,6 @@
     },
     { passive: true }
   );
-
-  const revealObs = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((en) => {
-        if (en.isIntersecting) en.target.classList.add("in");
-      });
-    },
-    { threshold: 0.06 }
-  );
-  document.querySelectorAll(".reveal").forEach((el) => revealObs.observe(el));
 
   const navObs = new IntersectionObserver(
     (entries) => {
