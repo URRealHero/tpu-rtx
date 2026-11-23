@@ -9,6 +9,7 @@ description = "TPU-RTX: Zero-Copy RTX-Class Ray Tracing, Multi-Bounce Path Traci
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
+authors = [{ name = "Feiyang Liu" }]
 dependencies = [
     "jax>=0.6.0",
     "flax>=0.10.0",
@@ -22,6 +23,10 @@ dependencies = [
 
 [project.optional-dependencies]
 usd = ["usd-core>=24.08"]
+
+[project.urls]
+Homepage = "https://zaychikliu.github.io/tpu-rtx/"
+Repository = "https://github.com/ZaychikLiu/tpu-rtx"
 
 [tool.setuptools.packages.find]
 include = ["tpu_mjx_render*", "tpu_rtx*"]

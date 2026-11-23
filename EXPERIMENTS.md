@@ -9,8 +9,8 @@
 
 ## Phase 0: Hardware, Environments & Reference Setup
 
-- **Live TPU Silicon**: Google Cloud TPU `v5p` (`tpu-v5p-64-2 w0`, zone `us-east5-a`, 459 TFLOP/s BF16, 2.765 TB/s HBM, 95.74 GiB HBM, 64 MiB VMEM per chip, `I_ridge = 166 FLOP/B`) in single-host 1-chip (`TPU_VISIBLE_DEVICES=0`) and 4-chip (`0,1,2,3`) isolated configurations.
-- **Software Versions**: `JAX 0.10.2`, `mujoco 4.0.1`, `mujoco-mjx 4.0.1`, Blender `5.2.0 LTS` (CPU Cycles `48 spp`, `max_bounces=6`). Isolated package overlay in `/tmp/zaychik-tpu-mjx-pkgs` on `w0` (zero edits to `/home/zaychik/ump-v5p-64-1-env`, `ops/STATE.md`, or `unified-opt-entry`).
+- **Live TPU Silicon**: Google Cloud TPU `v5p` (Google Cloud TPU v5p host, zone `us-east5-a`, 459 TFLOP/s BF16, 2.765 TB/s HBM, 95.74 GiB HBM, 64 MiB VMEM per chip, `I_ridge = 166 FLOP/B`) in single-host 1-chip (`TPU_VISIBLE_DEVICES=0`) and 4-chip (`0,1,2,3`) isolated configurations.
+- **Software Versions**: `JAX 0.10.2`, `mujoco 4.0.1`, `mujoco-mjx 4.0.1`, Blender `5.2.0 LTS` (CPU Cycles `48 spp`, `max_bounces=6`). Isolated Python package overlay on the TPU VM.
 - **Amdahl Profile Finding on Real `TPU v5p` (`PandaPickCube`, `B=1024, 64x64, 1 chip`)**:
   - `MJX step`: `12.39 ms` (`0.9%`)
   - `Stage 1 Analytic Raycast + Direct Shader (tiled=128)`: `~1242.6 ms` (`86.7%`, VPU/HBM-bound)
@@ -23,7 +23,7 @@
 
 | ID | Phase / Arm | Hypothesis & Prediction (Before Run) | Measured Result | Verdict | Attribution / Notes |
 |---|---|---|---|---|---|
-| **E0** | Phase 0 MJX Baseline (`Cartpole`, `Panda`) | Both scenes step in `mjx.put_model(..., impl='jax')` cleanly in TPU HBM (`64x64`, `128x128`) | Verified on `w0` (`mjx 4.0.1`); `Panda` physics `12.05–12.39 ms` at `B=1024`, `4.40 ms` on 4 chips | **PASS** | Compact analytic proxy retains all 6 primitive types & gripper-cube kinematics |
+| **E0** | Phase 0 MJX Baseline (`Cartpole`, `Panda`) | Both scenes step in `mjx.put_model(..., impl='jax')` cleanly in TPU HBM (`64x64`, `128x128`) | Verified on TPU v5p (`mjx 4.0.1`); `Panda` physics `12.05–12.39 ms` at `B=1024`, `4.40 ms` on 4 chips | **PASS** | Compact analytic proxy retains all 6 primitive types & gripper-cube kinematics |
 | **E1** | Stage 1 Parity vs `mujoco.mj_multiRay` | Branchless analytic intersection (`plane, sphere, capsule, ellipsoid, cylinder, box`) passes locked parity gate (`Depth <= 1e-4 / 2e-4 m`, `Normal <= 0.5°`, `Geom >= 99.8%`) | `all_primitives` (4 poses): `Depth MAE=7.53e-7 m`, `0.0014°`, `100.0%`; `cartpole` (64): `7.40e-7 m`, `0.0004°`, `99.9996%`; `panda` (64): `1.964e-4 m`, `0.0382°`, `99.952%` | **PASS** (`3/3`) | Exact frame-0 Cycles Z-depth alignment also verified (`z_depth_mae=0.00000 m`, `fg_mask=1.0000`) |
 | **E2a** | Pallas VMEM Kernels (`interpret=True` & Native TPU Mosaic `interpret=False`) | Pallas VMEM kernels match JAX `tiled` while bounding scratch arrays to VMEM tiles | CPU `interpret=True`: Cartpole `0.0` diff, Panda `1.79e-6` depth / `4.46e-6` RGB (`100%` geom); Native TPU Mosaic (`interpret=False`): `pallas_mxu_pixel_mlp` `0.0` diff, `pallas_raycast` Cartpole `0.0365 m` diff / `1.0` geom | **PASS** | `pallas_mxu_pixel_mlp` exact `0.0` on live TPU Mosaic; `vmap` fallback remains primary multi-primitive path for `6` types |
 | **E2b** | Stage 1 `naive` vs `tiled (128)` (`B=1024, 64x64`, 1 TPU v5p chip) | `tiled` shrinks live `[R, G]` buffer and speeds up Stage 1 E2E vs `naive` `[4096, 32]` materialization | `naive`: `2258.89 ms` (`453.3 FPS`); `tiled=128`: `1254.67 ms` (`816.1 FPS`) -> **1.80x speedup** (`0.0` depth diff vs `naive`) | **PASS** | Negative result for `naive`: `[B, R, G]` materialization blows out VMEM/HBM traffic |

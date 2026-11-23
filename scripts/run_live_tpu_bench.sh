@@ -2,17 +2,17 @@
 set -euo pipefail
 
 # Fail-closed live TPU silicon benchmark for TPU-MJX Batch Renderer.
-# NEVER touches an active UMP TPU process or UMP venv.
+# NEVER touches an active active TPU process or active venv.
 
 MODE="${1:-run}"
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-PKG_DIR="/tmp/zaychik-tpu-mjx-pkgs"
-PY="/home/zaychik/ump-v5p-64-1-env/train_venv/bin/python"
+PKG_DIR="/tmp/tpu-rtx-pkgs"
+PY="${PYTHON_BIN:-$(command -v python3)}"
 [ -x "$PY" ] || PY="$(command -v python3)"
 
 echo "=== TPU-MJX Live Silicon Benchmark (mode=$MODE) ==="
 
-# 1. Fail-closed guard against interfering with active UMP workloads
+# 1. Fail-closed guard against interfering with active active workloads
 if [ -f /tmp/libtpu_lockfile ]; then
   if fuser /tmp/libtpu_lockfile >/dev/null 2>&1; then
     echo "GUARD BLOCKED: /tmp/libtpu_lockfile is held by an active process. Refusing to touch TPU." >&2
@@ -20,9 +20,9 @@ if [ -f /tmp/libtpu_lockfile ]; then
   fi
 fi
 
-UMP_PROCS=$(ps -u "${USER:-zaychik}" -o args= | grep -cE "[t]rain_unified_tokenizer|[e]val_unified_tokenizer|[u]mp_eval|[q]c_g4_" || true)
-if [ "$UMP_PROCS" -gt 0 ]; then
-  echo "GUARD BLOCKED: $UMP_PROCS UMP process(es) active on this host. Refusing to touch TPU." >&2
+ACTIVE_PROCS=$(ps -u "${USER:-$(whoami)}" -o args= | grep -cE "[t]rain_unified_tokenizer|[e]val_unified_tokenizer|[u]mp_eval|[q]c_g4_" || true)
+if [ "$ACTIVE_PROCS" -gt 0 ]; then
+  echo "GUARD BLOCKED: $ACTIVE_PROCS active process(es) active on this host. Refusing to touch TPU." >&2
   exit 2
 fi
 

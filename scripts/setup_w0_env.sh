@@ -1,11 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
-# Isolated setup on tpu-v5p-64-2 w0 in /tmp/zaychik-tpu-mjx-pkgs
-# Never touches /home/zaychik/ump-v5p-64-1-env or any UMP directories.
-ROOT_DIR="/tmp/zaychik-tpu-mjx"
-PKG_DIR="/tmp/zaychik-tpu-mjx-pkgs"
-PY="/home/zaychik/ump-v5p-64-1-env/train_venv/bin/python"
+# Isolated setup on Cloud TPU v5p host in /tmp/tpu-rtx-pkgs
+# Never touches system Python environments or any active directories.
+ROOT_DIR="${ROOT_DIR}"
+PKG_DIR="/tmp/tpu-rtx-pkgs"
+PY="${PYTHON_BIN:-$(command -v python3)}"
 
 mkdir -p "$ROOT_DIR" "$PKG_DIR"
 

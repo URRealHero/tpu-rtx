@@ -19,18 +19,18 @@
 
 ## 2. System Architecture & Key Modules
 
-1. **[tpu_mjx_render/primitives.py](file:///Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer/tpu_mjx_render/primitives.py)** & **[camera.py](file:///Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer/tpu_mjx_render/camera.py)**: Branchless JAX implementations of MuJoCo pinhole camera projection and analytic ray intersections for all 6 primitive geom types (`plane`, `sphere`, `capsule`, `ellipsoid`, `cylinder`, `box`), ported cleanly from `mujoco_warp/_src/ray.py` formulas.
-2. **[tpu_mjx_render/renderer.py](file:///Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer/tpu_mjx_render/renderer.py)**: `RenderSceneSpec` pre-packs static scene metadata from `MjModel` once at setup while `render_batch(spec, mjx_data_batch, mode="tiled")` reads `geom_xpos`, `geom_xmat`, `cam_xpos`, `cam_xmat`, `xpos`, and `xmat` directly from live batched `mjx.Data` in HBM. Supports `naive`, `tiled` (ray-tile `jax.lax.scan`), and `pallas` modes, outputting full 20+ channel `GBuffer` (Direct RGB, Albedo, Euclidean & Z Depth, Normal, View Dir, World Pos, GeomID, Hard Shadow).
-3. **[tpu_mjx_render/pallas_render.py](file:///Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer/tpu_mjx_render/pallas_render.py)**: Native TPU Pallas (`Mosaic`) kernels (`pallas_raycast_scene` and `pallas_mxu_pixel_mlp`) keeping ray/geom/activation tiles inside TPU VMEM (`128`-aligned MXU tiles) to minimize HBM spills.
-4. **[tpu_mjx_render/neural_shader.py](file:///Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer/tpu_mjx_render/neural_shader.py)**: `build_gbuffer_features(gb)` packs `24` normalized physically-based channels (`rgb`, `albedo`, `normal`, `view_dir`, `pos_norm`, `z_norm`, `direct_shadow`, `hit`, `g_edge`, `z_edge`, `reflect(V, N)`, `clamp(-V·N)`). `SpatialRelighter` (`base_width=64 -> 128 -> 64`) computes multi-scale BF16 `3x3` residual convolutions for soft shadows & indirect GI, concatenated with an un-blurred `24`-ch `1x1` pixel-BRDF refinement head and calibrated via a scalar `cal_scale` measured strictly on the 32-frame `calib` split.
-5. **[tpu_mjx_render/envs.py](file:///Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer/tpu_mjx_render/envs.py)** & **[scripts/run_vision_ppo.py](file:///Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer/scripts/run_vision_ppo.py)**: Pure-JAX pixel environments (`CartpoleBalanceVisionEnv`, `PandaPickCubeVisionEnv`) and single-JIT `jax.lax.scan` PPO rollout + GAE + Flax CNN actor-critic update.
-6. **[gate.py](file:///Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer/gate.py)** & **[bench.py](file:///Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer/bench.py)**: Locked Phase 0 parity/quality gate evaluator and JIT-warmed multi-chip E2E benchmark harness.
+1. **[tpu_mjx_render/primitives.py](tpu_mjx_render/primitives.py)** & **[camera.py](tpu_mjx_render/camera.py)**: Branchless JAX implementations of MuJoCo pinhole camera projection and analytic ray intersections for all 6 primitive geom types (`plane`, `sphere`, `capsule`, `ellipsoid`, `cylinder`, `box`), ported cleanly from `mujoco_warp/_src/ray.py` formulas.
+2. **[tpu_mjx_render/renderer.py](tpu_mjx_render/renderer.py)**: `RenderSceneSpec` pre-packs static scene metadata from `MjModel` once at setup while `render_batch(spec, mjx_data_batch, mode="tiled")` reads `geom_xpos`, `geom_xmat`, `cam_xpos`, `cam_xmat`, `xpos`, and `xmat` directly from live batched `mjx.Data` in HBM. Supports `naive`, `tiled` (ray-tile `jax.lax.scan`), and `pallas` modes, outputting full 20+ channel `GBuffer` (Direct RGB, Albedo, Euclidean & Z Depth, Normal, View Dir, World Pos, GeomID, Hard Shadow).
+3. **[tpu_mjx_render/pallas_render.py](tpu_mjx_render/pallas_render.py)**: Native TPU Pallas (`Mosaic`) kernels (`pallas_raycast_scene` and `pallas_mxu_pixel_mlp`) keeping ray/geom/activation tiles inside TPU VMEM (`128`-aligned MXU tiles) to minimize HBM spills.
+4. **[tpu_mjx_render/neural_shader.py](tpu_mjx_render/neural_shader.py)**: `build_gbuffer_features(gb)` packs `24` normalized physically-based channels (`rgb`, `albedo`, `normal`, `view_dir`, `pos_norm`, `z_norm`, `direct_shadow`, `hit`, `g_edge`, `z_edge`, `reflect(V, N)`, `clamp(-V·N)`). `SpatialRelighter` (`base_width=64 -> 128 -> 64`) computes multi-scale BF16 `3x3` residual convolutions for soft shadows & indirect GI, concatenated with an un-blurred `24`-ch `1x1` pixel-BRDF refinement head and calibrated via a scalar `cal_scale` measured strictly on the 32-frame `calib` split.
+5. **[tpu_mjx_render/envs.py](tpu_mjx_render/envs.py)** & **[scripts/run_vision_ppo.py](scripts/run_vision_ppo.py)**: Pure-JAX pixel environments (`CartpoleBalanceVisionEnv`, `PandaPickCubeVisionEnv`) and single-JIT `jax.lax.scan` PPO rollout + GAE + Flax CNN actor-critic update.
+6. **[gate.py](gate.py)** & **[bench.py](bench.py)**: Locked Phase 0 parity/quality gate evaluator and JIT-warmed multi-chip E2E benchmark harness.
 
 ---
 
 ## 3. Stage 1 Exact Track Verification (Parity, Pallas, & Tiling)
 
-### 3.1 Parity vs Official MuJoCo C (`mujoco.mj_multiRay`, [stage1_parity.json](file:///Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer/out/metrics/stage1_parity.json))
+### 3.1 Parity vs Official MuJoCo C (`mujoco.mj_multiRay`, [stage1_parity.json](out/metrics/stage1_parity.json))
 
 | Scene | Poses | Depth MAE (Limit) | Normal Err (Limit) | GeomID Match (Limit) | Gate |
 |---|---:|---:|---:|---:|---|
@@ -38,17 +38,17 @@
 | `cartpole` | 64 | `7.40e-7 m` (`<= 1e-4`) | `0.0004°` (`<= 0.5°`) | `99.9996%` (`>= 99.8%`) | **PASS** |
 | `panda_pick_cube` | 64 | `1.964e-4 m` (`<= 2e-4`) | `0.0382°` (`<= 0.5°`) | `99.952%` (`>= 99.8%`) | **PASS** |
 
-- **Pallas Kernel Verification ([pallas_kernel_parity.json](file:///Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer/out/metrics/pallas_kernel_parity.json) & Live TPU Mosaic)**:
+- **Pallas Kernel Verification ([pallas_kernel_parity.json](out/metrics/pallas_kernel_parity.json) & Live TPU Mosaic)**:
   - CPU `interpret=True`: `pallas_vs_tiled` max depth diff `0.0 m` (`cartpole`) / `1.788e-6 m` (`panda`), `geom_match = 1.0`, `pallas_mxu_pixel_mlp_max_diff = 0.0`.
   - Live `TPU v5p` Mosaic (`interpret=False`): `pallas_mxu_pixel_mlp` max diff `0.0`; `pallas_raycast_scene` Cartpole depth diff `0.03647 m` (BF16/VPU), `geom_match = 1.0`.
 
-![Stage 1 Exact G-Buffer](file:///Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer/out/figures/stage1_gbuffer.png)
+![Stage 1 Exact G-Buffer](out/figures/stage1_gbuffer.png)
 
 ### 3.2 Stage 1 VMEM Tiling Optimization (`PandaPickCube`, `B=1024, 64x64`, 1 TPU v5p Chip)
 
 - `naive` (`[4096, 32]` full tensor): `2258.89 ms` E2E (**`453.3 FPS`**)
 - `tiled (tile_size=128)`: `1254.67 ms` E2E (**`816.1 FPS`**, **`1.80x`** over `naive`)
-- `tile_size` VMEM sweep ([live_tpu_tile_sweep_1c.json](file:///Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer/out/metrics/live_tpu_tile_sweep_1c.json)):
+- `tile_size` VMEM sweep ([live_tpu_tile_sweep_1c.json](out/metrics/live_tpu_tile_sweep_1c.json)):
 
 | `tile_size` | E2E Latency (ms) | E2E FPS | Behavior |
 |---:|---:|---:|---|
@@ -66,7 +66,7 @@ Dataset: `640` `PandaPickCube` states (`64x64`), rendered in local **Blender 5.2
 - `32 calib` (`split=1`, held-out luminance calibration)
 - `64 test_gate` (`split=2`, strictly frozen held-out test set verified bit-identical by `np.array_equal`)
 
-### Held-Out Quality Gate Results ([stage2_summary.json](file:///Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer/out/metrics/stage2_summary.json))
+### Held-Out Quality Gate Results ([stage2_summary.json](out/metrics/stage2_summary.json))
 
 | Model / Run | PSNR (dB) | Gain | SSIM | MS-SSIM | Lum Rel Err | ROI PSNR | ROI Edge | Occ Mismatch | Gate Verdict |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---|
@@ -76,7 +76,7 @@ Dataset: `640` `PandaPickCube` states (`64x64`), rendered in local **Blender 5.2
 | `M2_spatial_32` (150 ep) | `35.58` | `+21.74` | `0.9784` | `0.9839` | `-0.049%` | `27.79` | `0.252 px` | `0.1000` (`14/140`) | **FAIL** |
 | **`M2_spatial_128` (400 ep)** | **`38.35`** | **`+24.52`** | **`0.9889`** | **`0.9916`** | **`+0.032%`** | **`30.31`** | **`0.157 px`** | **`0.00714` (`1/140`)** | **PASS (8/8)** |
 
-![Stage 2 Cycles Comparison](file:///Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer/out/figures/stage2_cycles_comparison.png)
+![Stage 2 Cycles Comparison](out/figures/stage2_cycles_comparison.png)
 
 ---
 
@@ -86,27 +86,27 @@ Dataset: `640` `PandaPickCube` states (`64x64`), rendered in local **Blender 5.2
 
 | Scene | Config | Chips | Res | `B=1024` FPS (ms) | `B=2048` FPS (ms) | `B=4096` FPS (ms) | Source |
 |---|---|---:|---:|---:|---:|---:|---|
-| `Cartpole` | Stage 1 Tiled | 1 | `64x64` | **2,166.4** (`472.7`) | **2,127.6** (`962.6`) | **1,670.3** (`2452.3`) | [live_tpu_cartpole_1c.json](file:///Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer/out/metrics/live_tpu_cartpole_1c.json) |
-| `PandaPickCube` | Stage 1 Naive | 1 | `64x64` | **453.3** (`2258.9`) | — | — | [live_tpu_panda_naive_1c.json](file:///Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer/out/metrics/live_tpu_panda_naive_1c.json) |
-| `PandaPickCube` | Stage 1 Tiled | 1 | `64x64` | **816.1** (`1254.7`) | **811.8** (`2522.9`) | **621.1** (`6594.4`) | [live_tpu_panda_tiled_1c.json](file:///Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer/out/metrics/live_tpu_panda_tiled_1c.json) |
-| `PandaPickCube` | Stage 1 + `M2_spatial_128` | 1 | `64x64` | **714.2** (`1433.8`) | **710.4** (`2883.0`) | **641.0** (`6390.2`) | [live_tpu_panda_m2_1c.json](file:///Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer/out/metrics/live_tpu_panda_m2_1c.json) |
-| `PandaPickCube` | Stage 1 + `M2_spatial_128` | **4** | `64x64` | **3,502.6** (`292.4`) | **3,224.2** (`635.2`) | **2,851.7** (`1436.3`) | [live_tpu_panda_m2_4c.json](file:///Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer/out/metrics/live_tpu_panda_m2_4c.json) |
-| `PandaPickCube` | Stage 1 + `M2_spatial_128` | 1 | `128x128` | **189.3** (`5408.2`) | — | — | [live_tpu_panda_128_1c.json](file:///Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer/out/metrics/live_tpu_panda_128_1c.json) |
-| `PandaPickCube` | Stage 1 + `M2_spatial_128` | **4** | `128x128` | **881.8** (`1161.3`) | — | — | [live_tpu_panda_128_4c.json](file:///Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer/out/metrics/live_tpu_panda_128_4c.json) |
+| `Cartpole` | Stage 1 Tiled | 1 | `64x64` | **2,166.4** (`472.7`) | **2,127.6** (`962.6`) | **1,670.3** (`2452.3`) | [live_tpu_cartpole_1c.json](out/metrics/live_tpu_cartpole_1c.json) |
+| `PandaPickCube` | Stage 1 Naive | 1 | `64x64` | **453.3** (`2258.9`) | — | — | [live_tpu_panda_naive_1c.json](out/metrics/live_tpu_panda_naive_1c.json) |
+| `PandaPickCube` | Stage 1 Tiled | 1 | `64x64` | **816.1** (`1254.7`) | **811.8** (`2522.9`) | **621.1** (`6594.4`) | [live_tpu_panda_tiled_1c.json](out/metrics/live_tpu_panda_tiled_1c.json) |
+| `PandaPickCube` | Stage 1 + `M2_spatial_128` | 1 | `64x64` | **714.2** (`1433.8`) | **710.4** (`2883.0`) | **641.0** (`6390.2`) | [live_tpu_panda_m2_1c.json](out/metrics/live_tpu_panda_m2_1c.json) |
+| `PandaPickCube` | Stage 1 + `M2_spatial_128` | **4** | `64x64` | **3,502.6** (`292.4`) | **3,224.2** (`635.2`) | **2,851.7** (`1436.3`) | [live_tpu_panda_m2_4c.json](out/metrics/live_tpu_panda_m2_4c.json) |
+| `PandaPickCube` | Stage 1 + `M2_spatial_128` | 1 | `128x128` | **189.3** (`5408.2`) | — | — | [live_tpu_panda_128_1c.json](out/metrics/live_tpu_panda_128_1c.json) |
+| `PandaPickCube` | Stage 1 + `M2_spatial_128` | **4** | `128x128` | **881.8** (`1161.3`) | — | — | [live_tpu_panda_128_4c.json](out/metrics/live_tpu_panda_128_4c.json) |
 
 ### 5.2 Closed-Loop Vision PPO on Live TPU v5p (1 Chip, `B=512`, `64x64`)
 
-- **`CartpoleBalance` Stage 1 Vision PPO** ([ppo_cartpole.json](file:///Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer/out/metrics/ppo_cartpole.json)): `rollout_len=16`, `40` iters -> **`1,264.85 env_steps/s`**, `276.87 s` total, `hlo_zero_copy=true`, `mean_reward` `0.849–0.991`.
-- **`PandaPickCube + M2_spatial_128` Vision PPO** ([ppo_panda.json](file:///Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer/out/metrics/ppo_panda.json)): `rollout_len=8`, `30` iters -> **`377.33 env_steps/s`**, `428.94 s` total, `hlo_zero_copy=true`, `mean_reward` `2.237 -> 2.489`.
+- **`CartpoleBalance` Stage 1 Vision PPO** ([ppo_cartpole.json](out/metrics/ppo_cartpole.json)): `rollout_len=16`, `40` iters -> **`1,264.85 env_steps/s`**, `276.87 s` total, `hlo_zero_copy=true`, `mean_reward` `0.849–0.991`.
+- **`PandaPickCube + M2_spatial_128` Vision PPO** ([ppo_panda.json](out/metrics/ppo_panda.json)): `rollout_len=8`, `30` iters -> **`377.33 env_steps/s`**, `428.94 s` total, `hlo_zero_copy=true`, `mean_reward` `2.237 -> 2.489`.
 
-![Quality-Throughput Pareto and Vision PPO](file:///Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer/out/figures/pareto_and_ppo.png)
+![Quality-Throughput Pareto and Vision PPO](out/figures/pareto_and_ppo.png)
 
 ---
 
 ## 6. Reproducibility Commands
 
 ```bash
-cd /Users/zaychik/Desktop/Projects/UMP/research/tpu-mjx-renderer
+cd /path/to/tpu-rtx
 
 # Safety & dry-run check of the TPU benchmark harness
 bash scripts/run_live_tpu_bench.sh --dry-run
@@ -114,7 +114,7 @@ bash scripts/run_live_tpu_bench.sh --dry-run
 # Local figure generation
 python3 scripts/make_figures.py --out_dir out/figures
 
-# On TPU v5p w0 (PYTHONPATH=/tmp/zaychik-tpu-mjx-pkgs:/tmp/zaychik-tpu-mjx):
+# On a Cloud TPU v5p host (with repo on PYTHONPATH):
 python tests/test_primitives_parity.py
 python tests/test_pallas_kernel.py
 python tests/test_zero_copy_hlo.py

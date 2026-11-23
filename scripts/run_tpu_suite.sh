@@ -2,10 +2,10 @@
 set -euo pipefail
 
 # Complete TPU v5p Live Silicon Suite (Single-Host 4-Chip Isolated)
-# Guard: refuses to run if UMP training is active.
-UMP_PROCS=$(ps -u "${USER:-zaychik}" -o args= | grep -cE "[t]rain_unified_tokenizer|[e]val_unified_tokenizer|[u]mp_eval|[q]c_g4_" || true)
-if [ "$UMP_PROCS" -gt 0 ]; then
-  echo "GUARD BLOCKED: $UMP_PROCS UMP process(es) active." >&2
+# Guard: refuses to run if active training is active.
+ACTIVE_PROCS=$(ps -u "${USER:-$(whoami)}" -o args= | grep -cE "[t]rain_unified_tokenizer|[e]val_unified_tokenizer|[u]mp_eval|[q]c_g4_" || true)
+if [ "$ACTIVE_PROCS" -gt 0 ]; then
+  echo "GUARD BLOCKED: $ACTIVE_PROCS active process(es) active." >&2
   exit 2
 fi
 
@@ -20,12 +20,12 @@ export TPU_PROCESS_ADDRESSES=127.0.0.1:8476
 export TPU_PROCESS_PORT=8476
 export TPU_WORKER_ID=0
 export CLOUD_TPU_TASK_ID=0
-export JAX_COMPILATION_CACHE_DIR=/tmp/zaychik_jax_cache
+export JAX_COMPILATION_CACHE_DIR=/tmp/tpu_rtx_jax_cache
 mkdir -p "$JAX_COMPILATION_CACHE_DIR"
 
-cd /tmp/zaychik-tpu-mjx
-export PYTHONPATH=/tmp/zaychik-tpu-mjx-pkgs:/tmp/zaychik-tpu-mjx
-PY=/home/zaychik/ump-v5p-64-1-env/train_venv/bin/python
+cd ${ROOT_DIR}
+export PYTHONPATH=/tmp/tpu-rtx-pkgs:${ROOT_DIR}
+PY="${PYTHON_BIN:-$(command -v python3)}"
 
 rm -f out/metrics/SUITE_DONE out/metrics/SUITE_FAIL
 

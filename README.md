@@ -2,7 +2,7 @@
 
 **Zero-Copy RTX-Class Ray Tracing, Multi-Bounce Monte Carlo Path Tracing, 3D/4D Gaussian Splatting, OpenUSD/Blender Studio Compilation, and Photorealistic Physical AI Rendering natively on Google Cloud TPU v5p (JAX + Pallas Mosaic).**
 
-Interactive Project Showcase (GitHub Pages): [docs/index.html](docs/index.html)
+**Author:** Feiyang Liu · **License:** [Apache-2.0](LICENSE) · **Live Interactive Monograph:** [zaychikliu.github.io/tpu-rtx](https://zaychikliu.github.io/tpu-rtx/) ([English](https://zaychikliu.github.io/tpu-rtx/?lang=en) | [中文](https://zaychikliu.github.io/tpu-rtx/?lang=zh))
 
 > Every benchmark, render, and parity check in this repository was executed natively on real Google Cloud **TPU v5p** silicon (`interpret=False`, `95.74 GiB` HBM/chip, `383 GiB`/host) with XLA HLO verified at **`host_callbacks = 0`**, **`send_recv_ops = 0`**, and **`gather_ops = 0`**.
 
@@ -29,26 +29,26 @@ Interactive Project Showcase (GitHub Pages): [docs/index.html](docs/index.html)
 ## Visual Highlights (All Audited via Visual QA Gate)
 
 ### Disney *Moana* OpenUSD v2.1 (`22.30B` Tris) — Golden Sunset & Way-of-Water Underwater Coral Reef (4K)
-![Disney Moana Sunset and Underwater Reef 4K](docs/assets/v3_w2_moana_sunset_reef_4k.png)
+![Disney Moana Sunset and Underwater Reef 4K](docs/assets/web/v3_w2_moana_sunset_reef_4k.webp)
 
 ### Real-World Mip-NeRF 360 `garden` Native 8K (`7680×4320`, 1:1 Crop) & Dynamic `4DGS × MJX` RoboWild
-![Real-World 8K 3DGS Crop](docs/assets/v3_w3_realworld_8k_crop.png)
-![Dynamic 4DGS x MJX Manipulation](docs/assets/v3_w3_4dgs_robowild_manipulation.png)
+![Real-World 8K 3DGS Crop](docs/assets/web/v3_w3_realworld_8k_crop.webp)
+![Dynamic 4DGS x MJX Manipulation](docs/assets/web/v3_w3_4dgs_robowild_manipulation.webp)
 
 ### Blender Studio Parity (`BMW27`, `Barcelona 54.9M`, `Monster SSS`, `Fishy Cat`, `Barbershop`)
-![BMW27 and Barcelona Pavilion](docs/assets/v3_w5_bmw_barcelona_cinema.png)
-![Monster SSS and Fishy Cat](docs/assets/v3_w5_studio_double_cinema.png)
-![Barbershop Interior](docs/assets/v3_w7_barbershop_cinema.png)
+![BMW27 and Barcelona Pavilion](docs/assets/web/v3_w5_bmw_barcelona_cinema.webp)
+![Monster SSS and Fishy Cat](docs/assets/web/v3_w5_studio_double_cinema.webp)
+![Barbershop Interior](docs/assets/web/v3_w7_barbershop_cinema.webp)
 
 ### Physical FX (`Airy Thin-Film`, `12-Bounce Mirrors`, `Spectral Dispersion`, `SSS`, `TPU-ReSTIR DI`, `4K Thin-Lens Bokeh`)
-![Thin-Film Anisotropic GGX and 12-Bounce Mirror Gallery](docs/assets/v3_w7_thinfilm_mirror_fx.png)
-![Spectral Dispersion and Random-Walk SSS](docs/assets/v3_w7_dispersion_sss_fx.png)
-![Native 4K Thin-Lens Bokeh](docs/assets/v3_w6_thinlens_bokeh_4k.png)
+![Thin-Film Anisotropic GGX and 12-Bounce Mirror Gallery](docs/assets/web/v3_w7_thinfilm_mirror_fx.webp)
+![Spectral Dispersion and Random-Walk SSS](docs/assets/web/v3_w7_dispersion_sss_fx.webp)
+![Native 4K Thin-Lens Bokeh](docs/assets/web/v3_w6_thinlens_bokeh_4k.webp)
 
 ### `TPU-DLSS 3.5` (58.9 FPS 4K), Interactive Relighting (`78.6 FPS` 4K BF16), `MuJoCo Menagerie` & Diff Physics-Render Servoing
-![Interactive Zero-Copy Relighting and MXU Quantization Pareto](docs/assets/v3_w4_interactive_relight_quant.png)
-![MuJoCo Menagerie Wide-BVH-64](docs/assets/v3_w0_mujoco_menagerie_pbr.png)
-![End-to-End Differentiable Physics and PBR Servoing](docs/assets/v3_w0_diff_phys_render.png)
+![Interactive Zero-Copy Relighting and MXU Quantization Pareto](docs/assets/web/v3_w4_interactive_relight_quant.webp)
+![MuJoCo Menagerie Wide-BVH-64](docs/assets/web/v3_w0_mujoco_menagerie_pbr.webp)
+![End-to-End Differentiable Physics and PBR Servoing](docs/assets/web/v3_w0_diff_phys_render.webp)
 
 ---
 
@@ -70,5 +70,29 @@ Ecosystem adapters live under `tpu_mjx_render.adapters`:
 
 - `tpu_rtx/` & `tpu_mjx_render/`: Core Pallas Mosaic kernels (`host_callbacks = 0`, `gather_ops = 0`), Wide-BVH-64, 3DGS/4DGS rasterizers, thin-film/dispersion/volumetric FX, and ecosystem adapters
 - `experiments/`: Live TPU v5p experimental suites (`w0`–`w7`) + `pod_v5p64_capstone/` (4-chip verified dry-run + multi-host Pod scaling harness)
-- `docs/`: Interactive static web showcase (`docs/index.html`) + curated visually verified PNGs (`docs/assets/`)
+- `docs/`: Interactive bilingual (EN / 中文) dark & light showcase (`docs/index.html`) + WebP & full-res verified renders (`docs/assets/`)
 - `out/metrics/` & `out/figures/`: Verified TPU telemetry JSONs and rendered figures
+
+---
+
+## Third-Party Asset Acknowledgments
+
+Benchmark renders showcase the engine across standard public test scenes under their respective licenses:
+- **Walt Disney Animation Studios *Moana Island Scene* (v2.1)**: Used under the Disney *Moana Island Scene* non-commercial license; original geometry and OpenUSD scene © Walt Disney Animation Studios.
+- **Blender Open Data / Blender Studio Scenes** (*BMW27*, *Barcelona Pavilion*, *Barbershop*, *Classroom*, *Junkshop*, *Lone Monk*, *Monster Under the Bed*, *Fishy Cat*): CC0 / CC-BY via Blender Foundation & Blender Studio.
+- **Mip-NeRF 360** (`garden`, `bicycle`, `kitchen`, `bonsai`): Research photogrammetry captures by Barron et al.
+- **Google DeepMind `mujoco_menagerie`**: Apache-2.0 / BSD robot descriptions (`Franka Panda`, `Unitree G1`, `Unitree Go2`, `Tetheria Aero Hand`).
+
+---
+
+## Citation
+
+```bibtex
+@misc{liu2026tpurtx,
+  author       = {Feiyang Liu},
+  title        = {TPU-RTX: Zero-Copy RTX-Class Ray Tracing, Path Tracing, 3DGS, OpenUSD/Blender Compilation, and Physical AI Rendering on Google Cloud TPU v5p},
+  year         = {2026},
+  howpublished = {\url{https://github.com/ZaychikLiu/tpu-rtx}},
+  note         = {Interactive Monograph: \url{https://zaychikliu.github.io/tpu-rtx/}}
+}
+```

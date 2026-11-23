@@ -1,17 +1,17 @@
 #!/bin/bash
 set -euo pipefail
 
-# Fail-closed V2 TPU benchmark launcher for UMP TPU idle windows:
+# Fail-closed V2 TPU benchmark launcher for active TPU idle windows:
 # - Benchmarks Stage 1 V1 tiled vs V2 v2_soa vs V2 native (8,128) pallas_v2 (interpret=False)
 # - Benchmarks V2 Static Cluster-BVH Triangle Mesh Raytracer (jax_cluster & pallas)
 # - Benchmarks V2 Rigid-Body Tile-3DGS (jax_tile & pallas)
-# NEVER interferes with any active UMP workload.
+# NEVER interferes with any active active workload.
 
 MODE="${1:-run}"
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-PKG_DIR="/tmp/zaychik-tpu-mjx-pkgs"
-PY="/home/zaychik/ump-v5p-64-1-env/train_venv/bin/python"
-[ -x "$PY" ] || PY="/Users/zaychik/.venvs/ump-pod-mirror/bin/python"
+PKG_DIR="/tmp/tpu-rtx-pkgs"
+PY="${PYTHON_BIN:-$(command -v python3)}"
+[ -x "$PY" ] || PY="$(command -v python3)"
 
 echo "=== TPU-MJX V2 Live Silicon Benchmark (mode=$MODE) ==="
 
@@ -20,9 +20,9 @@ if [ -f /tmp/libtpu_lockfile ] && fuser /tmp/libtpu_lockfile >/dev/null 2>&1; th
   exit 2
 fi
 
-UMP_PROCS=$(ps -u "${USER:-zaychik}" -o args= | grep -cE "[t]rain_unified_tokenizer|[e]val_unified_tokenizer|[u]mp_eval|[q]c_g4_" || true)
-if [ "$UMP_PROCS" -gt 0 ]; then
-  echo "GUARD BLOCKED: $UMP_PROCS active UMP process(es) detected." >&2
+ACTIVE_PROCS=$(ps -u "${USER:-$(whoami)}" -o args= | grep -cE "[t]rain_unified_tokenizer|[e]val_unified_tokenizer|[u]mp_eval|[q]c_g4_" || true)
+if [ "$ACTIVE_PROCS" -gt 0 ]; then
+  echo "GUARD BLOCKED: $ACTIVE_PROCS active active process(es) detected." >&2
   exit 2
 fi
 
@@ -40,7 +40,7 @@ export TPU_PROCESS_ADDRESSES=127.0.0.1:8476
 export TPU_PROCESS_PORT=8476
 export TPU_WORKER_ID=0
 export CLOUD_TPU_TASK_ID=0
-export JAX_COMPILATION_CACHE_DIR=/tmp/zaychik_jax_cache
+export JAX_COMPILATION_CACHE_DIR=/tmp/tpu_rtx_jax_cache
 export PYTHONPATH="${PKG_DIR}:${ROOT_DIR}:${PYTHONPATH:-}"
 cd "$ROOT_DIR"
 
