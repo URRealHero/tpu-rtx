@@ -1,6 +1,5 @@
 /* ==========================================================================
-   TPU-RTX Native Dual-Theme Vector SVG Charts & Architecture Diagrams
-   Includes rtx-h100-style Step-Envelope Optimization Curve & Generalization Chart
+   TPU-RTX Vector SVG Charts & Architecture Diagrams
    All numbers verified verbatim from out/metrics/*.json
    Author: Feiyang Liu
    ========================================================================== */
@@ -17,31 +16,31 @@ window.TPU_RTX_CHARTS = (function () {
         <!-- Layer 4: Benchmarks & Applications -->
         <rect x="8" y="8" width="944" height="74" rx="8" fill="var(--bg-elev)" stroke="var(--hairline-strong)" />
         <text x="24" y="30" class="val-lbl" style="fill:var(--ok);font-size:12px;">
-          ${zh ? "LAYER 4 · 已验证具身智能、机器人与电影级基准套件" : "LAYER 4 · VERIFIED ROBOTICS, EMBODIED AI &amp; FILM BENCHMARKS"}
+          ${zh ? "第 4 层 · 机器人、具身智能与图形基准" : "Layer 4 · Robotics, Embodied AI &amp; Graphics Benchmarks"}
         </text>
         <text x="24" y="51" class="sub-lbl" style="font-size:10.8px;fill:var(--text-secondary);">
-          ${zh ? "具身基准：RoboTwin (12.4万 FPS) · RoboWild (4DGS×MJX) · MuJoCo Menagerie · 千帧工厂 VLA+GelSight" : "Embodied AI: RoboTwin (123.9k FPS) · RoboWild (4DGS×MJX) · MuJoCo Menagerie · Factory VLA+GelSight"}
+          ${zh ? "具身仿真：RoboTwin (123.9k FPS) · RoboWild (4DGS × MJX) · MuJoCo Menagerie · 百万帧 VLA + GelSight" : "Embodied AI: RoboTwin (123.9k FPS) · RoboWild (4DGS × MJX) · MuJoCo Menagerie · VLA + GelSight"}
         </text>
         <text x="24" y="69" class="sub-lbl" style="font-size:10.8px;fill:var(--muted);">
-          ${zh ? "感知与图形：Vision RL · 双 128 线 LiDAR (63.9B/s) · Blender 8 大场景 · Moana (223 亿面) · Mip-NeRF 360" : "Sensors &amp; Cinema: Vision RL · Dual 128-Beam LiDAR (63.9B/s) · Blender 8 Scenes · Moana (22.3B) · Mip-NeRF 360"}
+          ${zh ? "感知与渲染：Vision RL · 双 128 线 LiDAR (63.88B/s) · Blender 8 场景 · Moana (223 亿面) · Mip-NeRF 360" : "Sensors &amp; Rendering: Vision RL · Dual 128-Beam LiDAR (63.88B/s) · Blender 8 Scenes · Moana (22.30B) · Mip-NeRF 360"}
         </text>
 
-        <!-- Layer 3: 8 Drop-In Software Retrofits -->
+        <!-- Layer 3: 8 Adapters -->
         <rect x="8" y="94" width="944" height="84" rx="8" fill="var(--bg-elev)" stroke="var(--cyan)" />
         <text x="24" y="116" class="val-lbl" style="fill:var(--cyan);font-size:12px;">
-          ${zh ? "LAYER 3 · 8 大 DROP-IN 底层软件改造适配器 (tpu_mjx_render/adapters/)" : "LAYER 3 · 8 DROP-IN SOFTWARE RETROFIT ADAPTERS (tpu_mjx_render/adapters/)"}
+          ${zh ? "第 3 层 · 8 个软件接口适配层 (tpu_mjx_render/adapters/)" : "Layer 3 · 8 Software Adapters (tpu_mjx_render/adapters/)"}
         </text>
         <rect x="24" y="126" width="220" height="40" rx="5" fill="var(--bg-card)" stroke="var(--hairline)" />
         <text x="34" y="143" class="val-lbl" style="font-size:10.5px;">mjx_universal + isaac_rep</text>
-        <text x="34" y="158" class="sub-lbl" style="font-size:9.8px;">${zh ? "MuJoCo / DR / LiDAR / 视触觉" : "MuJoCo / DR / LiDAR / Tactile"}</text>
+        <text x="34" y="158" class="sub-lbl" style="font-size:9.8px;">${zh ? "MuJoCo / 域随机化 / LiDAR / 触觉" : "MuJoCo / DR / LiDAR / Tactile"}</text>
 
         <rect x="254" y="126" width="220" height="40" rx="5" fill="var(--bg-card)" stroke="var(--hairline)" />
         <text x="264" y="143" class="val-lbl" style="font-size:10.5px;">blend_compiler + openusd</text>
-        <text x="264" y="158" class="sub-lbl" style="font-size:9.8px;">${zh ? ".blend Cycles / OpenUSD 直编" : ".blend Cycles / OpenUSD USD"}</text>
+        <text x="264" y="158" class="sub-lbl" style="font-size:9.8px;">${zh ? ".blend Cycles / OpenUSD 编译" : ".blend Cycles / OpenUSD Loader"}</text>
 
         <rect x="484" y="126" width="220" height="40" rx="5" fill="var(--bg-card)" stroke="var(--hairline)" />
         <text x="494" y="143" class="val-lbl" style="font-size:10.5px;">tpu_optix + tpu_gsplat</text>
-        <text x="494" y="158" class="sub-lbl" style="font-size:9.8px;">${zh ? "OptiX SDK / 布料 / 3DGS+4DGS" : "OptiX SDK / Cloth / 3DGS+4DGS"}</text>
+        <text x="494" y="158" class="sub-lbl" style="font-size:9.8px;">${zh ? "OptiX 接口 / 布料 / 3DGS + 4DGS" : "OptiX API / Cloth / 3DGS + 4DGS"}</text>
 
         <rect x="714" y="126" width="222" height="40" rx="5" fill="var(--bg-card)" stroke="var(--hairline)" />
         <text x="724" y="143" class="val-lbl" style="font-size:10.5px;">tpu_dlss + tpu_restir</text>
@@ -50,30 +49,30 @@ window.TPU_RTX_CHARTS = (function () {
         <!-- Layer 2: 3 Zero-Copy Core Kernels -->
         <rect x="8" y="190" width="944" height="74" rx="8" fill="var(--bg-elev)" stroke="var(--accent)" />
         <text x="24" y="211" class="val-lbl" style="fill:var(--accent);font-size:12px;">
-          ${zh ? "LAYER 2 · 三大零拷贝 TPU 原生渲染与物理核（host_callbacks = 0 · gather_ops = 0）" : "LAYER 2 · THREE ZERO-COPY CORE KERNELS (host_callbacks = 0 · gather_ops = 0)"}
+          ${zh ? "第 2 层 · 3 个零拷贝核心内核 (host_callbacks = 0, gather_ops = 0)" : "Layer 2 · 3 Zero-Copy Core Kernels (host_callbacks = 0, gather_ops = 0)"}
         </text>
         <rect x="24" y="221" width="292" height="34" rx="5" fill="var(--bg-card)" stroke="var(--hairline-strong)" />
-        <text x="36" y="236" class="val-lbl" style="font-size:11px;">${zh ? "1. Wide-BVH-64 光追与路径追踪" : "1. Wide-BVH-64 Ray &amp; Path Tracing"}</text>
-        <text x="36" y="250" class="sub-lbl" style="font-size:10px;">${zh ? "3 级 64 叉 + VMEM 核融合 + AgX" : "3-Level 64-Ary + In-VMEM Fusion + AgX"}</text>
+        <text x="36" y="236" class="val-lbl" style="font-size:11px;">${zh ? "1. Wide-BVH-64 光线追踪与路径追踪" : "1. Wide-BVH-64 Ray &amp; Path Tracing"}</text>
+        <text x="36" y="250" class="sub-lbl" style="font-size:10px;">${zh ? "3 级 64 叉 + VMEM 融合着色 + AgX" : "3-Level 64-Ary + In-VMEM Fusion + AgX"}</text>
 
         <rect x="334" y="221" width="292" height="34" rx="5" fill="var(--bg-card)" stroke="var(--hairline-strong)" />
         <text x="346" y="236" class="val-lbl" style="font-size:11px;">${zh ? "2. 分块 VMEM 3DGS / 4DGS 光栅器" : "2. Chunked-VMEM 3DGS / 4DGS Engine"}</text>
-        <text x="346" y="250" class="sub-lbl" style="font-size:10px;">${zh ? "零动态 Gather · 10.62 亿高斯分布式" : "Zero Gather · Up to 1.06B Distributed Splats"}</text>
+        <text x="346" y="250" class="sub-lbl" style="font-size:10px;">${zh ? "无动态 Gather · 32 芯 10.62 亿高斯" : "Zero Gather · Up to 1.062B Splats (32c)"}</text>
 
         <rect x="644" y="221" width="292" height="34" rx="5" fill="var(--bg-card)" stroke="var(--hairline-strong)" />
         <text x="656" y="236" class="val-lbl" style="font-size:11px;">${zh ? "3. MXU 神经重建 + jax.grad 可微闭环" : "3. MXU Neural + jax.grad Diff Physics"}</text>
-        <text x="656" y="250" class="sub-lbl" style="font-size:10px;">${zh ? "4K 降噪/DLSS/重打光 + 像素到力矩反传" : "4K Denoise/DLSS/Relight + Pixel-to-Torque"}</text>
+        <text x="656" y="250" class="sub-lbl" style="font-size:10px;">${zh ? "4K 降噪/DLSS/重打光 + 像素反传力矩" : "4K Denoise/DLSS/Relight + Pixel-to-Torque"}</text>
 
-        <!-- Layer 1: Google Cloud TPU v5p Silicon -->
+        <!-- Layer 1: Google Cloud TPU v5p Hardware -->
         <rect x="8" y="276" width="944" height="74" rx="8" fill="var(--accent-soft)" stroke="var(--accent)" />
         <text x="24" y="299" class="val-lbl" style="fill:var(--accent);font-size:12px;">
-          ${zh ? "LAYER 1 · GOOGLE CLOUD TPU v5p 硬件底座（实测单芯 → 4 芯 383 GB → 32 芯 3.064 TB HBM）" : "LAYER 1 · GOOGLE CLOUD TPU v5p SILICON (LIVE 1-CHIP → 4-CHIP 383 GB → 32-CHIP 3.064 TB HBM)"}
+          ${zh ? "第 1 层 · Google Cloud TPU v5p 硬件（单芯 → 4 芯 383 GB → 32 芯 3.064 TB HBM）" : "Layer 1 · Google Cloud TPU v5p Hardware (1-Chip → 4-Chip 383 GB → 32-Chip 3.064 TB HBM)"}
         </text>
         <text x="24" y="321" class="sub-lbl" style="font-size:11px;fill:var(--text);">
-          ${zh ? "459 TFLOP/s BF16/INT8 脉动阵列 MXU  ·  64 MiB 软件直控 VMEM  ·  95.74 GiB HBM/芯  ·  3D Torus ICI" : "459 TFLOP/s BF16/INT8 Systolic MXU  ·  64 MiB SW-Managed VMEM  ·  95.74 GiB HBM/chip  ·  3D Torus ICI"}
+          ${zh ? "459 TFLOP/s BF16/INT8 脉动阵列 MXU  ·  64 MiB 片上 VMEM  ·  95.74 GiB HBM/芯  ·  3D Torus ICI" : "459 TFLOP/s BF16/INT8 Systolic MXU  ·  64 MiB SW-Managed VMEM  ·  95.74 GiB HBM/chip  ·  3D Torus ICI"}
         </text>
         <text x="24" y="339" class="sub-lbl" style="font-size:10.5px;fill:var(--text-secondary);">
-          ${zh ? "物理仿真、光线追踪、传感器建模与策略训练同驻单张 XLA 计算图，彻底消灭跨端拷贝。" : "Physics, ray tracing, tactile/LiDAR simulation &amp; RL/VLA gradients share one XLA HLO graph with zero CPU copies."}
+          ${zh ? "物理仿真、光线追踪、传感器建模与策略训练同驻单张 XLA 计算图，不回传 CPU。" : "Physics, ray tracing, tactile/LiDAR simulation &amp; RL/VLA gradients share one XLA HLO graph with zero CPU copies."}
         </text>
       </svg>
     `;
@@ -92,37 +91,37 @@ window.TPU_RTX_CHARTS = (function () {
           </marker>
         </defs>
 
-        <!-- LEFT: TRADITIONAL GPU -->
+        <!-- LEFT: GPU -->
         <rect x="8" y="8" width="458" height="374" rx="8" fill="var(--bg-elev)" stroke="var(--hairline-strong)" />
         <rect x="8" y="8" width="458" height="34" rx="8" fill="var(--cyan-soft)" />
         <text x="24" y="30" class="val-lbl" style="fill:var(--cyan);font-size:12px;">
-          ${zh ? "传统 GPU (SIMT Warp + 硬件 RT Core)" : "Traditional GPU (SIMT Warps + Hardware RT Core)"}
+          ${zh ? "NVIDIA GPU (SIMT Warp + 硬件 RT Core)" : "NVIDIA GPU (SIMT Warps + Hardware RT Core)"}
         </text>
 
         <rect x="24" y="54" width="426" height="62" rx="6" fill="var(--bg-card)" stroke="var(--hairline-strong)" />
-        <text x="38" y="74" class="val-lbl">${zh ? "芯片微架构 · 为非结构化标量分支而生" : "Silicon · Built for Branching & Random Access"}</text>
+        <text x="38" y="74" class="val-lbl">${zh ? "硬件特征：适配动态分支与随机访问" : "Silicon: Built for Branching & Random Access"}</text>
         <text x="38" y="92" class="sub-lbl">32-Thread SIMT Warps · Dedicated RT Cores · HW L1/L2 Cache</text>
-        <text x="38" y="106" class="sub-lbl">${zh ? "小块局部命中率极高，但单卡 HBM 容量相对有限 (24–80 GB)" : "Hardware BVH traversal & atomic tile scatter; 24–80 GB VRAM per GPU"}</text>
+        <text x="38" y="106" class="sub-lbl">${zh ? "硬件 BVH 遍历与原子写，单卡显存通常 24–80 GB" : "Hardware BVH traversal & atomic tile scatter; 24–80 GB VRAM per GPU"}</text>
 
         <rect x="24" y="132" width="426" height="44" rx="5" fill="var(--bg-card)" stroke="var(--hairline)" />
-        <text x="38" y="151" class="val-lbl">1. ${zh ? "独立光线 Warp（允许动态路径分歧与递归）" : "Per-Ray SIMT Warps (Dynamic Branching OK)"}</text>
-        <text x="38" y="167" class="sub-lbl">${zh ? "单条光线自由提前终止，无固定向量长度约束" : "Threads diverge freely across arbitrary ray bounces"}</text>
+        <text x="38" y="151" class="val-lbl">1. ${zh ? "单光线 SIMT Warp（允许不规则分歧与递归）" : "Per-Ray SIMT Warps (Dynamic Branching)"}</text>
+        <text x="38" y="167" class="sub-lbl">${zh ? "每条光线可独立提前终止，无固定向量长度约束" : "Threads diverge freely across arbitrary ray bounces"}</text>
         <line x1="237" y1="176" x2="237" y2="192" stroke="var(--cyan)" stroke-width="1.5" marker-end="url(#gvt-c)" />
 
         <rect x="24" y="194" width="426" height="44" rx="5" fill="var(--bg-card)" stroke="var(--hairline)" />
-        <text x="38" y="213" class="val-lbl">2. ${zh ? "硬件 RT Core 指针追踪 BVH（随机 L1/L2 Gather）" : "Pointer-Chasing Binary BVH (HW L1/L2 Cache)"}</text>
-        <text x="38" y="229" class="sub-lbl">${zh ? "硬件缓存兜底不规则内存读取与原子 tile scatter" : "Hardware cache absorbs irregular pointer chasing & atomics"}</text>
+        <text x="38" y="213" class="val-lbl">2. ${zh ? "指针跳转式二叉 BVH（依赖硬件 L1/L2 缓存）" : "Pointer-Chasing Binary BVH (HW L1/L2 Cache)"}</text>
+        <text x="38" y="229" class="sub-lbl">${zh ? "硬件缓存平滑吸收不规则读取与原子累加" : "Hardware cache absorbs irregular pointer chasing & atomics"}</text>
         <line x1="237" y1="238" x2="237" y2="254" stroke="var(--cyan)" stroke-width="1.5" marker-end="url(#gvt-c)" />
 
         <rect x="24" y="256" width="426" height="52" rx="5" fill="var(--bg-card)" stroke="var(--hairline)" />
-        <text x="38" y="275" class="val-lbl">3. ${zh ? "跨工具链桥接（PhysX / OptiX / CUDA PyTorch）" : "Cross-Stack Bridges (OptiX / Isaac / CUDA PyTorch)"}</text>
-        <text x="38" y="291" class="sub-lbl">${zh ? "实时交互视口极强，但 RL/物理/3DGS 常需缓冲拷贝或跨端桥" : "Mature viewport & Omniverse stack; multi-engine RL/diff bridge needed"}</text>
+        <text x="38" y="275" class="val-lbl">3. ${zh ? "跨工具链桥接 (PhysX / OptiX / CUDA PyTorch)" : "Cross-Stack Bridges (OptiX / Isaac / CUDA PyTorch)"}</text>
+        <text x="38" y="291" class="sub-lbl">${zh ? "交互式视口工具链成熟；多引擎 RL 常需缓冲交换" : "Mature viewport & Omniverse stack; multi-engine RL bridges needed"}</text>
 
         <rect x="24" y="320" width="426" height="48" rx="5" fill="var(--cyan-soft)" stroke="var(--cyan)" />
-        <text x="38" y="340" class="val-lbl" style="fill:var(--cyan);">${zh ? "最擅长：单光线随机递归、实时编辑器交互、原生 MaterialX" : "Sweet Spot: Complex Dynamic Branching, Viewports & Authoring"}</text>
-        <text x="38" y="357" class="sub-lbl">${zh ? "短板：大批量具身 RL/VLA + 3 亿高斯同驻单卡显存往往捉襟见肘" : "Limit: High-batch MJX RL + 300M splats hit per-device VRAM walls"}</text>
+        <text x="38" y="340" class="val-lbl" style="fill:var(--cyan);">${zh ? "适用场景：复杂动态分支、交互式 DCC 视口、单卡 Cycles" : "Strong at: Dynamic Branching, Viewports & Single-Card Cycles"}</text>
+        <text x="38" y="357" class="sub-lbl">${zh ? "约束：高批量具身 RL 或数亿级高斯会受限于单卡显存" : "Constraint: High-batch RL + 300M splats hit per-device VRAM limits"}</text>
 
-        <!-- RIGHT: GOOGLE TPU v5p (TPU-RTX) -->
+        <!-- RIGHT: GOOGLE TPU v5p -->
         <rect x="494" y="8" width="458" height="374" rx="8" fill="var(--bg-elev)" stroke="var(--accent)" />
         <rect x="494" y="8" width="458" height="34" rx="8" fill="var(--accent-soft)" />
         <text x="510" y="30" class="val-lbl" style="fill:var(--accent);font-size:12px;">
@@ -130,32 +129,31 @@ window.TPU_RTX_CHARTS = (function () {
         </text>
 
         <rect x="510" y="54" width="426" height="62" rx="6" fill="var(--bg-card)" stroke="var(--accent)" />
-        <text x="524" y="74" class="val-lbl">${zh ? "芯片微架构 · 为大块顺序向量与矩阵融合而生" : "Silicon · 459 TFLOP/s BF16 MXU + 95.74 GiB HBM/chip"}</text>
+        <text x="524" y="74" class="val-lbl">${zh ? "硬件特征：459 TFLOP/s BF16 MXU + 95.74 GiB HBM/芯" : "Silicon: 459 TFLOP/s BF16 MXU + 95.74 GiB HBM/chip"}</text>
         <text x="524" y="92" class="sub-lbl">128×128 MXU · 8×128 VPU · 64 MiB SW VMEM · 2.77 TB/s HBM</text>
-        <text x="524" y="106" class="sub-lbl">${zh ? "脊点 166 FLOP/B，无硬件光追核，必须靠软件 VMEM 消除 Gather" : "166 FLOP/B ridge point · No HW RT cache -> Zero-Gather Pallas"}</text>
+        <text x="524" y="106" class="sub-lbl">${zh ? "脊点 166 FLOP/B，无硬件 RT 缓存 → Pallas 零 Gather 调度" : "166 FLOP/B ridge point · No HW RT cache → Zero-Gather Pallas"}</text>
 
         <rect x="510" y="132" width="426" height="44" rx="5" fill="var(--bg-card)" stroke="var(--hairline)" />
         <text x="524" y="151" class="val-lbl">1. ${zh ? "批量 (B, R) SoA 光线块对齐 (8×128)" : "Batched (B, R) SoA Ray Tiles Aligned to (8×128)"}</text>
-        <text x="524" y="167" class="sub-lbl">${zh ? "上千并行仿真世界与射线直接打包进入 VPU 向量寄存器" : "Thousands of parallel worlds feed vector lanes directly"}</text>
+        <text x="524" y="167" class="sub-lbl">${zh ? "并行环境与相机射线规整排布并送入 VPU 向量通道" : "Parallel simulation worlds pack cleanly into vector lanes"}</text>
         <line x1="723" y1="176" x2="723" y2="192" stroke="var(--accent)" stroke-width="1.5" marker-end="url(#gvt-a)" />
 
         <rect x="510" y="194" width="426" height="44" rx="5" fill="var(--bg-card)" stroke="var(--hairline)" />
-        <text x="524" y="213" class="val-lbl">2. ${zh ? "64 叉 Wide-BVH + pltpu.async_copy（gather_ops = 0）" : "3-Level 64-Ary Wide-BVH + async_copy (0 Gather)"}</text>
-        <text x="524" y="229" class="sub-lbl">${zh ? "单指令同时测试 64 个 AABB，叶节点 DMA 流式进出 64 MiB VMEM" : "Tests 64 boxes per VPU op; leaf streams stay inside 64 MiB VMEM"}</text>
+        <text x="524" y="213" class="val-lbl">2. ${zh ? "64 叉 Wide-BVH + pltpu.async_copy (gather_ops = 0)" : "3-Level 64-Ary Wide-BVH + async_copy (0 Gather)"}</text>
+        <text x="524" y="229" class="sub-lbl">${zh ? "单次向量指令测试 64 个 AABB，叶节点 DMA 流式进出 VMEM" : "Tests 64 boxes per VPU op; leaf streams stay inside 64 MiB VMEM"}</text>
         <line x1="723" y1="238" x2="723" y2="254" stroke="var(--accent)" stroke-width="1.5" marker-end="url(#gvt-a)" />
 
         <rect x="510" y="256" width="426" height="52" rx="5" fill="var(--bg-card)" stroke="var(--hairline)" />
-        <text x="524" y="275" class="val-lbl">3. ${zh ? "单张 XLA 计算图闭环：物理 + 光追 + DLSS + VLA" : "One XLA Graph: Physics + Render + DLSS + VLA + Grad"}</text>
-        <text x="524" y="291" class="sub-lbl">${zh ? "host_callbacks=0：渲染结果直接原地喂给 PPO/ViT-Tiny 或 jax.grad" : "host_callbacks=0: G-buffers stay in HBM for MXU & differentiable control"}</text>
+        <text x="524" y="275" class="val-lbl">3. ${zh ? "单图融合：物理 + 渲染 + DLSS + VLA + 梯度" : "One XLA Graph: Physics + Render + DLSS + VLA + Grad"}</text>
+        <text x="524" y="291" class="sub-lbl">${zh ? "host_callbacks=0：G-Buffer 留在 HBM 内直接喂给 PPO 或 jax.grad" : "host_callbacks=0: G-buffers stay in HBM for MXU & differentiable control"}</text>
 
         <rect x="510" y="320" width="426" height="48" rx="5" fill="var(--accent-soft)" stroke="var(--accent)" />
-        <text x="524" y="340" class="val-lbl" style="fill:var(--accent);">${zh ? "最擅长：超大 HBM(383GB/机)、零拷贝 RL/VLA、MXU 去噪、可微物理" : "Sweet Spot: 266k FPS RL, 300M Splats, 88 FPS 4K MXU, jax.grad"}</text>
-        <text x="524" y="357" class="sub-lbl">${zh ? "短板：XLA AOT 首次编译 4–130 s；不规则动态 Gather 立即掉速" : "Limit: 4–130 s AOT compile cost; random HBM gathers stall badly"}</text>
+        <text x="524" y="340" class="val-lbl" style="fill:var(--accent);">${zh ? "适用场景：大显存场景、266k–411k FPS RL、88 FPS 4K 去噪、jax.grad" : "Strong at: High-HBM Scenes, 266k–411k FPS RL, 4K MXU, jax.grad"}</text>
+        <text x="524" y="357" class="sub-lbl">${zh ? "约束：XLA AOT 冷编译 4–130 s；不规则动态 Gather 性能骤降" : "Constraint: 4–130 s AOT compile time; uncoalesced HBM gathers stall"}</text>
       </svg>
     `;
   }
 
-  /* rtx-h100-inspired chronological Step-Envelope Optimization Curve (including negative/flat runs) */
   function renderEvolution(el, lang) {
     const zh = lang === "zh";
     const W = 960, H = 315, padL = 62, padR = 56, padT = 30, padB = 48;
@@ -163,15 +161,15 @@ window.TPU_RTX_CHARTS = (function () {
     const minL = 2.4, maxL = 6.18;
 
     const runs = [
-      { id: "Naive",  fps: 453.3,   best: 453.3,   lbl: "453",       note: zh ? "朴素 XLA" : "Naive XLA",    neg: false, dy: -11 },
-      { id: "Tile64", fps: 854.3,   best: 854.3,   lbl: "854",       note: "Tile=64",                      neg: false, dy: -11 },
-      { id: "Spill",  fps: 616.7,   best: 854.3,   lbl: "617 (-24%)",note: zh ? "512 溢出" : "512 Spill",   neg: true,  dy: 20 },
-      { id: "Pal1",   fps: 4883.3,  best: 4883.3,  lbl: "4,883",     note: zh ? "初版 Pallas" : "Pallas v1",neg: false, dy: -11 },
-      { id: "Flat",   fps: 4845.0,  best: 4883.3,  lbl: "4,845 (flat)",note: zh ? "持平尝试" : "Flat Pass", neg: true,  dy: 20 },
-      { id: "NoGat",  fps: 12843.5, best: 12843.5, lbl: "12.8k",     note: zh ? "消除 Gather" : "0-Gather", neg: false, dy: -11 },
-      { id: "4c",     fps: 50131.0, best: 50131.0, lbl: "50.1k",     note: zh ? "4 芯并行" : "4-Chip",      neg: false, dy: -11 },
-      { id: "Fused",  fps: 266209,  best: 266209,  lbl: "266,209",   note: zh ? "片上核融合" : "VMEM Fused",neg: false, dy: -11 },
-      { id: "Equiv",  fps: 921309,  best: 921309,  lbl: "921,309",   note: zh ? "纯渲染等效" : "Pure Render",neg: false, dy: -11 }
+      { id: "Naive",  fps: 453.3,   best: 453.3,   lbl: "453",          note: zh ? "初版 XLA" : "Naive XLA",    neg: false, dy: -11 },
+      { id: "Tile64", fps: 854.3,   best: 854.3,   lbl: "854",          note: "Tile=64",                      neg: false, dy: -11 },
+      { id: "Spill",  fps: 616.7,   best: 854.3,   lbl: "617 (−24%)",   note: zh ? "512 溢出" : "512 Spill",   neg: true,  dy: 20 },
+      { id: "Pal1",   fps: 4883.3,  best: 4883.3,  lbl: "4,883",        note: zh ? "初版 Pallas" : "Pallas v1",neg: false, dy: -11 },
+      { id: "Flat",   fps: 4845.0,  best: 4883.3,  lbl: "4,845 (flat)", note: zh ? "持平试验" : "Flat Pass", neg: true,  dy: 20 },
+      { id: "NoGat",  fps: 12843.5, best: 12843.5, lbl: "12.8k",        note: zh ? "去 Gather" : "0-Gather",   neg: false, dy: -11 },
+      { id: "4c",     fps: 50131.0, best: 50131.0, lbl: "50.1k",        note: zh ? "4 芯并行" : "4-Chip",      neg: false, dy: -11 },
+      { id: "Fused",  fps: 266209,  best: 266209,  lbl: "266,209",      note: zh ? "VMEM 融合" : "VMEM Fused", neg: false, dy: -11 },
+      { id: "Equiv",  fps: 921309,  best: 921309,  lbl: "921,309",      note: zh ? "纯渲染等效" : "Pure Render",neg: false, dy: -11 }
     ];
 
     const sx = (i) => padL + (i / (runs.length - 1)) * plotW;
@@ -210,9 +208,9 @@ window.TPU_RTX_CHARTS = (function () {
         <polyline fill="none" stroke="var(--accent)" stroke-width="2.5" points="${envPts.join(" ")}" />
         ${ptsSvg}
         <rect x="${padL + 10}" y="8" width="14" height="3.5" fill="var(--accent)" />
-        <text x="${padL + 30}" y="13" class="legend-lbl" style="font-size:11.5px">${zh ? "最佳前沿阶梯 (Log10 FPS)" : "Frontier Envelope (Log10 FPS)"}</text>
-        <circle cx="${padL + 265}" cy="10" r="4.5" fill="var(--warn)" />
-        <text x="${padL + 276}" y="13" class="legend-lbl" style="font-size:11.5px">${zh ? "负结果 / 持平尝试（未删档）" : "Negative / Flat Run (Disclosed)"}</text>
+        <text x="${padL + 30}" y="13" class="legend-lbl" style="font-size:11.5px">${zh ? "最佳吞吐包络 (Log10 FPS)" : "Frontier Envelope (Log10 FPS)"}</text>
+        <circle cx="${padL + 245}" cy="10" r="4.5" fill="var(--warn)" />
+        <text x="${padL + 256}" y="13" class="legend-lbl" style="font-size:11.5px">${zh ? "负结果 / 持平试验" : "Negative / Flat Run"}</text>
       </svg>
     `;
   }
@@ -264,8 +262,8 @@ window.TPU_RTX_CHARTS = (function () {
         <rect x="${padL + 8}" y="8" width="11" height="11" rx="2" fill="var(--cyan)" />
         <text x="${padL + 24}" y="17" class="legend-lbl" style="font-size:11px">${zh ? "主视角 Hero PSNR (dB)" : "Hero Camera PSNR (dB)"}</text>
         <rect x="${padL + 205}" y="8" width="11" height="11" rx="2" fill="var(--accent)" />
-        <text x="${padL + 221}" y="17" class="legend-lbl" style="font-size:11px">${zh ? "未见环绕视角 Orbit PSNR（验证无过拟合）" : "Held-Out Orbit PSNR (No Hero Overfit)"}</text>
-        <text x="${W - padR}" y="17" text-anchor="end" class="legend-lbl" style="fill:var(--ok);font-size:11px">${zh ? "--- 30 dB 电影一致性参考线" : "--- 30 dB Cinema Parity Bar"}</text>
+        <text x="${padL + 221}" y="17" class="legend-lbl" style="font-size:11px">${zh ? "留出环绕视角 Orbit PSNR" : "Held-Out Orbit PSNR"}</text>
+        <text x="${W - padR}" y="17" text-anchor="end" class="legend-lbl" style="fill:var(--ok);font-size:11px">${zh ? "--- 30 dB 参考线" : "--- 30 dB Reference"}</text>
         ${bars}
       </svg>
     `;
@@ -311,11 +309,11 @@ window.TPU_RTX_CHARTS = (function () {
       maxLog: 6.2,
       ticks: [500, 2000, 10000, 50000, 200000, 1000000],
       bars: [
-        { label: zh ? "V2 Pallas MXU (负结论)" : "V2 Pallas (FAIL)", val: 658.6, valText: "659 FPS (-1.81×)", warn: true },
-        { label: zh ? "V2 jax_tile 基线 (1芯)" : "V2 jax_tile (1c)", val: 1193.2, valText: "1,193 FPS", base: true },
-        { label: zh ? "V3 BF16-MXU (1芯)" : "V3 BF16-MXU (1c)", val: 35916, valText: "35,916 FPS" },
-        { label: zh ? "V3 4芯 shard_map 64²" : "V3 4c 64x64", val: 142008, valText: "142,008 FPS" },
-        { label: zh ? "V3 32芯 Pod 128² (实测)" : "V3 32c Pod 128² (Live)", val: 952248, valText: "952,248 FPS (32c)", cyan: true }
+        { label: zh ? "V2 Pallas MXU (负结果)" : "V2 Pallas (Slower)", val: 658.6, valText: "659 FPS (−1.81×)", warn: true },
+        { label: zh ? "V2 jax_tile 基线 (1 芯)" : "V2 jax_tile (1c)", val: 1193.2, valText: "1,193 FPS", base: true },
+        { label: zh ? "V3 BF16-MXU (1 芯)" : "V3 BF16-MXU (1c)", val: 35916, valText: "35,916 FPS" },
+        { label: zh ? "V3 4 芯 shard_map 64²" : "V3 4c 64×64", val: 142008, valText: "142,008 FPS" },
+        { label: zh ? "V3 32 芯 Pod 128²" : "V3 32c Pod 128²", val: 952248, valText: "952,248 FPS (32c)", cyan: true }
       ]
     });
   }
@@ -328,7 +326,7 @@ window.TPU_RTX_CHARTS = (function () {
       { tile: 64, fps: 854.3, tag: "854.3 FPS" },
       { tile: 128, fps: 811.0, tag: "811.0 FPS" },
       { tile: 256, fps: 799.3, tag: "799.3 FPS" },
-      { tile: 512, fps: 616.7, tag: "616.7 (-24%)" }
+      { tile: 512, fps: 616.7, tag: "616.7 (−24%)" }
     ];
     const minY = 550, maxY = 900;
     const sx = (i) => padL + (i / (pts.length - 1)) * plotW;
@@ -351,7 +349,7 @@ window.TPU_RTX_CHARTS = (function () {
     el.innerHTML = `
       <svg class="svg-chart" viewBox="0 0 ${W} ${H}">
         <rect x="${sx(2).toFixed(1)}" y="${padT}" width="${(sx(3) - sx(2)).toFixed(1)}" height="${plotH}" fill="var(--warn-soft)" />
-        <text x="${((sx(2) + sx(3)) / 2).toFixed(1)}" y="${padT + 20}" text-anchor="middle" class="sub-lbl" style="fill:var(--warn);font-size:11.5px;font-weight:700">${zh ? "64 MiB VMEM 溢出悬崖" : "64 MiB VMEM Spill Cliff"}</text>
+        <text x="${((sx(2) + sx(3)) / 2).toFixed(1)}" y="${padT + 20}" text-anchor="middle" class="sub-lbl" style="fill:var(--warn);font-size:11.5px;font-weight:700">${zh ? "64 MiB VMEM 溢出" : "64 MiB VMEM Spill"}</text>
         ${grid}
         <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H - padB}" class="ax-line" />
         <line x1="${padL}" y1="${H - padB}" x2="${W - padR}" y2="${H - padB}" class="ax-line" />
@@ -368,7 +366,7 @@ window.TPU_RTX_CHARTS = (function () {
     const items = [
       { name: "FP32", fps4k: 37.2, fps1080: 143.3, psnr: "20.276 dB" },
       { name: "BF16 (MXU)", fps4k: 78.6, fps1080: 307.4, psnr: "20.276 dB (2.11×)" },
-      { name: "INT8 QAT", fps4k: 78.1, fps1080: 303.5, psnr: "20.229 dB (-0.047)" }
+      { name: "INT8 QAT", fps4k: 78.1, fps1080: 303.5, psnr: "20.229 dB (−0.047)" }
     ];
     const maxY = 335, sy = (v) => padT + ((maxY - v) / maxY) * plotH;
     const grid = [0, 100, 200, 300].map((v) => {
@@ -397,7 +395,7 @@ window.TPU_RTX_CHARTS = (function () {
         <rect x="${padL + 10}" y="8" width="11" height="11" rx="2" fill="var(--cyan)" />
         <text x="${padL + 26}" y="18" class="legend-lbl" style="font-size:11.5px">1080p FPS (4c)</text>
         <rect x="${padL + 150}" y="8" width="11" height="11" rx="2" fill="var(--accent)" />
-        <text x="${padL + 166}" y="18" class="legend-lbl" style="font-size:11.5px">${zh ? "原生 4K FPS (4c)" : "Native 4K FPS (4c)"}</text>
+        <text x="${padL + 166}" y="18" class="legend-lbl" style="font-size:11.5px">${zh ? "4K FPS (4 芯)" : "4K FPS (4c)"}</text>
         ${groups}
       </svg>
     `;
@@ -460,19 +458,19 @@ window.TPU_RTX_CHARTS = (function () {
     const W = 960, H = 315;
     const tracks = [
       {
-        title: zh ? "Cartpole 成功率 (656.4k env-steps/s, 终态评测 94.2%)" : "Cartpole Success Rate (656.4k env-steps/s, eval 94.2%)",
+        title: zh ? "Cartpole 成功率 (656.4k env-steps/s, 评测 94.2%)" : "Cartpole Success Rate (656.4k env-steps/s, eval 94.2%)",
         pts: [[1,0.434],[8,0.281],[16,0.337],[24,0.438],[32,0.49],[40,0.568],[48,0.644],[56,0.718],[64,0.778],[72,0.793],[80,0.802],[88,0.799],[96,0.833],[104,0.851],[112,0.863],[120,0.880]],
-        minY: 0.25, maxY: 0.92, endLbl: "0.434 -> 0.880", color: "var(--ok)", yTop: 14
+        minY: 0.25, maxY: 0.92, endLbl: "0.434 → 0.880", color: "var(--ok)", yTop: 14
       },
       {
-        title: zh ? "PandaPickCube 单步奖励 (173.5k env-steps/s, 回报 146.9->165.5)" : "PandaPickCube Mean Reward (173.5k env-steps/s, return 146.9->165.5)",
+        title: zh ? "PandaPickCube 单步奖励 (173.5k env-steps/s, 回报 146.9 → 165.5)" : "PandaPickCube Mean Reward (173.5k env-steps/s, return 146.9 → 165.5)",
         pts: [[1,2.242],[10,2.196],[19,2.336],[28,2.408],[38,2.399],[47,2.44],[56,2.427],[65,2.489],[75,2.443],[84,2.509],[93,2.567],[102,2.59],[112,2.619],[121,2.564],[130,2.629],[140,2.641]],
-        minY: 2.15, maxY: 2.68, endLbl: "2.242 -> 2.641", color: "var(--accent)", yTop: 114
+        minY: 2.15, maxY: 2.68, endLbl: "2.242 → 2.641", color: "var(--accent)", yTop: 114
       },
       {
-        title: zh ? "Humanoid-21DOF 单步奖励 (221.7k env-steps/s, 回报 52.9->111.7)" : "Humanoid-21DOF Mean Reward (221.7k env-steps/s, return 52.9->111.7)",
+        title: zh ? "Humanoid-21DOF 单步奖励 (221.7k env-steps/s, 回报 52.9 → 111.7)" : "Humanoid-21DOF Mean Reward (221.7k env-steps/s, return 52.9 → 111.7)",
         pts: [[1,2.358],[10,2.378],[19,2.435],[28,2.445],[38,2.456],[47,2.485],[56,2.491],[65,2.516],[75,2.506],[84,2.514],[93,2.513],[102,2.524],[112,2.526],[121,2.547],[130,2.569],[140,2.576]],
-        minY: 2.34, maxY: 2.60, endLbl: "2.358 -> 2.576", color: "var(--cyan)", yTop: 214
+        minY: 2.34, maxY: 2.60, endLbl: "2.358 → 2.576", color: "var(--cyan)", yTop: 214
       }
     ];
 
@@ -522,9 +520,9 @@ window.TPU_RTX_CHARTS = (function () {
         <line x1="${padL}" y1="${H - padB}" x2="${W - padR}" y2="${H - padB}" class="ax-line" />
         <polyline fill="none" stroke="var(--cyan)" stroke-width="2.8" points="${poly}" />
         <circle cx="${sx(3.22).toFixed(1)}" cy="${sy(28.56).toFixed(1)}" r="5" fill="var(--accent)" />
-        <text x="${(sx(3.22) + 10).toFixed(1)}" y="${(sy(28.56) + 18).toFixed(1)}" class="val-lbl" style="fill:var(--accent);font-size:11.5px">3.22s -> 28.56 dB</text>
+        <text x="${(sx(3.22) + 10).toFixed(1)}" y="${(sy(28.56) + 18).toFixed(1)}" class="val-lbl" style="fill:var(--accent);font-size:11.5px">3.22s → 28.56 dB</text>
         <circle cx="${sx(7.5).toFixed(1)}" cy="${sy(30.3).toFixed(1)}" r="5" fill="var(--accent)" />
-        <text x="${(sx(7.5) + 10).toFixed(1)}" y="${(sy(30.3) + 18).toFixed(1)}" class="val-lbl" style="fill:var(--accent);font-size:11.5px">7.50s -> 30.30 dB</text>
+        <text x="${(sx(7.5) + 10).toFixed(1)}" y="${(sy(30.3) + 18).toFixed(1)}" class="val-lbl" style="fill:var(--accent);font-size:11.5px">7.50s → 30.30 dB</text>
         <circle cx="${sx(17.11).toFixed(1)}" cy="${sy(31.31).toFixed(1)}" r="5.6" fill="var(--ok)" />
         <text x="${sx(17.11).toFixed(1)}" y="${(sy(31.31) - 12).toFixed(1)}" text-anchor="middle" class="val-lbl" style="fill:var(--ok);font-size:12px">${zh ? "峰值 31.31 dB (17.1s)" : "Peak 31.31 dB (17.1s)"}</text>
       </svg>
@@ -536,15 +534,15 @@ window.TPU_RTX_CHARTS = (function () {
     el.innerHTML = `
       <svg class="svg-chart" viewBox="0 0 960 290">
         <rect x="10" y="10" width="462" height="270" rx="8" fill="var(--bg-elev)" stroke="var(--hairline-strong)" />
-        <text x="30" y="38" class="val-lbl" style="fill:var(--accent);font-size:13.5px">${zh ? "Sim-to-VLA 与 GelSight 视触觉工厂 (4 芯)" : "Sim-to-VLA &amp; GelSight Factory (4 Chips)"}</text>
+        <text x="30" y="38" class="val-lbl" style="fill:var(--accent);font-size:13.5px">${zh ? "Sim-to-VLA 与 GelSight 视触觉 (4 芯)" : "Sim-to-VLA &amp; GelSight Factory (4 Chips)"}</text>
         <text x="30" y="68" class="sub-lbl" style="font-size:11px">${zh ? "百万帧工厂数据集 (G=2048)" : "1M Factory Dataset (G=2048)"}</text>
         <text x="30" y="88" class="val-lbl" style="font-size:12.5px">1,001,472 frames in 142.58 s</text>
         <text x="30" y="106" class="sub-lbl" style="font-size:11px">7,024.2 cam-FPS · 4 TPU v5p chips · 0 host_callbacks</text>
 
         <line x1="30" y1="120" x2="452" y2="120" class="grid-line" />
         <text x="30" y="142" class="sub-lbl" style="font-size:11px">${zh ? "融合 ViT-Tiny 在线训练 (1.02M 参数)" : "Fused ViT-Tiny VLA (1.02M params)"}</text>
-        <text x="30" y="162" class="val-lbl" style="fill:var(--ok);font-size:12.5px">7,143.1 FPS (-1.84% overhead)</text>
-        <text x="30" y="180" class="sub-lbl" style="font-size:11px">Loss: 0.23781 -> 0.03321 in HBM</text>
+        <text x="30" y="162" class="val-lbl" style="fill:var(--ok);font-size:12.5px">7,143.1 FPS (−1.84% overhead)</text>
+        <text x="30" y="180" class="sub-lbl" style="font-size:11px">Loss: 0.23781 → 0.03321 in HBM</text>
 
         <line x1="30" y1="194" x2="452" y2="194" class="grid-line" />
         <text x="30" y="216" class="sub-lbl" style="font-size:11px">${zh ? "4 路视触觉 (头/腕相机 + 双 GelSight)" : "4-Sensor Visuo-Tactile + Dual GelSight"}</text>
@@ -552,18 +550,18 @@ window.TPU_RTX_CHARTS = (function () {
         <text x="30" y="254" class="sub-lbl" style="font-size:11px">DR overhead: +0.15% · zero gather_ops</text>
 
         <rect x="488" y="10" width="462" height="270" rx="8" fill="var(--bg-elev)" stroke="var(--hairline-strong)" />
-        <text x="508" y="38" class="val-lbl" style="fill:var(--cyan);font-size:13.5px">${zh ? "自动驾驶 8×1080p + 双 128 线激光雷达" : "Autonomous 8×1080p + Dual 128-Beam LiDAR"}</text>
+        <text x="508" y="38" class="val-lbl" style="fill:var(--cyan);font-size:13.5px">${zh ? "自动驾驶 8×1080p + 双 128 线 LiDAR" : "Autonomous 8×1080p + Dual 128-Beam LiDAR"}</text>
         <text x="508" y="68" class="sub-lbl" style="font-size:11px">${zh ? "单图融合传感器组 (4 芯 &amp; 32 芯扩展)" : "Single-Graph Sensor Rig (4c &amp; 32c Scaling)"}</text>
         <text x="508" y="88" class="val-lbl" style="font-size:12.5px">8×1080p RGB+D+Seg + 2×128×2048 LiDAR</text>
         <text x="508" y="106" class="sub-lbl" style="font-size:11px">17.11M rays/env · gather_ops = 0 · host_callbacks = 0</text>
 
         <line x1="508" y1="120" x2="930" y2="120" class="grid-line" />
-        <text x="508" y="142" class="sub-lbl" style="font-size:11px">${zh ? "实测端到端吞吐" : "Measured E2E Throughput"}</text>
+        <text x="508" y="142" class="sub-lbl" style="font-size:11px">${zh ? "端到端实测吞吐" : "Measured E2E Throughput"}</text>
         <text x="508" y="162" class="val-lbl" style="fill:var(--accent);font-size:12.5px">4c Rig: 66.81 cam-FPS (8.35 env-FPS)</text>
         <text x="508" y="180" class="sub-lbl" style="font-size:11px">32c Batch 128×2048 LiDAR: 243,676 env-FPS (63.88B rays/s)</text>
 
         <line x1="508" y1="194" x2="930" y2="194" class="grid-line" />
-        <text x="508" y="216" class="sub-lbl" style="font-size:11px">${zh ? "点云物理几何对齐 (对比 MuJoCo C)" : "LiDAR XYZ Parity vs MuJoCo C"}</text>
+        <text x="508" y="216" class="sub-lbl" style="font-size:11px">${zh ? "点云几何对齐 (对比 MuJoCo C)" : "LiDAR XYZ Parity vs MuJoCo C"}</text>
         <text x="508" y="236" class="val-lbl" style="fill:var(--ok);font-size:12.5px">3.13e-8 m Dual-XYZ MAE</text>
         <text x="508" y="254" class="sub-lbl" style="font-size:11px">GeomID match = 1.0000 (bitwise boundary parity)</text>
       </svg>
