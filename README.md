@@ -4,7 +4,7 @@
 
 **Author:** Feiyang Liu · **License:** [Apache-2.0](LICENSE) · **Live Interactive Monograph:** [zaychikliu.github.io/tpu-rtx](https://zaychikliu.github.io/tpu-rtx/) ([English](https://zaychikliu.github.io/tpu-rtx/?lang=en) | [中文](https://zaychikliu.github.io/tpu-rtx/?lang=zh))
 
-> Every benchmark, render, and parity check in this repository was executed natively on real Google Cloud **TPU v5p** silicon (`interpret=False`, `95.74 GiB` HBM/chip, `383 GiB`/host) with XLA HLO verified at **`host_callbacks = 0`**, **`send_recv_ops = 0`**, and **`gather_ops = 0`**.
+> Every benchmark, render, and parity check in this repository was executed natively on real Google Cloud **TPU v5p** silicon (`interpret=False`, `95.74 GiB` HBM/chip, `383 GiB`/host single-host to **`3.064 TB` HBM across 8 hosts / 32 chips**) with XLA HLO verified at **`host_callbacks = 0`**, **`send_recv_ops = 0`**, and **`gather_ops = 0`**.
 
 ---
 
@@ -12,7 +12,8 @@
 
 | Domain | Verified Live TPU v5p Result | Details & Module |
 |---|---|---|
-| **Zero-Copy MJX + Fused Pallas Shader** | **`266,209 FPS`** E2E (`64×64`, `B=8,192`, 4c) · **`921,309 FPS`** render-equiv | `w0` Fused In-VMEM GGX+AO+Shadows (`depth_mae = 3.35e-10 m`) |
+| **32-Chip TPU v5p-64 Pod Capstone (8 Hosts, `3.064 TB` HBM)** | **`411,023 FPS`** E2E MJX+RTX (`B=131k`) · **`952,248 FPS`** 3DGS (`128²`) · **`1.062B` Splats** · **`63.88B` LiDAR rays/s** · **`17.18B` Unique Tris** · **`1,650.2 spm` @ 8K** | [`run_pod_32chip_capstone.py`](experiments/pod_v5p64_capstone/run_pod_32chip_capstone.py) (`395.07 s` total, `out/metrics/v3_pod_v5p64_capstone.json`) |
+| **Zero-Copy MJX + Fused Pallas Shader (4c)** | **`266,209 FPS`** E2E (`64×64`, `B=8,192`, 4c) · **`921,309 FPS`** render-equiv | `w0` Fused In-VMEM GGX+AO+Shadows (`depth_mae = 3.35e-10 m`) |
 | **Native 3D Gaussian Splatting + `300M` Scale** | **`142,008 FPS`** (`4c, 64×64`) · **`300,000,000` Gaussians** in 4c HBM @ 4K (`0.25 FPS`) | `w3` `tpu_gsplat` (`301.87 GB / 380 GB`, `1,171,875:1` cull, `gather_ops = 0`) |
 | **Real-World Mip-NeRF 360 3DGS + `4DGS × MJX`** | **Native 8K `garden` (`5.83M` SH3) `0.88 FPS` (`29.19 MPix/s`)** · `4DGS × MJX` **`5.32 FPS` 1080p** | `w3` `32`-view `jax.grad` `23.42 steps/s` (`30.62 dB`, peak `31.31 dB`) |
 | **Disney *Moana* Island OpenUSD v2.1 (`22.30B` Tris)** | **4K `5.13 s`** / **8K `17.24 s`** · **Sunset `5.60 s`** · **Underwater Reef Caustics `8.72 s`** | `w2` `openusd_loader` (`4.653 GiB` HBM) + *Moana Beach × MJX* @ 4K (`5.40 s`) |
@@ -63,6 +64,28 @@ obs = tpu_rtx.render(mjx_data, scene)  # -> {"rgb", "depth", "normal", "seg_id",
 
 Ecosystem adapters live under `tpu_mjx_render.adapters`:
 `mjx_universal`, `isaac_replicator`, `openusd_loader`, `blend_compiler`, `tpu_gsplat`, `tpu_optix`, `tpu_dlss`, `tpu_restir`.
+
+---
+
+## Supported Software Retrofits & Benchmarks
+
+### 8 Drop-In Ecosystem Adapters (`tpu_mjx_render/adapters/`)
+
+| Target Software / Standard | TPU Adapter Module | What Was Rebuilt for Google Cloud TPU |
+|---|---|---|
+| **MuJoCo / MJX & Menagerie** | [`mjx_universal.py`](tpu_mjx_render/adapters/mjx_universal.py) | Compiles unmodified `MjModel`, MJCF XML & multi-mesh Menagerie assets into Wide-BVH-64 + `jax.grad` differentiable servoing |
+| **NVIDIA Isaac Sim & Omniverse Replicator** | [`isaac_replicator.py`](tpu_mjx_render/adapters/isaac_replicator.py) | Drop-in `TiledCamera` (`RGB/Depth/Normal/Seg/Flow`), `rep.randomizer.*` DR, `128×2048` RTX LiDAR & `GelSight` tactile kernels in one XLA graph |
+| **Blender 4.x / Cycles `.blend`** | [`blend_compiler.py`](tpu_mjx_render/adapters/blend_compiler.py) | Automated Cycles Shader Graph (`Principled/Glass/Glossy/SSS`) & Depsgraph walker -> TPU ScenePack + AgX |
+| **Pixar / Disney OpenUSD** | [`openusd_loader.py`](tpu_mjx_render/adapters/openusd_loader.py) | Native `.usd/.usda/.usdc/.usdz` (`UsdGeom.Mesh`, `PointInstancer`, `BasisCurves`) -> 2-level Wide-TLAS-64 |
+| **NVIDIA OptiX Python/JAX SDK** | [`tpu_optix.py`](tpu_mjx_render/adapters/tpu_optix.py) | `OptixDeviceContext`, `accelBuild(GAS/IAS)`, `ShaderBindingTable`, `optixTrace` & dynamic cloth BVH refit |
+| **`gsplat` 3DGS / 4DGS** | [`tpu_gsplat.py`](tpu_mjx_render/adapters/tpu_gsplat.py) | Zero-gather chunked-VMEM EWA rasterizer + 32-view `jax.grad` training + SE(3) dynamic 4DGS |
+| **NVIDIA DLSS 3.5 & Denoiser** | [`tpu_dlss.py`](tpu_mjx_render/adapters/tpu_dlss.py) | Analytical `4×4` motion vectors + BF16 MXU 2× SR, 4K MC denoiser & static G-buffer relighting |
+| **SIGGRAPH ReSTIR DI** | [`tpu_restir.py`](tpu_mjx_render/adapters/tpu_restir.py) | Streaming `M=32` RIS + spatiotemporal reservoir resampling over 1,024 dynamic lights |
+
+### Benchmark Coverage (Verified on Live TPU vs. Drop-In API Compatible)
+
+- **Verified Live on TPU v5p**: **`RoboTwin`** (`123,858 cam-FPS` 3-cam DR), **`RoboWild` 3DGS/4DGS × MJX** (`5.32 FPS` 1080p live LEGO Dozer push in Mip-NeRF `kitchen`), **`MuJoCo Menagerie`** (`Aero Hand 4,284`, `Panda 3,131`, `G1 2,546`, `Go2 1,863 FPS`), **`Factory Sim-to-VLA + GelSight`** (`1M` frames in `142.6 s`, `270.6k` tactile/s), **`Vision PPO`** (`Cartpole 656k/s`, `Panda 211k/s`, `Humanoid 292k/s`, 32c E2E `411k FPS`), **`Autonomous 8×1080p + 2×128×2048 LiDAR`** (`66.8 cam-FPS`, 32c batch LiDAR `63.88B rays/s`), **`Blender Open Data / Studio` (8 scenes)**, **`Disney Moana OpenUSD` (`22.30B` tris)**, and **`Mip-NeRF 360` + `10M Bistro`**.
+- **Drop-In API Compatible (Standard MJCF / OpenUSD / `rep.randomizer`)**: Suites exported as standard MJCF XML or OpenUSD — including **`RoboDojo`**, **`MuJoCo Playground`**, **`ALOHA`**, and **`ManiSkill`** assets — compile cleanly via `tpu_rtx.compile(...)` (dedicated per-suite telemetry logs are not yet recorded in `out/metrics/`).
 
 ---
 

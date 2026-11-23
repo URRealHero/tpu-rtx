@@ -1,16 +1,34 @@
 /* ==========================================================================
    TPU-RTX Bilingual Content Dictionary (English / 中文)
-   Pure Single-Scene Architecture:
-   - 23 Pure Standalone Single-Scene Plates + 2 Full-Width QA-Rejected Cases
+   6-Chapter Monograph Architecture:
+   - 26 Clean Standalone Single-Scene Plates (Zero Defects, Zero Collages)
    - 3 Interactive Split Slider Labs (19 Aligned Left/Right Presets)
-   - 2 Interactive Full-Width Single-Scene Stages (3DGS 4K & Menagerie PBR)
-   - GPU vs TPU Tradeoffs, 4 Post-Mortems, Ablation Table, 20-Row JSON Ledger
+   - 3 Interactive Full-Width Single-Scene Stages (Hero, 4K 3DGS, Robots PBR)
+   - 11 Full-Width Vector SVGs, 4 Post-Mortems, 21-Row JSON Ledger
    Author: Feiyang Liu
    ========================================================================== */
 
 window.TPU_RTX_DATA = {
   plates: [
-    // --- Moana & Film / Caustics Singles ---
+    // --- Moana & Film / Optics Singles (10 Film) ---
+    {
+      id: "moana_daylight_4k",
+      cat: "film",
+      web: "./assets/singles/moana_daylight_4k.webp",
+      png: "./assets/singles/moana_daylight_4k.webp",
+      badges: {
+        en: [["hot", "Moana Daylight 4K"], ["", "22.30B Instanced Tris"], ["ok", "4.65 GiB HBM · 5.13 s"]],
+        zh: [["hot", "晴天 Moana 海湾 4K"], ["", "223 亿实例化三角面"], ["ok", "4.65 GiB 显存 · 5.13 s"]]
+      },
+      title: {
+        en: "Disney Moana OpenUSD v2.1: Motunui Turquoise Lagoon Daylight (4K)",
+        zh: "迪士尼 Moana OpenUSD v2.1：Motunui 晴天绿松石珊瑚泻湖（原生 4K）"
+      },
+      desc: {
+        en: "Full daylight wide view of Disney's 22.30B-tri OpenUSD island showing transparent turquoise lagoon water, submerged coral heads, palm canopy, and volcanic ridges compiled into 4.65 GiB TPU HBM (5.13 s @ 4K).",
+        zh: "晴天广角视角直出迪士尼 223 亿面 OpenUSD 岛屿：清澈绿松石海湾水体、水下礁石、热带椰林与火山山脊全量装入 4.65 GiB TPU HBM（原生 4K 5.13 s）。"
+      }
+    },
     {
       id: "moana_sunset",
       cat: "film",
@@ -27,24 +45,6 @@ window.TPU_RTX_DATA = {
       desc: {
         en: "45.5M unique + 14.0M instanced BLAS triangles packed into 4.653 GiB HBM on Google Cloud TPU v5p: Rayleigh atmospheric sunset glare and specular ocean wave glints traced in 5.60 s @ 3840x2160 with zero host callbacks.",
         zh: "4,550 万唯一三角面 + 1,400 万实例化 BLAS（总等效 223 亿面），仅占 4.653 GiB HBM：Rayleigh 黄金日落大气散射与海面波光反射，3840x2160 单帧 5.60 s、全程零主机回调。"
-      }
-    },
-    {
-      id: "moana_reef",
-      cat: "film",
-      web: "./assets/singles/moana_reef.webp",
-      png: "./assets/singles/moana_reef.webp",
-      badges: {
-        en: [["hot", "Underwater Reef 4K"], ["", "16-Step HG God Rays"], ["ok", "8.72 s @ 4K"]],
-        zh: [["hot", "水下珊瑚礁 4K"], ["", "16 步 HG 圣光束"], ["ok", "4K 8.72 s"]]
-      },
-      title: {
-        en: "Disney Moana OpenUSD v2.1: Submerged Coral Reef & Snell's Window (4K)",
-        zh: "迪士尼 Moana OpenUSD v2.1：水下珊瑚礁、Snell 全反射天窗与焦散（4K）"
-      },
-      desc: {
-        en: "Beer-Lambert cyan-emerald absorption, overhead Snell total-internal-reflection window, seafloor wave caustics, and 16-step Henyey-Greenstein volumetric shafts rendered natively inside TPU HBM.",
-        zh: "Beer-Lambert 蓝绿水体吸收、水面 Snell 全反射天窗、海底波纹焦散与 16 步 Henyey-Greenstein 体积丁达尔光束，完全在 TPU HBM 内联算完成。"
       }
     },
     {
@@ -75,12 +75,12 @@ window.TPU_RTX_DATA = {
         zh: [["hot", "原生 8K UHD"], ["", "7680x4320 · 3,318 万像素"], ["ok", "4 芯 17.24 s"]]
       },
       title: {
-        en: "Disney Moana OpenUSD @ Native 8K Full-Bay Aerial Overview",
-        zh: "迪士尼 Moana OpenUSD 原生 8K（7680x4320）海湾俯瞰全景"
+        en: "Disney Moana OpenUSD @ Native 8K Tropical Palm Canopy & Ridge",
+        zh: "迪士尼 Moana OpenUSD 原生 8K（7680x4320）热带棕榈冠层与山脊特写"
       },
       desc: {
-        en: "Full 33.18M-pixel 8K raytrace directly over OpenUSD PointInstancers across 4 TPU v5p chips in 17.24 s (3.85 MRays/s, gather_ops = 0).",
-        zh: "4 颗 TPU v5p 芯片协同直出完整 7680x4320 像素 8K 全景海湾，直接遍历 OpenUSD PointInstancer（17.24 s，gather_ops = 0）。"
+        en: "Full 33.18M-pixel 8K raytrace through dense instanced tropical palms and mountain foliage directly via OpenUSD PointInstancers across 4 TPU v5p chips in 17.24 s (3.85 MRays/s, gather_ops = 0).",
+        zh: "4 颗 TPU v5p 芯片协同直出完整 7680x4320 像素 8K 高密热带棕榈冠层与山脊树叶，直接遍历 OpenUSD PointInstancer（17.24 s，gather_ops = 0）。"
       }
     },
     // --- Standalone Blender Studio TPU-RTX Plates ---
@@ -192,25 +192,7 @@ window.TPU_RTX_DATA = {
         zh: "2,014 万等效实例化植被面与灯笼多材质漫反射暖光：28.83 dB 环绕、18.91 mm 深度误差。"
       }
     },
-    // --- Physical Optics Singles ---
-    {
-      id: "glass_caustics",
-      cat: "optics",
-      web: "./assets/singles/glass_caustics.webp",
-      png: "./assets/singles/glass_caustics.webp",
-      badges: {
-        en: [["hot", "5-Bounce Caustics"], ["", "Beer-Lambert Glass"], ["ok", "192 spp · 0 Host CB"]],
-        zh: [["hot", "5 次反弹玻璃焦散"], ["", "Beer-Lambert 介质吸收"], ["ok", "192 spp · 零回调"]]
-      },
-      title: {
-        en: "Dielectric Crown Glass Lens Caustics & Beer-Lambert Concentrator",
-        zh: "电介质光学玻璃球焦散与 Beer-Lambert 透射聚光（192 spp）"
-      },
-      desc: {
-        en: "Pure dielectric Fresnel refraction concentrating directional skylight into sharp floor caustic arcs inside one branchless XLA path tracer.",
-        zh: "5 次纯物理电介质 Fresnel 折射将高光汇聚成地面明锐焦散弧线，整条蒙特卡洛路径循环零主机回调。"
-      }
-    },
+    // --- Physical Optics Singles (3 Optics) ---
     {
       id: "prism_dispersion",
       cat: "optics",
@@ -265,7 +247,25 @@ window.TPU_RTX_DATA = {
         zh: "等角度体积采样与宽 BVH 阴影查询紧密耦合，全流程在单张 XLA 计算图内直出体积光柱。"
       }
     },
-    // --- Real-World 3DGS Singles (Used in Ch 04 Stage) ---
+    // --- Real-World 3DGS Singles (6 Real-World 3DGS) ---
+    {
+      id: "robowild_panda_4k",
+      cat: "gs3d",
+      web: "./assets/singles/robowild_panda_4k.webp",
+      png: "./assets/singles/robowild_panda_4k.webp",
+      badges: {
+        en: [["hot", "RoboWild 4K Composite"], ["", "1.80M Kitchen + Panda"], ["ok", "Zero HUD · Exact Z"]],
+        zh: [["hot", "RoboWild 4K 实景融合"], ["", "180 万厨房高斯 + Panda"], ["ok", "无遮挡原图 · 精准深度"]]
+      },
+      title: {
+        en: "RoboWild 4K: Live MJX Franka Panda inside Mip-NeRF 360 Kitchen + LEGO Dozer",
+        zh: "RoboWild 原生 4K：MJX Franka Panda 直接部署进 Mip-NeRF 360 厨房乐高实景"
+      },
+      desc: {
+        en: "Borderless 4K composite of a live MuJoCo MJX Franka Panda casting analytical shadows onto real tabletop placemats alongside the 1.80M-splat LEGO Dozer capture.",
+        zh: "零 HUD 遮挡原生 4K 混合成片：实时 MJX Franka 机械臂在真实 Mip-NeRF 360 厨房桌布上投下精准投影并靠近 180 万高斯乐高推土机。"
+      }
+    },
     {
       id: "garden_4k",
       cat: "gs3d",
@@ -356,7 +356,25 @@ window.TPU_RTX_DATA = {
         zh: "1,000 万街区 3DGS 与实时 MJX 人形/熊猫双机器人 4K 逐像素深度融合，4 芯单帧 439.3 ms（2.28 FPS）。"
       }
     },
-    // --- MuJoCo Menagerie PBR Robot Singles (Used in Ch 05 Stage) ---
+    // --- MuJoCo Menagerie & RoboTwin PBR Robot Singles (5 Robotics) ---
+    {
+      id: "robotwin_bimanual",
+      cat: "robotics",
+      web: "./assets/singles/robotwin_bimanual.webp",
+      png: "./assets/singles/robotwin_bimanual.webp",
+      badges: {
+        en: [["hot", "RoboTwin 16-DOF"], ["", "123.9k cam-FPS (DR)"], ["ok", "72 MJX Geoms + GGX"]],
+        zh: [["hot", "RoboTwin 双臂桌面"], ["", "12.39 万 cam-FPS (DR)"], ["ok", "72 刚体 + GGX 软阴影"]]
+      },
+      title: {
+        en: "RoboTwin 16-DOF Bimanual Tabletop — Isaac Replicator DR + Wide-BVH-64",
+        zh: "RoboTwin 16 自由度双臂桌面操控 — Isaac Replicator DR + Wide-BVH-64"
+      },
+      desc: {
+        en: "Dual 7-DOF bimanual arms, overhead third-person cam, colored sorting bins and tabletop props executing at 123,858 cam-FPS (41,286 env-steps/s) across 4 TPU v5p chips with only +0.32% DR overhead.",
+        zh: "双臂协作抓取、分拣料盒与桌面积木场景在 4 芯 TPU v5p 上跑出 123,858 cam-FPS（41,286 env-steps/s），五模态 Replicator DR 仅增加 +0.32% 开销。"
+      }
+    },
     {
       id: "menagerie_g1",
       cat: "robotics",
@@ -468,29 +486,29 @@ window.TPU_RTX_DATA = {
     }
   ],
 
-  spreadCh3: ["moana_sunset", "moana_reef", "moana_mjx_beach", "moana_8k_bay", "glass_caustics"],
+  spreadCh3: ["moana_daylight_4k", "moana_sunset", "moana_8k_bay", "prism_dispersion", "cathedral_godrays"],
 
   stage3dgs: [
     {
+      plateId: "robowild_panda_4k",
+      tabIdx: { en: "SCENE 01 · ROBOWILD 4K", zh: "场景 01 · ROBOWILD 4K" },
+      tabTitle: { en: "RoboWild Panda × Kitchen (4K)", zh: "RoboWild Panda × 厨房 (4K)" },
+      hudL: { en: "<strong>RoboWild Franka Panda × Mip-NeRF Kitchen</strong> · 1.80M SH3 Splats · Zero HUD", zh: "<strong>RoboWild Franka 机械臂 × Mip-NeRF 厨房</strong> · 180 万 SH3 高斯 · 无遮挡原图" },
+      hudR: { en: "Native <strong>4K (3840x2160)</strong> · Exact MJX Shadow &amp; Z-Depth · Click to Zoom", zh: "原生 <strong>4K (3840x2160)</strong> · 精准 MJX 阴影与深度融合 · 点击放大" }
+    },
+    {
       plateId: "garden_4k",
-      tabIdx: { en: "SCENE 01 · OUTDOOR", zh: "场景 01 · 户外花园" },
+      tabIdx: { en: "SCENE 02 · OUTDOOR", zh: "场景 02 · 户外花园" },
       tabTitle: { en: "garden (5.83M SH3 · 2.61 FPS)", zh: "garden 航拍花园 (583 万高斯)" },
       hudL: { en: "<strong>Mip-NeRF 360 garden</strong> · 5,834,784 SH3 Splats · gather_ops = 0", zh: "<strong>Mip-NeRF 360 garden</strong> · 583 万全 SH3 高斯 · 零 Gather" },
       hudR: { en: "Native <strong>4K @ 2.61 FPS</strong> · <strong>8K @ 29.19 MPix/s</strong> · Click to Zoom", zh: "原生 <strong>4K 2.61 FPS</strong> · <strong>8K 29.19 MPix/s</strong> · 点击放大" }
     },
     {
       plateId: "bicycle_4k",
-      tabIdx: { en: "SCENE 02 · FOLIAGE", zh: "场景 02 · 细草坪与辐条" },
+      tabIdx: { en: "SCENE 03 · FOLIAGE", zh: "场景 03 · 细草坪与辐条" },
       tabTitle: { en: "bicycle (6.13M SH3 · 2.59 FPS)", zh: "bicycle 自行车 (613 万高斯)" },
       hudL: { en: "<strong>Mip-NeRF 360 bicycle</strong> · 6,131,954 SH3 Splats · 4 TPU v5p Chips", zh: "<strong>Mip-NeRF 360 bicycle</strong> · 613 万全 SH3 高斯 · 4 芯 TPU v5p" },
       hudR: { en: "Native <strong>4K (3840x2160) @ 2.59 FPS</strong> (386 ms) · Click to Zoom", zh: "原生 <strong>4K (3840x2160) 2.59 FPS</strong> (386 ms) · 点击放大" }
-    },
-    {
-      plateId: "kitchen_4k",
-      tabIdx: { en: "SCENE 03 · INDOOR LEGO", zh: "场景 03 · 室内厨房" },
-      tabTitle: { en: "kitchen (1.80M SH3 · 3.98 FPS)", zh: "kitchen 厨房乐高 (180 万高斯)" },
-      hudL: { en: "<strong>Mip-NeRF 360 kitchen</strong> · 1,802,911 SH3 Splats · 4DGS Contact Host", zh: "<strong>Mip-NeRF 360 kitchen</strong> · 180 万 SH3 高斯 · 4DGS 物理推挤底图" },
-      hudR: { en: "Native <strong>4K @ 3.98 FPS</strong> (251 ms) · Click to Zoom", zh: "原生 <strong>4K 3.98 FPS</strong> (251 ms) · 点击放大" }
     },
     {
       plateId: "bonsai_4k",
@@ -510,29 +528,36 @@ window.TPU_RTX_DATA = {
 
   stageMenagerie: [
     {
+      plateId: "robotwin_bimanual",
+      tabIdx: { en: "ROBOT 01 · BIMANUAL", zh: "机器人 01 · 双臂操控" },
+      tabTitle: { en: "RoboTwin 16-DOF (123.9k FPS)", zh: "RoboTwin 双臂 (12.39万 FPS)" },
+      hudL: { en: "<strong>RoboTwin Bimanual Tabletop</strong> · 72 Geoms · Isaac Replicator 5-Modality DR", zh: "<strong>RoboTwin 16 自由度双臂桌面</strong> · 72 刚体 · Replicator 五模态域随机" },
+      hudR: { en: "<strong>123,858 cam-FPS</strong> (41,286 env/s, +0.32% DR) · Click to Zoom", zh: "4 芯实测 <strong>123,858 cam-FPS</strong>（DR 仅 +0.32%）· 点击放大" }
+    },
+    {
       plateId: "menagerie_g1",
-      tabIdx: { en: "ROBOT 01 · HUMANOID", zh: "机器人 01 · 双足人形" },
+      tabIdx: { en: "ROBOT 02 · HUMANOID", zh: "机器人 02 · 双足人形" },
       tabTitle: { en: "Unitree G1 (393k · 2,546 FPS)", zh: "宇树 G1 人形 (2,546 FPS)" },
       hudL: { en: "<strong>Unitree G1 Humanoid</strong> · 393k Mesh Tris · Wide-BVH-64 + 1024² GGX", zh: "<strong>宇树 Unitree G1 人形机器人</strong> · 39.3 万面 · Wide-BVH-64" },
       hudR: { en: "<strong>2,546 FPS</strong> @ 64² (4 Chips, host_callbacks=0) · Click to Zoom", zh: "4 芯 64² 实测 <strong>2,546 FPS</strong>（零回调）· 点击放大" }
     },
     {
       plateId: "menagerie_go2",
-      tabIdx: { en: "ROBOT 02 · QUADRUPED", zh: "机器人 02 · 四足机器狗" },
+      tabIdx: { en: "ROBOT 03 · QUADRUPED", zh: "机器人 03 · 四足机器狗" },
       tabTitle: { en: "Unitree Go2 (398k · 1,863 FPS)", zh: "宇树 Go2 四足 (1,863 FPS)" },
       hudL: { en: "<strong>Unitree Go2 Quadruped</strong> · 398k Mesh Tris · Curved Chassis + Soft Shadow", zh: "<strong>宇树 Unitree Go2 四足机器狗</strong> · 39.8 万面 · 软阴影 PBR" },
       hudR: { en: "<strong>1,863 FPS</strong> @ 64² (4 Chips, gather_ops=0) · Click to Zoom", zh: "4 芯 64² 实测 <strong>1,863 FPS</strong>（零 Gather）· 点击放大" }
     },
     {
       plateId: "menagerie_panda",
-      tabIdx: { en: "ROBOT 03 · 7-DOF ARM", zh: "机器人 03 · 7 轴机械臂" },
+      tabIdx: { en: "ROBOT 04 · 7-DOF ARM", zh: "机器人 04 · 7 轴机械臂" },
       tabTitle: { en: "Franka Panda (3,131 FPS)", zh: "Franka Panda 机械臂 (3,131 FPS)" },
       hudL: { en: "<strong>Franka Emika Panda</strong> · Menagerie MJCF · Diff Physics Servoing Target", zh: "<strong>Franka Emika Panda</strong> · 官方 Menagerie · 可微视觉伺服平台" },
       hudR: { en: "<strong>3,131 FPS</strong> @ 64² (4 Chips) · <code>jax.grad</code> 36.08 dB · Click to Zoom", zh: "4 芯 64² <strong>3,131 FPS</strong> · <code>jax.grad</code> 伺服 36.08 dB · 点击放大" }
     },
     {
       plateId: "menagerie_aerohand",
-      tabIdx: { en: "ROBOT 04 · DEXTEROUS", zh: "机器人 04 · 多指灵巧手" },
+      tabIdx: { en: "ROBOT 05 · DEXTEROUS", zh: "机器人 05 · 多指灵巧手" },
       tabTitle: { en: "Aero Hand (4,284 FPS)", zh: "Aero Hand 灵巧手 (4,284 FPS)" },
       hudL: { en: "<strong>Tetheria Aero Hand</strong> · Articulated Fingers · Tactile &amp; Manipulation Ready", zh: "<strong>Tetheria Aero Hand 灵巧手</strong> · 多指关节 · 视触觉策略高速底座" },
       hudR: { en: "<strong>4,284 FPS</strong> @ 64² (4 Chips) · Click to Zoom", zh: "4 芯 64² 实测 <strong>4,284 FPS</strong> · 点击放大" }
@@ -541,36 +566,36 @@ window.TPU_RTX_DATA = {
 
   heroStage: [
     {
-      plateId: "moana_sunset",
-      hudL: {
-        en: "<strong>Disney Moana OpenUSD v2.1</strong> · 22.30B Instanced Tris in 4.65 GiB HBM · host_callbacks=0",
-        zh: "<strong>迪士尼 Moana OpenUSD v2.1</strong> · 223 亿面仅占 4.65 GiB HBM · 零回调"
-      },
-      hudR: {
-        en: "Native <strong>4K (3840x2160)</strong> in <strong>5.60 s</strong> · Click frame for Lightbox + 1:1 Loupe",
-        zh: "原生 <strong>4K (3840x2160)</strong> 单帧 <strong>5.60 s</strong> · 点击画面打开 1:1 放大镜"
-      }
-    },
-    {
       plateId: "moana_mjx_beach",
       hudL: {
-        en: "<strong>Physical AI x Film OpenUSD</strong> · Live MJX Humanoid &amp; Quadruped on Motunui Beach",
-        zh: "<strong>具身智能 x 电影 OpenUSD</strong> · MJX 人形与四足机器人实景互影奔跑"
+        en: "<strong>Physical AI × Disney Moana OpenUSD</strong> · 22.30B Tris + 45 Live MJX Geoms in Single TLAS",
+        zh: "<strong>具身智能 × 迪士尼 Moana OpenUSD</strong> · 223 亿面与 45 个 MJX 关节刚体同图互影"
       },
       hudR: {
-        en: "Single unified TLAS · Native <strong>4K in 5.40 s</strong> · gather_ops=0",
-        zh: "单个统一 TLAS · 原生 <strong>4K 5.40 s</strong> · 零 HBM Gather"
+        en: "Native <strong>4K (3840x2160)</strong> in <strong>5.40 s</strong> · Click frame for Lightbox + 1:1 Loupe",
+        zh: "原生 <strong>4K (3840x2160)</strong> 单帧 <strong>5.40 s</strong> · 点击画面打开 1:1 放大镜"
       }
     },
     {
-      plateId: "garden_4k",
+      plateId: "bistro_humanoid_4k",
       hudL: {
-        en: "<strong>Real-World Mip-NeRF 360 garden</strong> · 5.83M SH3 Gaussians · Native EWA in VMEM",
-        zh: "<strong>真实航拍 Mip-NeRF 360 garden</strong> · 583 万全 SH3 高斯 · 片内 VMEM 原生溅射"
+        en: "<strong>Real-to-Sim 3DGS × MJX</strong> · 10M-Gaussian Amazon Bistro + Humanoid &amp; Mobile Panda",
+        zh: "<strong>实景 Real-to-Sim 3DGS × MJX</strong> · 1,000 万 Bistro 街区 + 人形与熊猫机器人"
       },
       hudR: {
-        en: "Native <strong>4K @ 2.61 FPS</strong> (<strong>8K @ 29.19 MPix/s</strong>) · Click to Inspect",
-        zh: "原生 <strong>4K 2.61 FPS</strong>（<strong>8K 29.19 MPix/s</strong>）· 点击放大检视"
+        en: "Native <strong>4K @ 2.28 FPS</strong> (439.3 ms, gather_ops=0) · Click to Inspect",
+        zh: "原生 <strong>4K 2.28 FPS</strong>（439.3 ms，零 HBM Gather）· 点击放大检视"
+      }
+    },
+    {
+      plateId: "barcelona_tpu",
+      hudL: {
+        en: "<strong>Blender Open Data Barcelona Pavilion</strong> · 54.91M Unique Tris Compiled from .blend",
+        zh: "<strong>Blender 官方巴塞罗那展馆</strong> · 5,491 万唯一三角面从 .blend 直编上 TPU"
+      },
+      hudR: {
+        en: "Native <strong>4K @ 1.11 img/s</strong> · <strong>15.94 mm</strong> Z-MAE · Click to Inspect",
+        zh: "原生 <strong>4K 1.11 img/s</strong> · 几何深度差仅 <strong>15.94 mm</strong> · 点击放大检视"
       }
     }
   ],
@@ -583,19 +608,19 @@ window.TPU_RTX_DATA = {
       },
       presets: [
         {
-          id: "bmw",
-          tab: { en: "BMW27 (37.65 dB)", zh: "BMW27 跑车 (37.65 dB)" },
-          aImg: "./assets/compare/bmw_a.webp",
-          bImg: "./assets/compare/bmw_b.webp",
-          aLbl: { en: "LEFT: TPU-RTX Wide-BVH-64 + AgX (0.9813 SSIM)", zh: "左：TPU-RTX Wide-BVH-64 + AgX (SSIM 0.9813)" },
-          bLbl: { en: "RIGHT: Official Blender Cycles Reference EXR", zh: "右：官方 Blender Cycles 基准真值 EXR" }
-        },
-        {
           id: "barcelona",
           tab: { en: "Barcelona 54.9M", zh: "巴塞罗那馆 5,491 万面" },
           aImg: "./assets/compare/barcelona_a.webp",
           bImg: "./assets/compare/barcelona_b.webp",
           aLbl: { en: "LEFT: TPU-RTX (54.91M Tris, 15.94 mm Z-MAE)", zh: "左：TPU-RTX (5,491 万面, 深度差 15.94 mm)" },
+          bLbl: { en: "RIGHT: Official Blender Cycles Reference EXR", zh: "右：官方 Blender Cycles 基准真值 EXR" }
+        },
+        {
+          id: "bmw",
+          tab: { en: "BMW27 (37.65 dB)", zh: "BMW27 跑车 (37.65 dB)" },
+          aImg: "./assets/compare/bmw_a.webp",
+          bImg: "./assets/compare/bmw_b.webp",
+          aLbl: { en: "LEFT: TPU-RTX Wide-BVH-64 + AgX (0.9813 SSIM)", zh: "左：TPU-RTX Wide-BVH-64 + AgX (SSIM 0.9813)" },
           bLbl: { en: "RIGHT: Official Blender Cycles Reference EXR", zh: "右：官方 Blender Cycles 基准真值 EXR" }
         },
         {
@@ -719,14 +744,6 @@ window.TPU_RTX_DATA = {
           bLbl: { en: "RIGHT: After MJX Push (+16.43 cm / -17.71 deg, 5.32 FPS 1080p)", zh: "右：Franka 实臂推走 +16.43 cm / -17.71°（5.32 FPS）" }
         },
         {
-          id: "dlss",
-          tab: { en: "TPU-DLSS 3.5 (1080p -> 4K)", zh: "TPU-DLSS 3.5 (58.9 FPS 4K)" },
-          aImg: "./assets/compare/dlss_a.webp",
-          bImg: "./assets/compare/dlss_b.webp",
-          aLbl: { en: "LEFT: Noisy 1080p 1-spp Input Frame", zh: "左：1080p 1-spp 原始噪点输入帧" },
-          bLbl: { en: "RIGHT: Native 4K TPU-DLSS 3.5 Output (58.93 FPS, 3.91x Speedup)", zh: "右：原生 4K TPU-DLSS 3.5 输出（58.93 FPS，3.91 倍提速）" }
-        },
-        {
           id: "denoise",
           tab: { en: "1-spp -> 4K MXU Denoiser", zh: "1-spp 噪点 -> 4K 降噪 (87.8 FPS)" },
           aImg: "./assets/compare/denoise_a.webp",
@@ -735,11 +752,19 @@ window.TPU_RTX_DATA = {
           bLbl: { en: "RIGHT: BF16 MXU 4K Denoiser (24.92 dB, 11.39 ms / 87.8 FPS)", zh: "右：BF16 MXU 4K 降噪输出 (24.92 dB, 11.39 ms)" }
         },
         {
+          id: "dlss",
+          tab: { en: "TPU-DLSS 3.5 (1080p -> 4K)", zh: "TPU-DLSS 3.5 (58.9 FPS 4K)" },
+          aImg: "./assets/compare/dlss_a.webp",
+          bImg: "./assets/compare/dlss_b.webp",
+          aLbl: { en: "LEFT: Noisy 1080p 1-spp Input Frame (w/ Crop Box)", zh: "左：1080p 1-spp 原始噪点输入（含局部放大框）" },
+          bLbl: { en: "RIGHT: Native 4K TPU-DLSS 3.5 Output (58.93 FPS, 3.91x Speedup)", zh: "右：原生 4K TPU-DLSS 3.5 输出（58.93 FPS，3.91 倍提速）" }
+        },
+        {
           id: "material",
           tab: { en: "Matte Clay -> Chrome (0 RT)", zh: "哑光泥塑 -> 镜面铬合金 (0 光追)" },
           aImg: "./assets/compare/material_a.webp",
           bImg: "./assets/compare/material_b.webp",
-          aLbl: { en: "LEFT: Matte Clay (rough=0.88, metal=0.00)", zh: "左：哑光泥塑材质（零额外光追）" },
+          aLbl: { en: "LEFT: Matte Clay (rough=0.88 · w/ MC GT Inset)", zh: "左：哑光泥塑材质（零光追 · 含路径追踪参考小窗）" },
           bLbl: { en: "RIGHT: Brushed Chrome (rough=0.03, metal=1.00, 78.6 FPS 4K)", zh: "右：高光铬合金（原生 4K BF16 实时 78.6 FPS）" }
         },
         {
@@ -747,7 +772,7 @@ window.TPU_RTX_DATA = {
           tab: { en: "Sunset 2600K -> Twilight 9500K", zh: "日落 2600K -> 暮蓝 9500K" },
           aImg: "./assets/compare/tod_a.webp",
           bImg: "./assets/compare/tod_b.webp",
-          aLbl: { en: "LEFT: Golden Sunset (2600K, az=202 deg)", zh: "左：黄金日落暖光 (2600K, 静态 G-Buffer)" },
+          aLbl: { en: "LEFT: Golden Sunset (2600K · w/ MC GT Inset)", zh: "左：黄金日落暖光 (2600K · 含路径追踪参考小窗)" },
           bLbl: { en: "RIGHT: Blue-Hour Twilight (9500K, 307 FPS 1080p / 78.6 FPS 4K)", zh: "右：蓝调暮光重照明（1080p 307 FPS / 4K 78.6 FPS）" }
         }
       ]
@@ -873,106 +898,125 @@ window.TPU_RTX_DATA = {
 
   copy: {
     en: {
-      pageTitle: "TPU-RTX — Native Ray Tracing, Path Tracing & 3DGS on Google TPU | Feiyang Liu",
+      pageTitle: "TPU-RTX — Turning Google TPUs into Real-Time Ray-Tracing Engines | Feiyang Liu",
       themeNight: "Obsidian",
       themeDay: "Paper",
       nav: {
-        c1: "01 GPU vs TPU", c2: "02 Evolution", c3: "03 Film & Optics", c4: "04 3DGS & Neural",
-        c5: "05 Training & AI", c6: "06 Post-Mortems", c7: "07 Ledger & Index", c8: "08 Limits"
+        c1: "01 GPU vs TPU", c2: "02 Software & Bench", c3: "03 Visual Proof",
+        c4: "04 Perf & 32-Chip", c5: "05 Embodied AI", c6: "06 Limits & Data"
       },
       hero: {
-        kicker: "GOOGLE CLOUD TPU v5p (1c TO 32-CHIP POD) · ZERO HOST_CALLBACK · ZERO GATHER_OPS",
+        kicker: "GOOGLE CLOUD TPU v5p (1-CHIP TO 32-CHIP POD) · ZERO HOST_CALLBACK · ZERO HBM GATHER",
         by: "By",
         license: "Apache-2.0",
         title: "<em>TPU-RTX</em>: Turning Google TPUs into Real&#8209;Time Ray&#8209;Tracing Engines.",
-        lead: "Native <strong>Google Cloud TPU v5p</strong> ray tracing, path tracing, <strong>1.06B</strong>-splat 3DGS, and <strong>17.18B</strong>-triangle OpenUSD / Physical AI — compiled into one zero-copy XLA graph with zero CPU round-trips.",
-        ctaStart: "GPU vs TPU Architecture",
-        ctaGallery: "Ledger & Plate Index",
-        stamp: "Pure Single-Scene Cinema Monograph · Zero Cropped Frames · Zero Multi-Panel Collages",
-        t0i: "SCENE 01 · OPENUSD SUNSET",
-        t0t: "Disney Moana Lagoon Sunset (22.30B Tris, 4K)",
-        t1i: "SCENE 02 · FILM × MJX",
-        t1t: "Live MJX Robots on Moana Beach (Native 4K)",
-        t2i: "SCENE 03 · REAL-WORLD 3DGS",
-        t2t: "Mip-NeRF 360 Garden @ Native 4K (SH3, 0 Gather)"
+        lead: "Native ray tracing, path tracing, <strong>1.06B</strong>-splat 3DGS, and <strong>17.18B</strong>-triangle OpenUSD / Physical AI on <strong>Google Cloud TPU v5p</strong> — compiled into one zero-copy XLA graph with zero CPU round-trips.",
+        ctaStart: "Explore Visual Proof",
+        ctaGallery: "Software & Benchmarks",
+        stamp: "Single-Scene Cinema Monograph · Zero Cropped Borders · Zero Collages",
+        t0i: "SCENE 01 · FILM × PHYSICAL AI",
+        t0t: "Live MJX Robots on 22.30B-Tri Moana Beach (4K)",
+        t1i: "SCENE 02 · REAL-TO-SIM 3DGS",
+        t1t: "Live MJX Robots in 10M-Splat Amazon Bistro (4K)",
+        t2i: "SCENE 03 · BLENDER CYCLES",
+        t2t: "Barcelona Pavilion (54.91M Tris, 4K)",
+        stackTag: "SYSTEM STACK OVERVIEW · 10-SECOND MAP",
+        stackTitle: "How TPU-RTX Connects TPU v5p Silicon to Robotics, OpenUSD, Blender & 3DGS",
+        stackSub: "Four clean layers inside one zero-copy XLA HLO graph: TPU v5p Silicon -> 3 Core Kernels -> 8 Drop-In Software Adapters -> Verified Benchmarks."
       },
       kpis: [
-        ["4c Fused & 32c MJX+RTX", "266k / 411k FPS", "<strong>921,309 FPS</strong> render-equiv (4c) · <strong>411,023 FPS</strong> (32c E2E)"],
-        ["Disney Moana OpenUSD", "22.30B Tris", "<strong>4K 5.13 s · 8K 17.24 s</strong> · Sunset &amp; Reef (4c, 4.65 GiB)"],
-        ["3DGS Speed & Pod HBM", "952k FPS / 1.06B", "<code>142k</code> (4c) / <strong>952,248 FPS</strong> (32c 128²) · <strong>1.062B</strong> splats"],
-        ["Native 8K Real 3DGS", "7680×4320", "<code>5.83M</code> SH3 <code>garden</code> @ <strong>29.19 MPix/s</strong> · 8K PT <strong>1,650 spm</strong> (32c)"],
-        ["DLSS 3.5 & Relight (4K)", "58.9 / 78.6 FPS", "DLSS <strong>3.91×</strong> · Static G-Buf Relight <strong>78.6 FPS</strong> BF16 (4c)"],
-        ["Blender Cycles Parity", "37.65 / 36.98 dB", "<code>BMW27</code> <strong>0.9813</strong> SSIM · <code>Monster</code> <strong>0.121 mm</strong> (4c)"],
-        ["Cloth Refit & 32c Unique", "973 FPS / 17.18B", "<code>973.3 FPS</code> cloth BVH · <strong>17.18B</strong> unique tris (32c, 1.18 TB)"],
-        ["Diff Phys + 32c LiDAR", "1.63 cm / 63.9B/s", "<code>jax.grad</code> <strong>36.08 dB</strong> (1c) · <strong>63.88B</strong> LiDAR rays/s (32c)"]
+        ["End-to-End MJX + Raytrace", "411,023 FPS", "<strong>32-Chip Pod</strong> (<code>B=131k</code>, 7.97x scaling) · <strong>266k FPS</strong> (4c fused)"],
+        ["Scene Scale (Moana & Unique)", "22.3B / 17.2B Tris", "Moana OpenUSD (<code>4.65 GiB</code>) &amp; 32c non-instanced tris (<code>1.18 TB HBM</code>)"],
+        ["Native 3DGS Speed & Pod Splats", "952k FPS / 1.06B", "<strong>952,248 FPS</strong> (32c 128²) · <strong>1.062B splats</strong> distributed over ICI"],
+        ["LiDAR & Cluster HBM Capacity", "63.9B/s · 3.06 TB", "32c <code>128×2048</code> LiDAR (<strong>243.7k env-FPS</strong>) · Single XLA Graph"]
       ],
       c1: {
-        num: "01 / 08 · GPU VS TPU",
+        num: "01 / 06 · WHY TPU?",
         rail: "First principles: how SIMT RTX GPUs and Systolic TPU MXUs execute ray tracing differently — and where each wins or loses.",
         title: "Why <em>TPU</em>? GPU vs. TPU Silicon &amp; Tradeoffs.",
-        lead: "A GPU (SIMT Warps + Hardware RT Cores + L1/L2 Caches) and a Google Cloud TPU v5p (<strong>128×128 Systolic MXU</strong> at 459 TFLOP/s BF16 + <strong>64 MiB software-managed VMEM</strong> + <strong>95.74 GiB HBM</strong>) sit on opposite ends of silicon architecture. Writing CUDA-style pointer chasing stalls on TPU gather latency; aligning traversal with 64-ary VMEM vectors turns 383 GB/host HBM and MXU throughput into a superpower.",
+        lead: "A GPU (SIMT Warps + Hardware RT Cores + L1/L2 Caches) and a Google Cloud TPU v5p (<strong>128×128 Systolic MXU</strong> at 459 TFLOP/s BF16 + <strong>64 MiB software-managed VMEM</strong> + <strong>95.74 GiB HBM</strong>) sit on opposite ends of silicon architecture. Pointer chasing stalls on TPU gather latency; aligning 64-ary Wide-BVH traversal with VMEM turns <code>3.064 TB</code> Pod HBM and MXUs into a unified Physical AI &amp; rendering superpower.",
         gvtTag: "SILICON & DATAFLOW COMPARISON",
         gvtTitle: "SIMT RTX GPU vs. Systolic Google TPU v5p Execution Pipeline",
         gvtSub: "Why CUDA-style pointer chasing stalls on TPU HBM, and how VMEM 64-ary Wide-BVH unlocks systolic ray tracing.",
         gvtRows: [
           ["1. Dynamic Branching & Hardware RT Cores", "<span class='badge fail'>Con</span> No HW RT Cores; <code>128</code>-lane VPU prefers regular, branchless masking.", "<span class='badge ok'>Pro</span> Dedicated hardware RT Cores &amp; 32-thread SIMT warps handle incoherent multi-bounce branching naturally."],
           ["2. Random Memory Gather / Scatter", "<span class='badge fail'>Con</span> High <code>166 FLOP/B</code> ridge point; uncoalesced HBM gathers or tile atomics crater speed.", "<span class='badge ok'>Pro</span> Hardware L1/L2 caches and fast shared-memory atomics absorb irregular pointer chasing."],
-          ["3. On-Chip VMEM & HBM Capacity", "<span class='badge ok'>Pro</span> Massive <strong>95.74 GiB HBM/chip (383 GB/host)</strong> + explicit 64 MiB VMEM holds <strong>300M splats</strong> or <strong>22.3B</strong>-tri Moana without PCIe paging.", "<span class='badge fail'>Con</span> Per-GPU VRAM (24–80 GB) caps massive 3DGS/OpenUSD + RL batch concurrency on one node."],
-          ["4. Zero-Copy Physics + Render + RL/VLA", "<span class='badge ok'>Pro</span> Physics (<code>mjx.step</code>), raytrace, GelSight, LiDAR, PPO &amp; ViT-Tiny live in <strong>one XLA graph</strong> (<code>266k FPS</code>, <code>-1.84%</code> VLA overhead).", "<span class='badge fail'>Con</span> Often crosses Warp / OptiX / Isaac / PyTorch bridges or copies buffers between engines."],
+          ["3. On-Chip VMEM & HBM Capacity", "<span class='badge ok'>Pro</span> Massive <strong>95.74 GiB HBM/chip (3.064 TB / 32c)</strong> holds <strong>1.06B splats</strong> or <strong>22.3B</strong>-tri Moana without PCIe paging.", "<span class='badge fail'>Con</span> Per-GPU VRAM (24–80 GB) caps massive 3DGS/OpenUSD + RL batch concurrency on one node."],
+          ["4. Zero-Copy Physics + Render + RL/VLA", "<span class='badge ok'>Pro</span> Physics (<code>mjx.step</code>), raytrace, GelSight, LiDAR, PPO &amp; ViT-Tiny live in <strong>one XLA graph</strong> (<code>411k FPS</code> 32c, <code>-1.84%</code> VLA overhead).", "<span class='badge fail'>Con</span> Often crosses Warp / OptiX / Isaac / PyTorch bridges or copies buffers between engines."],
           ["5. MXU AI Denoising, DLSS & Relighting", "<span class='badge ok'>Pro</span> <code>459 TFLOP/s</code> BF16 MXUs sit directly behind HBM G-buffers: <strong>87.8 FPS</strong> 4K Denoise, <strong>58.9 FPS</strong> 4K DLSS, <strong>78.6 FPS</strong> 4K Relight.", "<span class='badge ok'>Pro</span> Tensor Cores + mature DLSS 3.5 / OptiX OIDN ecosystem work out of the box."],
-          ["6. Startup Compile vs. Steady Throughput", "<span class='badge fail'>Con</span> XLA AOT + Mosaic lowering pays a <strong>4–130 s</strong> cold compile upfront before steady loops.", "<span class='badge ok'>Pro</span> Sub-second JIT / precompiled CUDA kernels deliver instant interactive viewport responsiveness."],
-          ["7. Authoring & DCC Ecosystem", "<span class='badge fail'>Con</span> Compiles exported <code>.usd</code>, <code>.blend</code>, MJCF, and <code>.ply</code> ahead of training.", "<span class='badge ok'>Pro</span> Unmatched interactive GUI tooling (Omniverse, Blender Viewport, Unreal Engine)."]
-        ],
-        pillars: [
-          ["VMEM Traversal", "1. 3-Level 64-Ary Wide-BVH", "Packing 64 child AABBs into (8, 128) vector tiles lets Pallas Mosaic test 64 children in single VPU ops via pltpu.async_copy leaf streaming — scaling cleanly to 22.30B-tri Disney Moana and 2.15B unique tris."],
-          ["Zero-Gather Raster", "2. In-VMEM Kernel Fusion & EWA", "Fusing raygen, traversal, GGX/AO/shadows, and material deduplication avoids HBM G-buffer round-trips (921k FPS render-equiv), while chunked VMEM take_along_axis accelerates 3DGS to 142k FPS and 300M splats."],
-          ["Native MXU + Grad", "3. BF16/INT8 MXUs & jax.grad Physics", "Keeping every pixel inside TPU HBM lets BF16 MXUs run 4K denoising at 87.8 FPS, TPU-DLSS 3.5 at 58.9 FPS 4K, static G-buffer relighting at 78.6 FPS 4K, and pixel-to-torque backprop through mjx.step."]
-        ],
-        diagCap: "Architectural invariant verified in XLA HLO across all modules: host_callbacks = 0, send_recv_ops = 0, gather_ops = 0.",
-        sdkBar: "Quickstart SDK · 8 Ecosystem Adapters under tpu_mjx_render.adapters"
+          ["6. Startup Compile vs. Interactive Viewport", "<span class='badge fail'>Con</span> XLA AOT pays <strong>4–130 s</strong> cold compile upfront; better for compiled training/renders than live CAD.", "<span class='badge ok'>Pro</span> Sub-second CUDA responsiveness + unmatched interactive DCC tooling (Omniverse, Blender, Unreal)."]
+        ]
       },
       c2: {
-        num: "02 / 08 · EVOLUTION & PROFILING",
-        rail: "Chronological step-envelope optimization log (including negative runs), 3DGS pivot, 64 MiB VMEM cliff, MXU Pareto, and Hero vs. Held-Out Orbit PSNR.",
-        title: "<em>587×</em> on TPU: Optimization Log &amp; Orbit Generalization.",
-        lead: "Inspired by <code>wenhaochai/rtx-h100</code>, we plot our chronological step-envelope optimization log (including flat/negative runs), the <code>tile_size = 512</code> VMEM spill cliff (<code>-24%</code>), BF16/INT8 MXU Pareto, and Hero vs. Held-Out Orbit PSNR across Blender scenes."
+        num: "02 / 06 · SOFTWARE & BENCH",
+        rail: "All 8 rebuilt software adapters, 9-row supported benchmark matrix (verified vs. drop-in ready), and 5-line SDK quickstart.",
+        title: "<em>Software Retrofits</em> &amp; Supported Benchmarks.",
+        lead: "Instead of forcing robotics teams to rewrite tasks for a bespoke toy renderer, we rebuilt standard simulator APIs, scene formats, and rendering SDKs (<strong>MuJoCo/MJX</strong>, <strong>Isaac Replicator</strong>, <strong>Blender Cycles</strong>, <strong>OpenUSD</strong>, <strong>OptiX</strong>, <strong>gsplat</strong>, <strong>DLSS 3.5</strong>, <strong>ReSTIR</strong>) to compile directly into XLA &amp; Pallas Mosaic on TPU.",
+        sdkBar: "Quickstart SDK · Unified Entry Point for Physical AI & Rendering",
+        ecoTag: "8 DROP-IN ADAPTERS · CLICKABLE GITHUB SOURCE",
+        ecoTitle: "Rebuilt Simulators, DCC Compilers & Rendering APIs for Google TPU",
+        ecoSub: "Click any file badge to inspect its XLA / Pallas Mosaic implementation inside tpu_mjx_render/adapters/.",
+        adapters: [
+          ["MuJoCo / MJX & Menagerie", "mjx_universal.py", "Zero-copy compilation from unmodified MjModel, MJCF XML, or Menagerie multi-mesh scenes into Wide-BVH-64 + analytic primitives, plus jax.grad differentiable servoing.", "266k FPS (4c) / 411k FPS (32c) · Menagerie 1.9k–4.3k FPS"],
+          ["NVIDIA Isaac Sim & Replicator", "isaac_replicator.py", "Drop-in TiledCamera (RGB/Depth/Normal/Seg/Flow), rep.randomizer.* XLA domain randomization, 128x2048 RTX LiDAR & GelSight tactile kernels in one graph.", "RoboTwin 123.9k cam-FPS (+0.32% DR) · 32c LiDAR 63.88B rays/s"],
+          ["Blender 4.x / Cycles .blend", "blend_compiler.py", "Automated Cycles Shader Graph (Principled / Glass / Glossy / SSS) & Depsgraph walker compiling raw .blend scenes directly into TPU ScenePack + AgX.", "BMW27 37.65 dB · Monster 36.98 dB · Barbershop 31.00 dB"],
+          ["Pixar / Disney OpenUSD", "openusd_loader.py", "Native .usd / .usda / .usdc / .usdz loader supporting UsdGeom.Mesh, PointInstancer & BasisCurves into 2-level Wide-TLAS-64 on TPU.", "Disney Moana 22.30B tris in 4.65 GiB · 4K 5.13 s / 8K 17.24 s"],
+          ["NVIDIA OptiX Python SDK", "tpu_optix.py", "OptiX-style OptixDeviceContext, accelBuild(GAS/IAS), programmable ShaderBindingTable (raygen/miss/closesthit/anyhit) & live cloth BVH refit.", "Cloth Refit 973.3 FPS (0.0 m error) · 17.18B unique tris (32c)"],
+          ["gsplat 3DGS / 4DGS Engine", "tpu_gsplat.py", "Drop-in gsplat-style chunked-VMEM EWA rasterizer + 32-view jax.grad training + SE(3) dynamic 4DGS without dynamic HBM gathers.", "142k (4c) / 952k FPS (32c) · 1.062B splats (32c) · 29.2 MPix/s 8K"],
+          ["NVIDIA DLSS 3.5 & Denoiser", "tpu_dlss.py", "Analytical 4x4 motion-vector reprojection + YCoCg history clamp + BF16 MXU 2x Super-Resolution, 4K Monte Carlo denoiser & static G-buffer relighting.", "TPU-DLSS 3.5 58.9 FPS @ 4K · Denoiser 87.8 FPS · Relight 78.6 FPS"],
+          ["SIGGRAPH ReSTIR DI", "tpu_restir.py", "Streaming M=32 Resampled Importance Sampling (RIS) + spatiotemporal reservoir reuse over thousands of dynamic lights on TPU HBM.", "1,024-Light Courtyard 21.89 dB (+11.61 dB, 7.43x HDR VarRed)"]
+        ],
+        bmkTag: "SUPPORTED BENCHMARKS · VERIFIED VS. DROP-IN READY",
+        bmkTitle: "Robotics, Embodied AI & Graphics Benchmark Coverage",
+        bmkSub: "Explicit distinction between directly measured live TPU v5p benchmarks and API-compatible drop-in MJCF / OpenUSD suites.",
+        benchSupportRows: [
+          ["<strong>RoboTwin</strong> (Bimanual Tabletop)", "<code>isaac_replicator</code> + <code>mjx_universal</code>", "<span class='badge ok'>Verified</span>", "16-DOF dual-arm + 3-cam DR: <strong>123,858 cam-FPS</strong> (41,286 env/s, +0.32% DR overhead)."],
+          ["<strong>RoboWild</strong> (Real-to-Sim 3DGS / 4DGS x MJX)", "<code>tpu_gsplat</code> + <code>mjx_universal</code>", "<span class='badge ok'>Verified</span>", "Live Panda pushing 125.6k LEGO Dozer splats in Mip-NeRF <code>kitchen</code> (+16.43 cm, 5.32 FPS 1080p / 1.30 FPS 4K)."],
+          ["<strong>MuJoCo Menagerie</strong> (DeepMind Official)", "<code>mjx_universal</code>", "<span class='badge ok'>Verified</span>", "Unmodified MJCFs: Aero Hand <strong>4,284 FPS</strong>, Panda <strong>3,131</strong>, Unitree G1 <strong>2,546</strong>, Go2 <strong>1,863</strong> (4c 64²)."],
+          ["<strong>Factory Sim-to-VLA + GelSight Tactile</strong>", "<code>isaac_replicator</code> + <code>tactile_kernel</code>", "<span class='badge ok'>Verified</span>", "1M frames in <strong>142.6 s</strong>, ViT-Tiny VLA <strong>7,143 FPS</strong> (-1.84% overhead), 4-sensor GelSight <strong>270,625/s</strong>."],
+          ["<strong>Vision RL</strong> (Cartpole / Panda / Humanoid-21DOF)", "<code>mjx_universal</code> + <code>shard_map</code>", "<span class='badge ok'>Verified</span>", "Zero-copy HBM PPO: Cartpole <strong>656.4k/s</strong> (94.2%), Panda <strong>211.6k/s</strong> (411k 32c E2E), Humanoid <strong>292.0k/s</strong>."],
+          ["<strong>Autonomous Surround-View + 128-Beam LiDAR</strong>", "<code>isaac_replicator</code> + <code>tpu_optix</code>", "<span class='badge ok'>Verified</span>", "8x1080p + 2x128x2048 rig (<strong>66.8 cam-FPS</strong>, 3.13e-8 m XYZ) &amp; 32c batch LiDAR (<strong>63.88B rays/s</strong>)."],
+          ["<strong>Blender Open Data &amp; Studio</strong> (8 Scenes)", "<code>blend_compiler</code>", "<span class='badge ok'>Verified</span>", "BMW27 <strong>37.65 dB</strong>, Monster <strong>36.98 dB</strong>, Barbershop <strong>31.00 dB</strong>, Barcelona 54.9M, Junkshop / Monk / Fishy Cat / Classroom."],
+          ["<strong>Disney Moana OpenUSD + Mip-NeRF 360 &amp; Bistro</strong>", "<code>openusd_loader</code> + <code>tpu_gsplat</code>", "<span class='badge ok'>Verified</span>", "Moana <strong>22.30B tris</strong> (4K Daylight/Sunset/8K/MJX), 4x Mip-NeRF 360 4K (8K garden <strong>29.2 MPix/s</strong>), 10M Bistro x MJX."],
+          ["<strong>RoboDojo / MuJoCo Playground / ALOHA / ManiSkill</strong>", "<code>mjx_universal</code> + <code>openusd_loader</code> + <code>isaac_replicator</code>", "<span class='badge cyan'>Drop-In Ready</span>", "Standard MJCF XML, OpenUSD .usd &amp; rep.randomizer APIs compile directly via <code>tpu_rtx.compile(...)</code> (benchmark runs not yet recorded in out/metrics/)."]
+        ]
       },
       c3: {
-        num: "03 / 08 · FILM, CLOTH & OPTICS",
-        rail: "Two interactive left/right sliders (6 Blender Cycles scenes + 8 optical/cloth effects) plus 5 full-width standalone 4K/8K Moana & Caustics plates.",
-        title: "<em>Moana</em> (22.3B Tris), Cycles Parity, Cloth &amp; Wave Optics.",
-        lead: "Zero stitched multi-panel collages: compare 6 official Blender Cycles references and 8 optical/cloth regimes using the interactive left/right curtains below, followed by 5 full-width standalone 4K/8K Moana &amp; Caustics renders (all uncropped)."
+        num: "03 / 06 · VISUAL PROOF",
+        rail: "All visual comparisons in one place: 6 Blender Cycles split sliders, 8 optical/cloth sliders, 5 clean 4K/8K cinema plates, 5 4K 3DGS stages & 5 neural sliders.",
+        title: "<em>Visual Proof</em>: Film, Wave Optics &amp; Real&#8209;World 3DGS.",
+        lead: "Zero stitched multi-panel collages and zero dark letterbox edges: inspect 6 Blender Cycles comparisons, 8 physical-optics &amp; cloth effects, 5 standalone 4K/8K cinema plates (including daylight Moana Lagoon and prism dispersion), our 5-scene 4K Real-World 3DGS + RoboWild stage, and 5 neural rendering sliders."
       },
       c4: {
-        num: "04 / 08 · 3DGS & NEURAL SILICON",
-        rail: "Interactive 4K Single-Scene Mip-NeRF 360 + Bistro switcher + 5-preset 4DGS / DLSS / Denoiser / Relight split slider.",
-        title: "Native TPU <em>3DGS / 4DGS</em>, <code>TPU-DLSS 3.5</code> &amp; 4K Relighting.",
-        lead: "Switch between five full-width standalone 4K 3DGS scenes below (click any frame to open 1:1 Lightbox Loupe), then drag the 5-preset slider to inspect <code>4DGS × MJX</code> pushing, <strong>TPU-DLSS 3.5</strong> (<code>58.9 FPS</code> 4K), <strong>87.8 FPS 4K Denoising</strong>, and <strong>78.6 FPS</strong> zero-raytrace relighting."
+        num: "04 / 06 · PERF & 32-CHIP",
+        rail: "Verified 32-chip (8-host, 3.064 TB HBM) scaling highlights plus 5 full-width profiling charts (no hidden negative runs).",
+        title: "<em>587×</em> Optimization &amp; 32&#8209;Chip Pod Scaling (3.06 TB HBM).",
+        lead: "Every number from 1 chip to <strong>32 TPU v5p chips</strong> (<code>3.064 TB HBM</code>, full capstone completed live in <code>395.07 s</code>) is backed by raw telemetry. Below are our 4 pod scaling breakthroughs followed by 5 full-width profiling plots — including negative/flat experiments and the <code>64 MiB</code> VMEM cliff."
       },
       c5: {
-        num: "05 / 08 · TRAINING & PHYSICAL AI",
-        rail: "Four live TPU convergence & throughput plots + full-width MuJoCo Menagerie PBR robot stage (G1, Go2, Panda, Aero Hand).",
-        title: "In-HBM Training: <em>Diff Physics</em>, Vision PPO &amp; Menagerie.",
-        lead: "Physics steps, sensors, losses, and gradients train together in TPU HBM. Below are four exact full-width telemetry curves extracted from <code>out/metrics/*.json</code> plus an interactive full-width <strong>MuJoCo Menagerie</strong> PBR switcher (Unitree G1, Go2, Franka Panda, Aero Hand)."
+        num: "05 / 06 · EMBODIED AI",
+        rail: "Four live TPU convergence & throughput plots + 5-tab PBR robot switcher (RoboTwin Bimanual, G1, Go2, Panda, Aero Hand).",
+        title: "In&#8209;HBM Training: <em>Diff Physics</em>, Vision PPO &amp; Robots.",
+        lead: "Physics steps, tactile/LiDAR sensors, losses, and gradients train together inside TPU HBM with zero CPU round-trips. Below are four exact telemetry curves plus an interactive 5-robot PBR stage covering <strong>RoboTwin Bimanual</strong> and official <strong>MuJoCo Menagerie</strong> models."
       },
       c6: {
-        num: "06 / 08 · POST-MORTEMS",
-        rail: "Real bottlenecks, negative Pallas benchmarks, neural shader ablations, multi-host pitfalls, and full-width QA-rejected renders.",
-        title: "TPU Pitfalls: <em>Post-Mortems</em> &amp; QA-Rejected Renders.",
-        lead: "Publishing only final hero renders hides what actually makes TPU rendering hard. Here are four genuine bottlenecks &amp; negative runs from our engineering ledger — plus two uncropped renders that our <strong>Visual QA Gate rejected</strong> before publication.",
+        num: "06 / 06 · LIMITS & DATA",
+        rail: "Real TPU post-mortems, QA-rejected failures, honest comparison citing wenhaochai/rtx-h100, 21-row JSON ledger, plate index & BibTeX.",
+        title: "Post&#8209;Mortems, <em>Honest Boundaries</em> &amp; 21&#8209;Row Ledger.",
+        lead: "Four candid engineering post-mortems, two uncropped QA-rejected failure renders, an honest hardware comparison citing <code>wenhaochai/rtx-h100</code>, an interactive telemetry console, all <strong>21 traceable JSON logs</strong>, and a quick-jump directory across all <strong>26 clean plates</strong>.",
         pmCards: [
-          ["FAIL -> FIX", "E10 / E11 / E12", "1. The Hidden 151 MB Checkerboard Gather", "Amdahl profiling revealed >90% of early Pallas frame time (286.5 ms) wasn't in the BVH kernel — it was a single XLA dynamic gather geom_xmat[b_idx, safe_gid] triggered by one checkerboard floor plane.", "Replacing that dynamic lookup with static iteration over checkerboard IDs slashed shading 4.4x (286.5 -> 64.9 ms), unlocking 12,843 FPS (1c) and 50,131 FPS (4c) with gather_ops = 0."],
-          ["NEGATIVE RESULT", "E14 vs Wave 3", "2. Hand-Written Pallas 3DGS Lost 1.81x to Pure XLA", "Our initial MXU log-space Pallas 3DGS kernel (gs3d_pallas) ran at only 658.6 FPS — slower than plain XLA jax_tile (1,193.2 FPS) because padded (BT, 64, 128) outputs bloated writes 16x and emitted 65,536 tiny DMAs.", "We documented the negative result, kept jax_tile default, then redesigned chunked VMEM EWA sorting (gs3d_v3) to jump 119x to 142,008 FPS (4c) and 300M splats in HBM."],
-          ["3-RUN FAILURE -> PASS", "E4 / E5 / E6a -> E6b", "3. Why Stage-2 Neural Relighting Failed Three Times First", "M1 pixel MLP failed soft penumbras (27.80 dB); narrow W32 U-Net failed gripper occlusion (10% mismatch); jnp.clip inside loss saturated gradients on step 1 leaving training stuck at 15.20 dB.", "Adding reflect(V, N) + Fresnel N dot V, dual 1x1 BRDF skip heads, unclipped loss + global norm clipping, and tight-grasp augmentation passed 8/8 locked gates at 38.35 dB / 0.9889 SSIM."],
+          ["FAIL -> FIX", "Checkerboard Gather Bottleneck", "1. Why Early Shading Ate >90% of Frame Time (151 MB Gather)", "Amdahl profiling revealed >90% of early Pallas frame time (286.5 ms) wasn't in the BVH kernel — it was a single XLA dynamic gather geom_xmat[b_idx, safe_gid] triggered by one checkerboard floor plane.", "Replacing that dynamic lookup with static iteration over checkerboard IDs slashed shading 4.4x (286.5 -> 64.9 ms), unlocking 12,843 FPS (1c) and 50,131 FPS (4c) with gather_ops = 0."],
+          ["NEGATIVE RESULT", "3DGS Pallas vs XLA Baseline", "2. Hand-Written Pallas 3DGS Lost 1.81x to Pure XLA", "Our initial MXU log-space Pallas 3DGS kernel (gs3d_pallas) ran at only 658.6 FPS — slower than plain XLA jax_tile (1,193.2 FPS) because padded (BT, 64, 128) outputs bloated writes 16x and emitted 65,536 tiny DMAs.", "We documented the negative result, kept jax_tile default, then redesigned chunked VMEM EWA sorting (gs3d_v3) to jump 119x to 142,008 FPS (4c) and 952,248 FPS + 1.062B splats (32c)."],
+          ["3-RUN FAILURE -> PASS", "Neural Shader Gate Ablation", "3. Why Stage-2 Neural Relighting Failed Three Times First", "Pixel-only MLP failed soft penumbras (27.80 dB); narrow W32 U-Net failed gripper occlusion (10% mismatch); jnp.clip inside loss saturated gradients on step 1 leaving training stuck at 15.20 dB.", "Adding reflect(V, N) + Fresnel N dot V, dual 1x1 BRDF skip heads, unclipped loss + global norm clipping, and tight-grasp augmentation passed 8/8 locked gates at 38.35 dB / 0.9889 SSIM."],
           ["MULTI-HOST PITFALL -> SOLVED", "32-Chip Pod 395.1 s", "4. Non-Addressable MJX Arrays & SSH PID Lock Leaks", "In 8-host (32-chip) JAX distributed mode, mjx.put_model(m, impl='jax') with device=None created cross-host IFRT failures, and multiline SSH PID cleanup previously left /dev/vfio/3 locked.", "Patched device=local_devs[0] + single-line tr PID cleanup, then executed the live 32-chip (3.064 TB HBM) Capstone across all 8 hosts in 395.07 s: 411k E2E, 952k 3DGS, 1.062B splats, 63.88B LiDAR rays/s, 17.18B unique tris & 1,650 spm @ 8K, returning 8/8 IDLE."]
         ],
         ablationRows: [
           ["Locked Phase-0 Threshold", ">= 30.0 dB", ">= 28.0 dB", "<= 0.010", "<span class='badge cyan'>All 8 Required</span>"],
           ["Stage 1 Direct Exact Baseline", "13.83 dB", "—", "—", "Hard shadows, no indirect GI"],
-          ["E4: M1_pixel_128 (1x1 MLP, 150 ep)", "27.80 dB", "23.52 dB", "0.0500 (7/140)", "<span class='badge fail'>FAIL</span> Zero spatial receptive field"],
-          ["E5: M2_spatial_32 (Narrow W32)", "35.58 dB", "27.79 dB", "0.1000 (14/140)", "<span class='badge fail'>FAIL</span> Grasping contact blur"],
-          ["E6a-3: M2_spatial_128 + jnp.clip Loss", "15.20 dB", "—", "—", "<span class='badge fail'>FAIL</span> Dead step-1 gradient saturation"],
-          ["E6b: M2_spatial_128 (24-ch BRDF, Final)", "<strong>38.35 dB</strong>", "<strong>30.31 dB</strong>", "<strong>0.00714 (1/140)</strong>", "<span class='badge ok'>PASS (8/8)</span> SSIM 0.9889, Edge 0.157 px"]
+          ["M1 Pixel MLP (1x1, 150 ep)", "27.80 dB", "23.52 dB", "0.0500 (7/140)", "<span class='badge fail'>FAIL</span> Zero spatial receptive field"],
+          ["M2 Spatial U-Net (Narrow W32)", "35.58 dB", "27.79 dB", "0.1000 (14/140)", "<span class='badge fail'>FAIL</span> Grasping contact blur"],
+          ["M2 Spatial U-Net + jnp.clip Loss", "15.20 dB", "—", "—", "<span class='badge fail'>FAIL</span> Dead step-1 gradient saturation"],
+          ["M2 Spatial U-Net (24-ch BRDF, Final)", "<strong>38.35 dB</strong>", "<strong>30.31 dB</strong>", "<strong>0.00714 (1/140)</strong>", "<span class='badge ok'>PASS (8/8)</span> SSIM 0.9889, Edge 0.157 px"]
         ],
         rejected: [
           {
@@ -980,7 +1024,7 @@ window.TPU_RTX_DATA = {
             img: "./assets/postmortem/rejected_openusd_clay.webp",
             banner: "QA REJECTED · EARLY FLAT CLAY SHADING & LOW MATERIAL CONTRAST",
             title: "Rejected Output A: Early Untextured OpenUSD Stage Test (v3_w2_openusd_4k)",
-            desc: "Caught by Visual QA Gate: before binding full Disney OpenUSD Ptex/material packs, diffuse shaders collapsed distant foliage and water reflections into flat clay. Replaced by the verified Sunset, Reef Caustics, and Moana x MJX 4K passes."
+            desc: "Caught by Visual QA Gate: before binding full Disney OpenUSD Ptex/material packs, diffuse shaders collapsed distant foliage and water reflections into flat clay. Replaced by the verified Daylight, Sunset, and Moana x MJX 4K passes."
           },
           {
             id: "rejected_garden_seams",
@@ -989,49 +1033,38 @@ window.TPU_RTX_DATA = {
             title: "Rejected Output B: Early 32-View 3DGS Training Render (v3_w3_garden_32v_grad)",
             desc: "Caught by Visual QA Gate: local tile accumulation bounds clipped splats outside each 16x16 frustum bin, producing blocky grid seams and masked black borders. Excluded from showcase galleries; fixed fast-grad pipeline verified at 31.31 dB peak."
           }
-        ]
-      },
-      c7: {
-        num: "07 / 08 · TELEMETRY & LEDGER",
-        rail: "Interactive subsystem bars, zero-overflow 21-row JSON telemetry ledger, and quick-jump directory for all 25 standalone renders (no tiny thumbnail clutter).",
-        title: "Telemetry Console, <em>21 JSON Logs</em> &amp; Scene Index.",
-        lead: "Every metric traces directly to raw JSON artifacts in <code>out/metrics/</code> (compact <code>JSON ↗</code> links keep zero horizontal overflow). Use the quick-jump directory below to inspect any of the 25 standalone uncropped plates in full 1:1 Lightbox resolution."
-      },
-      c8: {
-        num: "08 / 08 · 32-CHIP POD & COLOPHON",
-        rail: "Live 32-chip (8-host, 3.064 TB HBM) scaling vs. 4-chip baseline, honest hardware comparison citing wenhaochai/rtx-h100, Feiyang Liu colophon & BibTeX.",
-        title: "<em>32-Chip TPU Pod</em> (3.06 TB HBM), Limits &amp; <code>rtx-h100</code>.",
-        lead: "Verified live 8-host (32-chip, <code>3.064 TB</code> HBM) Pod Capstone measurements completed in <code>395.07 s</code> alongside the 4-chip baseline (<code>383 GB</code> HBM), plus honest GPU vs. TPU boundaries citing <code>wenhaochai/rtx-h100</code> and Feiyang Liu BibTeX.",
-        honest: "Every number reported on this page is measured live on real TPU v5p silicon (1-chip, 4-chip single-host, or 32-chip 8-host distributed pod, all explicitly labeled with zero fabricated scaling claims). Where GPUs still lead — sub-second interactive viewport turnaround, incoherent multi-bounce branching on hardware RT Cores, and single-card raw Cycles throughput (Chai et al., 2026) — we state so plainly.",
+        ],
+        honest: "Every number reported on this page — across 1-chip experiments, single-host 4-chip nodes (383 GiB HBM), and the full 8-host 32-chip TPU v5p-64 Pod (3.064 TB HBM, v3_pod_v5p64_capstone.json) — was measured live on real Google Cloud TPU v5p silicon with zero fabricated extrapolation. Standard suites without a benchmark JSON yet (RoboDojo, MuJoCo Playground, ALOHA, ManiSkill) are explicitly labeled Drop-In Ready rather than verified scores. Meanwhile, GPUs still lead decisively in sub-second interactive editor responsiveness, dynamic incoherent branching on HW RT Cores, and single-card Blender Cycles speed (Chai et al., 2026).",
         authorBio: "Systems & graphics engineer exploring compiler-native rendering, differentiable physics, and high-throughput Physical AI on custom ML accelerators.",
         ack: "Third-Party Asset & Work Acknowledgments: Walt Disney Animation Studios Moana Island Scene v2.1 (Non-Commercial License); Blender Open Data / Blender Studio (BMW27, Barcelona Pavilion, Barbershop, Classroom, Junkshop, Lone Monk, Monster Under the Bed, Fishy Cat — CC0 / CC-BY); Mip-NeRF 360 photogrammetry captures (Barron et al.); Google DeepMind mujoco_menagerie (Apache-2.0 / BSD); Chai et al. (2026) wenhaochai/rtx-h100 Cycles H100/RTX PRO 6000 reference."
       },
       podStats: [
-        ["Bench 1 & 2 · Embodied Physics + 3DGS (4c -> 32c)", "411,023 FPS E2E  |  952,248 FPS 3DGS", "8x pod scaling from 51.5k MJX+RTX (4c) to 411.0k FPS (32c B=131k); 128² 3DGS hits 952.2k FPS plus 1.062B ICI splats @ 1080p (3.41 s)."],
+        ["Bench 1 & 2 · Embodied Physics + 3DGS (4c -> 32c)", "411,023 FPS E2E  |  952,248 FPS 3DGS", "7.97x pod scaling from 51.5k MJX+RTX (4c) to 411.0k FPS (32c B=131k); 128² 3DGS hits 952.2k FPS plus 1.062B ICI splats @ 1080p (3.41 s)."],
         ["Bench 3 · 128x2048 Batch 360° LiDAR (32c)", "243,676 env-FPS  |  63.88 Billion Rays/s", "B=16,384 parallel 128x2048 LiDAR scans in 67.2 ms across 8 hosts (B=32,768: 229,060 env-FPS / 60.05B rays/s, gather_ops=0)."],
         ["Bench 4 · Geometry-Sharded Unique Triangles (32c)", "17.18B Unique Non-Instanced Tris (1.18 TB)", "32-chip ICI jax.lax.pmin scales 8x over 4c (2.15B -> 17.18B unique tris), rendering 4K in 4.46 s and 8K in 8.53 s (8.59B tris: 2.43 s 4K / 4.70 s 8K)."],
         ["Bench 5 · Spatial-Sharded Native 8K 3-Bounce PT (32c)", "1,650.2 spm @ 8K (5.475 GRays/s, 7.54x 4c)", "Unbiased 3-bounce Monte Carlo GI @ 7680x4320 (33.18M px): 145.4 ms @ 4 spp (6.88 FPS) and 37.5 ms @ 1 spp (26.69 FPS, host_callbacks=0)."]
       ],
       compRows: [
-        ["Embodied Vision RL, VLA & Tactile", "<strong>Zero-Copy Single XLA Graph</strong>: <code>266k FPS</code> E2E, <code>1M</code> factory frames in <code>142.6s</code>, <code>270.6k/s</code> GelSight, <code>-1.84%</code> Sim-to-VLA overhead", "Static offline renderer (no interactive RL loop)", "Mature CUDA Warp/Isaac ecosystem on RTX/L40S/H100"],
-        ["Real-to-Sim 3DGS / 4DGS + Physics", "<strong>Zero-Gather Native TPU</strong>: <code>142k FPS</code> (<code>64²</code>), <code>300M</code> splats @ 4K (4c HBM), <code>8K garden 29.2 MPix/s</code>, live <code>4DGS x MJX</code> push", "Cycles mesh + NRC only", "Requires separate CUDA gsplat + USD/PhysX bridge"],
+        ["Embodied Vision RL, VLA & Tactile", "<strong>Zero-Copy Single XLA Graph</strong>: <code>266k FPS</code> (4c) / <code>411k FPS</code> (32c), <code>1M</code> factory frames in <code>142.6s</code>, <code>270.6k/s</code> GelSight", "Static offline renderer (no interactive RL loop)", "Mature CUDA Warp/Isaac ecosystem on RTX/L40S/H100"],
+        ["Real-to-Sim 3DGS / 4DGS + Physics", "<strong>Zero-Gather Native TPU</strong>: <code>142k</code> (4c) / <code>952k</code> (32c), <code>1.062B</code> distributed splats, <code>8K garden 29.2 MPix/s</code>, live <code>4DGS x MJX</code> push", "Cycles mesh + NRC only", "Requires separate CUDA gsplat + USD/PhysX bridge"],
         ["End-to-End Diff Physics + Render", "<strong>36.08 dB / 1.63 cm EE Error</strong> via <code>jax.value_and_grad(mjx.step + PBR)</code> at <code>27.9 grad-steps/s</code>", "Non-differentiable offline path tracer", "Separate Warp diff-sim / Nvdiffrast integration"],
-        ["Film Production Path Tracing & Cycles", "<strong>Large-Scene OpenUSD & .blend Compiler</strong>: <em>Moana</em> (<code>22.30B</code> tris, 4.65 GiB), <code>BMW27 37.65 dB</code>, <code>Monster 36.98 dB</code>", "<strong>Speed Champion (wenhaochai/rtx-h100)</strong>: <code>55,148 spm</code> single H100 (7.8x Blender), <code>78,297 spm</code> RTX PRO 6000 OptiX (39.9 img/s NRC)", "Full interactive Omniverse / OptiX workstation viewport"],
+        ["Film Production Path Tracing & Cycles", "<strong>Large-Scene OpenUSD & .blend Compiler</strong>: <em>Moana</em> (<code>22.30B</code> tris, 4.65 GiB), <code>BMW27 37.65 dB</code>, <code>17.18B</code> unique tris (32c)", "<strong>Speed Champion (wenhaochai/rtx-h100)</strong>: <code>55,148 spm</code> single H100 (7.8x Blender), <code>78,297 spm</code> RTX PRO 6000 OptiX (39.9 img/s NRC)", "Full interactive Omniverse / OptiX workstation viewport"],
         ["AI Relighting, Denoising & DLSS", "<strong>Native MXU BF16/INT8</strong>: 4K Denoise <code>87.8 FPS</code>, 4K DLSS <code>58.9 FPS</code>, Static Relight <code>78.6 FPS</code> 4K / <code>307 FPS</code> 1080p", "NRC-scatter <code>40.4 img/s</code> (32-spp bar, H100)", "Hardware Tensor Core DLSS 3.5 + Ray Reconstruction"]
       ],
       ui: {
         copy: "Copy", copied: "Copied", zoom4k: "Inspect ↗", loupe: "1:1 Pixel Loupe (L)", raw: "Open Full Image ↗",
         footerL: "TPU-RTX · Google Cloud TPU v5p (JAX + Pallas Mosaic · Zero host_callbacks · Zero HBM Gathers)",
         searchPlaceholder: "Search experiments, scenes, JSON...",
-        b_mjx: "MJX & Robotics (w0/w1/w6)", b_gs3d: "3DGS / 4DGS / 300M (w3)", b_cinema: "Moana, Cloth & Blender (w2/w5/w7)", b_dlss: "TPU-DLSS 3.5 & Relight (w4)", b_fx: "Path Tracing, ReSTIR & Optics (w7/w6)",
-        g_all: "All Standalone Plates (25)", g_film: "Moana & Blender Studio (10)", g_optics: "Physical Optics & Caustics (4)", g_gs3d: "Real-World 3DGS / Bistro (5)", g_robotics: "Menagerie PBR Robots (4)", g_rej: "QA-Rejected (2)",
+        b_mjx: "Robotics & Embodied AI", b_gs3d: "3DGS / 4DGS / 1.06B Pod", b_cinema: "Moana, Cloth & Blender", b_dlss: "TPU-DLSS 3.5 & Relight", b_fx: "Path Tracing & Optics",
+        g_all: "All Standalone Plates (26)", g_film: "Moana & Blender Studio (10)", g_optics: "Physical Optics (3)", g_gs3d: "Real-World 3DGS / Bistro (6)", g_robotics: "Menagerie & RoboTwin (5)", g_rej: "QA-Rejected (2)",
         th1: "Workload", th2: "TPU-RTX (Google TPU v5p)", th3: "GPU Cycles (wenhaochai/rtx-h100)", th4: "NVIDIA Isaac Sim / OptiX",
         gvt1: "Dimension", gvt2: "Google Cloud TPU v5p (TPU-RTX)", gvt3: "NVIDIA GPU (RTX / H100 / Isaac)",
+        bs1: "Benchmark / Suite", bs2: "Adapter Stack", bs3: "Status", bs4: "Measured Result or Compatibility Scope",
         ab1: "Stage-2 Neural Shader Ablation", ab2: "PSNR (dB)", ab3: "ROI Contact PSNR", ab4: "Occ Mismatch", ab5: "Gate & Root Cause",
         ld_all: "All (21)", ld_rob: "Robotics", ld_film: "Film & Cloth", ld_gs: "3DGS/4DGS", ld_nn: "Neural/Optics",
         lt1: "Experiment", lt2: "Config / Scale", lt3: "Throughput", lt4: "Accuracy / Parity", lt5: "JSON",
-        ev_t: "CHRONOLOGICAL STEP-ENVELOPE · NEGATIVE RUNS EXPOSED", ev_h: "587x Optimization Trajectory (453 -> 266,209 FPS)", ev_s: "Every new throughput envelope plus flat/negative runs plotted on live TPU v5p (inspired by wenhaochai/rtx-h100).",
-        gs_t: "LOG-SCALE PIVOT · 3D GAUSSIAN SPLATTING", gs_h: "3DGS Trajectory: Negative Pallas (-1.81x) -> 142k FPS / 300M", gs_s: "Replacing padded Pallas DMA writes with chunked VMEM EWA unlocks 142,008 FPS & 300M splats in 4c HBM.",
+        ev_t: "CHRONOLOGICAL STEP-ENVELOPE · NEGATIVE RUNS EXPOSED", ev_h: "587x Optimization Trajectory on TPU v5p (453 -> 266,209 FPS · 32c: 411,023 FPS)", ev_s: "Every throughput step plus negative/flat runs plotted cleanly (inspired by wenhaochai/rtx-h100).",
+        gs_t: "LOG-SCALE PIVOT · 3D GAUSSIAN SPLATTING", gs_h: "3DGS Trajectory: Negative Pallas (-1.81x) -> 142k (4c) -> 952k FPS (32c Pod)", gs_s: "Replacing padded Pallas DMA writes with chunked VMEM EWA unlocks 142k (4c) and 952,248 FPS + 1.062B splats (32c Pod).",
         vm_t: "HARDWARE BOUNDARY · LIVE TPU SWEEP", vm_h: "64 MiB VMEM Spill Cliff at tile_size = 512 (-24%)", vm_s: "Measured E2E FPS as ray tile size sweeps 64 -> 128 -> 256 -> 512 on 1 TPU v5p chip (B=1024).",
         mx_t: "MXU QUANTIZATION · ACCURACY VS FPS", mx_h: "FP32 vs BF16 vs INT8 W8A8 MXU Precision Pareto", mx_s: "BF16 doubles throughput (2.11x @ 4K: 78.6 vs 37.2 FPS) with exact 20.276 dB PSNR parity; INT8 QAT costs only -0.047 dB.",
         orb_t: "GENERALIZATION CHECK · CYCLES EXR", orb_h: "Hero Camera vs. Held-Out Orbit Camera PSNR", orb_s: "Reporting both hero-view and full multi-angle held-out orbit parity across 7 Blender Studio scenes.",
@@ -1043,106 +1076,125 @@ window.TPU_RTX_DATA = {
     },
 
     zh: {
-      pageTitle: "TPU-RTX — 让 Google TPU 原生跑通光线追踪、路径追踪与 3DGS | Feiyang Liu",
+      pageTitle: "TPU-RTX — 把 Google TPU 变成原生实时光追引擎 | Feiyang Liu",
       themeNight: "暗房",
       themeDay: "纸本",
       nav: {
-        c1: "01 GPU对比TPU", c2: "02 性能演进", c3: "03 电影与光学", c4: "04 3DGS与神经渲染",
-        c5: "05 训练与具身", c6: "06 踩坑与失败案例", c7: "07 账本与索引", c8: "08 极限与边界"
+        c1: "01 GPU对比TPU", c2: "02 软件与Bench", c3: "03 画质与拉杆",
+        c4: "04 性能与32芯", c5: "05 具身训练", c6: "06 踩坑与数据"
       },
       hero: {
-        kicker: "实测于 GOOGLE CLOUD TPU v5p（单芯至 32 芯集群）· ZERO HOST_CALLBACK · ZERO GATHER_OPS",
+        kicker: "GOOGLE CLOUD TPU v5p 真机实测（单芯至 32 芯集群）· 零 HOST_CALLBACK · 零 HBM GATHER",
         by: "作者",
         license: "Apache-2.0 开源",
         title: "<em>TPU-RTX</em>：把 Google TPU 变成原生实时光追引擎。",
-        lead: "全栈原生运行于 <strong>Google Cloud TPU v5p</strong>：单张零拷贝 XLA 图直驱 <strong>223 亿</strong>面电影 OpenUSD、<strong>10.6 亿</strong> 3DGS、<strong>171.8 亿</strong>唯一三角面与 <strong>41.1 万 FPS</strong> 具身物理仿真。",
-        ctaStart: "先看 GPU vs TPU 架构对比",
-        ctaGallery: "数据账本与单场景索引",
-        stamp: "全单图全幅专刊 · 零裁剪 · 零多宫格拼图 · 每一帧均来自 TPU v5p 实测",
-        t0i: "场景 01 · OPENUSD 日落",
-        t0t: "迪士尼 Moana 黄金日落海湾（223 亿面，原生 4K）",
-        t1i: "场景 02 · 电影 × MJX",
-        t1t: "MJX 人形与四足机器人奔跑在 Moana 沙滩（原生 4K）",
-        t2i: "场景 03 · 实景 3DGS",
-        t2t: "Mip-NeRF 360 Garden 原生 4K（SH3，零 Gather）"
+        lead: "全栈原生运行于 <strong>Google Cloud TPU v5p</strong>：单张零拷贝 XLA 计算图直驱 <strong>223 亿</strong>面电影 OpenUSD、<strong>10.6 亿</strong> 3DGS、<strong>171.8 亿</strong>唯一三角面与 <strong>41.1 万 FPS</strong> 具身物理仿真。",
+        ctaStart: "先看真实画质对比",
+        ctaGallery: "支持的软件与 Bench",
+        stamp: "全单图全幅专刊 · 零黑边残留 · 零多宫格拼图 · 100% TPU v5p 真机实测",
+        t0i: "场景 01 · 电影 × 具身",
+        t0t: "MJX 机器人奔跑在 223 亿面 Moana 沙滩（4K）",
+        t1i: "场景 02 · 实景 3DGS × 具身",
+        t1t: "MJX 人形与熊猫进入 1,000 万 Bistro 街区（4K）",
+        t2i: "场景 03 · BLENDER CYCLES",
+        t2t: "巴塞罗那展馆（5,491 万唯一面，原生 4K）",
+        stackTag: "10 秒系统总览图 · 四层全景架构",
+        stackTitle: "TPU-RTX 如何把 Google TPU v5p 底层硬件直接连通具身智能、OpenUSD、Blender 与 3DGS",
+        stackSub: "从下至上四层全部驻留在同一张零拷贝 XLA 计算图内：TPU v5p 硬件 -> 3 大零拷贝核心内核 -> 8 大软件适配器 -> 已验证基准套件。"
       },
       kpis: [
-        ["4 芯 & 32 芯 MJX+光追", "266k / 411k FPS", "4 芯纯渲染等效 <strong>921k</strong> · <strong>32 芯 E2E 411,023 FPS</strong>"],
-        ["迪士尼 Moana OpenUSD", "223 亿三角面", "<strong>4K 5.13 s · 8K 17.24 s</strong> · 日落与水下珊瑚礁 (4 芯)"],
-        ["3DGS 速度与集群容量", "95.2 万 FPS / 10.6 亿", "<code>14.2 万</code> (4 芯) / <strong>952,248 FPS</strong> (32 芯 128²) · <strong>10.62 亿</strong>高斯"],
-        ["原生 8K 实景与 PT", "7680×4320", "<code>garden 29.19 MPix/s</code> (4 芯) · 8K 路径追踪 <strong>1,650 spm</strong> (32 芯)"],
-        ["DLSS 3.5 与 4K 重打光", "58.9 / 78.6 FPS", "DLSS <strong>3.91×</strong> · 零光追重打光 <strong>78.6 FPS</strong> BF16 (4 芯)"],
-        ["Blender Cycles 对齐度", "37.65 / 36.98 dB", "<code>BMW27</code> <strong>0.9813</strong> SSIM · <code>Monster</code> <strong>0.121 mm</strong> (4 芯)"],
-        ["布料 Refit & 32 芯唯一面", "973 FPS / 171.8 亿", "<code>973.3 FPS</code> 布料 BVH · <strong>171.8 亿</strong>唯一三角面 (32 芯, 1.18 TB)"],
-        ["可微物理 + 32 芯 LiDAR", "1.63 cm / 639 亿/s", "<code>jax.grad</code> <strong>36.08 dB</strong> (单芯) · <strong>63.88B</strong> LiDAR 射线/秒 (32 芯)"]
+        ["端到端物理 + 光追", "411,023 FPS", "<strong>32 芯集群实测</strong>（<code>B=131k</code>，7.97x 扩展）· 4 芯融合 <strong>266k FPS</strong>"],
+        ["超大场景几何上限", "223 亿 / 172 亿", "Moana OpenUSD（<code>4.65 GiB</code>）&amp; 32 芯非实例化独立三角面（<code>1.18 TB HBM</code>）"],
+        ["3DGS 速度与分布式容量", "95.2 万 FPS / 10.6 亿", "<strong>952,248 FPS</strong>（32 芯 128²）· ICI 跨机分布式 <strong>10.62 亿高斯</strong>"],
+        ["激光雷达与整集群显存", "639 亿/s · 3.06 TB", "32 芯 <code>128×2048</code> LiDAR（<strong>24.37 万 env-FPS</strong>）· 全程零回调"]
       ],
       c1: {
-        num: "01 / 08 · GPU VS TPU",
-        rail: "第一性原理对比：为什么传统 SIMT 光追 GPU 与谷歌 TPU 脉动阵列底层逻辑完全不同，各自优势与短板在哪。",
-        title: "为什么用 <em>TPU</em>？GPU 与 TPU 底层架构全景对比。",
-        lead: "传统 GPU（32 线程 SIMT Warp + 硬件 RT Core + 硬件 L1/L2 缓存）与 Google Cloud TPU v5p（459 TFLOP/s BF16 <strong>128×128 脉动阵列 MXU</strong> + <strong>64 MiB 软件显控 VMEM</strong> + <strong>95.74 GiB 大显存 HBM</strong>）处于硬件设计的两端。照搬 CUDA 思路写 TPU 会瞬间卡死在 HBM 延迟上；但围绕 64 叉 Wide-BVH 与 VMEM 重构后，TPU 在大显存容量、物理-渲染-AI 零拷贝融合上展现出惊人的爆发力。",
+        num: "01 / 06 · 为什么用 TPU",
+        rail: "第一性原理对比：传统 SIMT 光追 GPU 与 Google TPU 脉动阵列的底层区别，以及各自真正的擅长与短板。",
+        title: "为什么用 <em>TPU</em>？GPU 与 TPU 底层架构对比。",
+        lead: "传统 GPU（32 线程 SIMT Warp + 硬件 RT Core + 硬件 L1/L2 缓存）与 Google Cloud TPU v5p（459 TFLOP/s BF16 <strong>128×128 脉动阵列 MXU</strong> + <strong>64 MiB 软件显控 VMEM</strong> + <strong>95.74 GiB HBM</strong>）处于芯片设计的两端。照搬 CUDA 随机指针写法会在 TPU Gather 延迟上瞬间卡死；而改用 64 叉 Wide-BVH 对齐 VMEM 后，<code>3.064 TB</code> 大显存和物理-渲染-AI 零拷贝融合成了决定性优势。",
         gvtTag: "硬件架构与执行流程图对比",
         gvtTitle: "传统 SIMT RTX GPU vs. Google TPU v5p 脉动阵列光追流水线对比",
-        gvtSub: "清晰拆解两者的核心算力单元、缓存层次、BVH 遍历路径与后续 AI/物理仿真耦合方式。",
+        gvtSub: "拆解两者的核心算力单元、缓存层次、BVH 遍历路径与后续 AI/物理仿真耦合方式。",
         gvtRows: [
           ["1. 动态分支与硬件 RT Core", "<span class='badge fail'>劣势</span> 无专用硬件 RT Core，128 通道 VPU 要求规则无分支掩码。", "<span class='badge ok'>优势</span> 拥有硬件 RT Core 与 32 线程 SIMT Warp，天然擅长随机多反弹光线分歧。"],
           ["2. 随机内存 Gather / 原子操作", "<span class='badge fail'>劣势</span> 脊点高达 166 FLOP/B，一旦出现不规则 HBM Gather 或 Tile 原子写，性能会断崖下跌。", "<span class='badge ok'>优势</span> 硬件 L1/L2 缓存与高速片上原子写专门为随机指针跳转和细粒度 Scatter 设计。"],
-          ["3. 显存容量 (HBM) 与片上 VMEM", "<span class='badge ok'>优势</span> 单芯 <strong>95.74 GiB HBM（单机 383 GB）</strong> + 64 MiB 显式 VMEM，轻松装下 <strong>3 亿高斯</strong>或 <strong>223 亿面</strong> <em>Moana</em>，无需 PCIe 换页。", "<span class='badge fail'>劣势</span> 单卡显存通常 24–80 GB，大批量具身 RL 或超大规模 3DGS 常碰显存天花板。"],
-          ["4. 物理 + 渲染 + RL/VLA 零拷贝融合", "<span class='badge ok'>优势</span> MJX 物理、光追、GelSight、LiDAR、PPO 与 ViT-Tiny 同驻<strong>单张 XLA 计算图</strong>（<code>266k FPS</code>，VLA 仅 <code>-1.84%</code> 开销）。", "<span class='badge fail'>劣势</span> 多跨 Warp / OptiX / Isaac / PyTorch 工具链桥接，常伴随中间缓冲拷出。"],
+          ["3. 显存容量 (HBM) 与片上 VMEM", "<span class='badge ok'>优势</span> 单芯 <strong>95.74 GiB HBM（32 芯 3.064 TB）</strong>轻松装下 <strong>10.6 亿高斯</strong>或 <strong>223 亿面</strong> <em>Moana</em>，无需 PCIe 换页。", "<span class='badge fail'>劣势</span> 单卡显存通常 24–80 GB，大批量具身 RL 或超大规模 3DGS 常碰显存天花板。"],
+          ["4. 物理 + 渲染 + RL/VLA 零拷贝融合", "<span class='badge ok'>优势</span> MJX 物理、光追、GelSight、LiDAR、PPO 与 ViT-Tiny 同驻<strong>单张 XLA 计算图</strong>（32 芯 <code>411k FPS</code>，VLA 仅 <code>-1.84%</code> 开销）。", "<span class='badge fail'>劣势</span> 多跨 Warp / OptiX / Isaac / PyTorch 工具链桥接，常伴随中间缓冲拷出。"],
           ["5. MXU 神经降噪、超分与重打光", "<span class='badge ok'>优势</span> <code>459 TFLOP/s</code> BF16 MXU 直连 HBM G-Buffer：<strong>87.8 FPS</strong> 4K 降噪、<strong>58.9 FPS</strong> 4K DLSS、<strong>78.6 FPS</strong> 重打光。", "<span class='badge ok'>优势</span> Tensor Core + 成熟的官方 DLSS 3.5 与 OptiX OIDN 开箱即用。"],
-          ["6. 首次编译延迟 vs 稳态吞吐", "<span class='badge fail'>劣势</span> XLA AOT 编译需 <strong>4–130 秒</strong>冷启动编译，不适合频改拓扑的实时编辑器。", "<span class='badge ok'>优势</span> 亚秒级响应，交互式场景编辑与实时游戏预览体验极佳。"],
-          ["7. 生态工具链成熟度", "<span class='badge fail'>劣势</span> 适合在训练/仿真前先编译 <code>.usd</code> / <code>.blend</code> / MJCF / <code>.ply</code> 资产。", "<span class='badge ok'>优势</span> 拥有无可替代的 Omniverse、Blender 实时视口与虚幻引擎生态。"]
-        ],
-        pillars: [
-          ["VMEM 宽树遍历", "1. 三级 64 叉 Wide-BVH", "把 64 个子节点包围盒紧致打包成 (8, 128) 向量块，使 Pallas Mosaic 在单条 VPU 指令内完成 64 路包围盒测试，并配合 pltpu.async_copy 异步流水流式读取叶节点，平稳扩展至 223 亿面 Moana 与 21.5 亿唯一三角面。"],
-          ["片上核融合与零 Gather", "2. In-VMEM 核融合与分块 3DGS", "把光线生成、求交、GGX/AO/软阴影与材质去重直接融进 VMEM 寄存器，彻底消除 G-Buffer 往返（92.1 万 FPS 等效）；分块 VMEM take_along_axis 将 3DGS 推至 14.2 万 FPS 与 3 亿高斯。"],
-          ["MXU 与端到端可微", "3. 原生 MXU 神经加速与 jax.grad 物理", "像素全程不离 TPU HBM，让 BF16 MXU 运行 87.8 FPS 4K 去噪、58.9 FPS 4K TPU-DLSS 3.5、78.6 FPS 零光追重打光，以及直接穿透 mjx.step 的像素到力矩反向传播。"]
-        ],
-        diagCap: "全模块在 XLA HLO 层通过硬验证：host_callbacks = 0，send_recv_ops = 0，gather_ops = 0。",
-        sdkBar: "极速接入 SDK · tpu_mjx_render.adapters 下内置 8 大生态适配器"
+          ["6. 首次编译延迟 vs 交互式视口", "<span class='badge fail'>劣势</span> XLA AOT 需 <strong>4–130 秒</strong>冷编译，更适合预编译训练/渲染而非频繁改拓扑的编辑器。", "<span class='badge ok'>优势</span> 亚秒级响应，加之 Omniverse、Blender、Unreal 无可替代的实时视口生态。"]
+        ]
       },
       c2: {
-        num: "02 / 08 · 性能演进与泛化",
-        rail: "按时间顺序记录每一步优化包络（包含负优化与持平试验）、3DGS 反转、64 MiB VMEM 溢出悬崖、MXU 帕累托与环绕泛化检测。",
-        title: "TPU 上 <em>587×</em> 演进：优化轨迹与视角泛化检验。",
-        lead: "借鉴 <code>wenhaochai/rtx-h100</code> 的工程透明标准：完整呈现按时间演进的步骤包络曲线（明确标出负优化和持平实验）、<code>tile_size = 512</code> 溢出悬崖（<code>-24%</code>）、BF16/INT8 MXU 帕累托，以及 7 大 Blender 场景的<strong>主视角 vs 环绕泛化</strong> PSNR。"
+        num: "02 / 06 · 软件改造与 BENCH",
+        rail: "8 大已重构软件适配器（点击直达源码）、9 类主流机器人/图形 Bench 覆盖表，以及 5 行接入 SDK。",
+        title: "已重构 <em>软件生态</em> 与支持的 Bench 全景。",
+        lead: "我们没有另起炉灶要求用户重写工程，而是把行业主流仿真器接口、场景格式和渲染 API（<strong>MuJoCo / MJX</strong>、<strong>Isaac Replicator</strong>、<strong>Blender Cycles</strong>、<strong>OpenUSD</strong>、<strong>OptiX</strong>、<strong>gsplat</strong>、<strong>DLSS 3.5</strong>、<strong>ReSTIR</strong>）直接改造成零拷贝编译进 TPU XLA / Pallas。",
+        sdkBar: "极速接入 SDK · tpu_mjx_render.adapters 统一编译入口",
+        ecoTag: "8 大 DROP-IN TPU 适配器 · 点击直达 GITHUB 源码",
+        ecoTitle: "我们为 Google TPU 重构了哪些仿真器、渲染器与 DCC 管线",
+        ecoSub: "点击右上角文件名即可直达 GitHub 仓库 tpu_mjx_render/adapters/ 查看源码实现。",
+        adapters: [
+          ["MuJoCo / MJX 与官方 Menagerie", "mjx_universal.py", "零改模直接编译官方 MjModel、MJCF XML 与 Menagerie 多网格机器人至 Wide-BVH-64 + 解析几何，并支持穿透 mjx.step 的 jax.grad 可微视觉伺服。", "266k FPS (4芯) / 411k FPS (32芯) · Menagerie 1.9k–4.3k FPS"],
+          ["NVIDIA Isaac Sim & Omniverse Replicator", "isaac_replicator.py", "原生重实现 TiledCamera（RGB/Depth/Normal/Seg/Flow）、rep.randomizer.* XLA 域随机化、128x2048 激光雷达与 GelSight 视触觉管线。", "RoboTwin 123.9k cam-FPS (+0.32% DR) · 32芯 LiDAR 63.88B/s"],
+          ["Blender 4.x / Cycles .blend 直编器", "blend_compiler.py", "自动递归解析任意 .blend 的 Cycles 材质节点图（Principled/Glass/Glossy/SSS）与 Depsgraph 修改器实例，直编 TPU ScenePack + AgX。", "BMW27 37.65 dB · Monster 36.98 dB · Barbershop 31.00 dB"],
+          ["Pixar / Disney OpenUSD 编译加载器", "openusd_loader.py", "原生解析 .usd / .usda / .usdc / .usdz 中的 UsdGeom.Mesh、PointInstancer 与 BasisCurves，直入 TPU 两级 Wide-TLAS-64。", "迪士尼 Moana 223 亿面仅占 4.65 GiB · 4K 5.13s / 8K 17.24s"],
+          ["NVIDIA OptiX 等价 Python/JAX SDK", "tpu_optix.py", "在 TPU 上复刻 OptixDeviceContext、accelBuild(GAS/IAS)、可编程 ShaderBindingTable（raygen/miss/closesthit/anyhit）与动态布料 Refit。", "布料 BVH Refit 973.3 FPS (0.0 m 误差) · 32芯 171.8 亿唯一面"],
+          ["gsplat 风格 3DGS / 4DGS 引擎", "tpu_gsplat.py", "无动态 HBM Gather 的分块 VMEM EWA 高斯光栅化器：兼容 32 视角 jax.grad 快速训练与 SE(3) 动态 4DGS 物理碰撞。", "14.2万 (4芯) / 95.2万 FPS (32芯) · 10.62 亿高斯 · 原生 8K 实景"],
+          ["NVIDIA DLSS 3.5 与光线重建降噪器", "tpu_dlss.py", "精确 4x4 运动矢量重投影 + YCoCg 历史钳位 + BF16 MXU 2x 超分、4K 路径追踪降噪与零光追静态 G-Buffer 交互重打光。", "TPU-DLSS 3.5 4K 58.9 FPS · 4K 降噪 87.8 FPS · 重打光 78.6 FPS"],
+          ["SIGGRAPH ReSTIR DI 多光源重采样", "tpu_restir.py", "纯 XLA 流式 M=32 RIS 与时空蓄水池复用，无需 CPU 回传即可应对 1,024 盏动态光源复杂照明。", "1,024 盏灯庭院 21.89 dB（+11.61 dB，HDR 方差降 7.43 倍）"]
+        ],
+        bmkTag: "基准覆盖矩阵 · 真机实测 vs. 接口直连兼容",
+        bmkTitle: "已验证具身智能、机器人与电影级图形 Bench 一览",
+        bmkSub: "严格区分已在 TPU v5p 跑出真实记录的 Benchmark 与通过标准 MJCF / OpenUSD 接口即插即用的套件（未实测绝不虚标数字）。",
+        benchSupportRows: [
+          ["<strong>RoboTwin</strong>（双臂桌面操控与域随机）", "<code>isaac_replicator</code> + <code>mjx_universal</code>", "<span class='badge ok'>真机已测</span>", "16 自由度双臂 + 三相机 Replicator DR：<strong>123,858 cam-FPS</strong>（41,286 env/s，DR 开销仅 +0.32%）。"],
+          ["<strong>RoboWild</strong>（实景 3DGS / 4DGS x MJX 交互）", "<code>tpu_gsplat</code> + <code>mjx_universal</code>", "<span class='badge ok'>真机已测</span>", "真实 Mip-NeRF <code>kitchen</code> 内 Panda 实臂撞推 12.56 万乐高推土机高斯（+16.43 cm，1080p 5.32 / 4K 1.30 FPS）。"],
+          ["<strong>MuJoCo Menagerie</strong>（DeepMind 官方机器人库）", "<code>mjx_universal</code>", "<span class='badge ok'>真机已测</span>", "未改模型官方 MJCF 直编：Aero Hand <strong>4,284 FPS</strong>、Panda <strong>3,131</strong>、宇树 G1 <strong>2,546</strong>、Go2 <strong>1,863</strong>（4 芯 64²）。"],
+          ["<strong>千帧工厂 Sim-to-VLA + GelSight 视触觉</strong>", "<code>isaac_replicator</code> + <code>tactile_kernel</code>", "<span class='badge ok'>真机已测</span>", "<strong>142.6 s</strong> 生成百万帧 VLA，ViT-Tiny 在线训练 <strong>7,143 FPS</strong>（仅 -1.84% 开销），4 路 GelSight <strong>270,625/s</strong>。"],
+          ["<strong>零拷贝闭环 Vision RL</strong>（Cartpole/Panda/Humanoid）", "<code>mjx_universal</code> + <code>shard_map</code>", "<span class='badge ok'>真机已测</span>", "像素全片上闭环 PPO：Cartpole <strong>656.4k/s</strong>（94.2%）、Panda <strong>211.6k/s</strong>（32 芯 411k E2E）、Humanoid <strong>292.0k/s</strong>。"],
+          ["<strong>自动驾驶 8 路环视 + 双 128 线激光雷达</strong>", "<code>isaac_replicator</code> + <code>tpu_optix</code>", "<span class='badge ok'>真机已测</span>", "8x1080p + 2x128x2048 实测 <strong>66.8 cam-FPS</strong>（3.13e-8 m 误差），32 芯批量 LiDAR <strong>638.8 亿射线/秒</strong>。"],
+          ["<strong>Blender Open Data &amp; Studio</strong>（8 大标准场景）", "<code>blend_compiler</code>", "<span class='badge ok'>真机已测</span>", "BMW27 <strong>37.65 dB</strong>、Monster <strong>36.98 dB</strong>、Barbershop <strong>31.00 dB</strong>、Barcelona 5,491 万面及 Junkshop / Monk / Fishy Cat / Classroom。"],
+          ["<strong>迪士尼 Moana OpenUSD + Mip-NeRF 360 &amp; Bistro</strong>", "<code>openusd_loader</code> + <code>tpu_gsplat</code>", "<span class='badge ok'>真机已测</span>", "Moana <strong>223 亿面</strong>（4K 晴天/日落/8K/MJX），4 景 Mip-NeRF 360 4K（8K garden <strong>29.2 MPix/s</strong>），千万级 Bistro x MJX。"],
+          ["<strong>RoboDojo / MuJoCo Playground / ALOHA / ManiSkill</strong>", "<code>mjx_universal</code> + <code>openusd_loader</code> + <code>isaac_replicator</code>", "<span class='badge cyan'>接口直连兼容</span>", "所有导出为标准 MJCF XML、OpenUSD .usd 或调用 <code>rep.randomizer</code> 的任务均可直接传入 <code>tpu_rtx.compile(...)</code> 运行（<code>out/metrics/</code> 暂未单独登记其跑分）。"]
+        ]
       },
       c3: {
-        num: "03 / 08 · 电影、布料与物理光学",
-        rail: "两组全宽左右拉杆对比（6 大 Blender Cycles 真值 + 8 组物理光学与布料）与 5 张完整单场景 4K/8K Moana 与焦散大图。",
-        title: "223 亿面 <em>Moana</em>、Cycles 对照、布料与物理光学。",
-        lead: "全站彻底去除多宫格拼图：先在下方两组<strong>可交互左右拉杆实验室</strong>中逐像素对照 6 大 Blender Cycles 官方真值与 8 组物理光学/可变形布料变化，再欣赏 5 张全宽完整无裁剪的 Moana 4K/8K 与焦散单场景大图。"
+        num: "03 / 06 · 视觉画质与拉杆对比",
+        rail: "全站所有电影、光学、3DGS 与神经超分画质对比一章看尽：两组主拉杆 + 5 张纯净 4K/8K 大图 + 4K 实景 3DGS + 神经重打光拉杆。",
+        title: "<em>真实画质检验</em>：电影、波动光学与实景 3DGS。",
+        lead: "全部黑边与字条瑕疵已裁净、剔除多宫格拼图与缺陷图：下方依次为 6 大 Blender Cycles 左右拉杆、8 组物理光学与布料拉杆、5 张无暇 4K/8K 电影光学大图（含晴天 Moana 绿松石泻湖与棱镜色散）、5 景原生 4K 3DGS 大舞台（含无 HUD 版 RoboWild）及神经渲染拉杆。"
       },
       c4: {
-        num: "04 / 08 · 3DGS 与 MXU 神经渲染",
-        rail: "原生 4K 实景 3DGS 单图切换大舞台（5 景）+ 4DGS 物理推挤 / TPU-DLSS 3.5 / 4K 降噪 / 重打光 5 组左右拉杆。",
-        title: "TPU 原生 <em>3DGS / 4DGS</em>、<code>TPU-DLSS 3.5</code> 与 4K 重打光。",
-        lead: "在下方全宽大舞台直接切换 5 个原生 4K 真实重建场景（点击画面开启 1:1 像素放大镜），并拖动 5 组神经滑块对比 <code>4DGS × MJX</code> 推挤、<strong>TPU-DLSS 3.5</strong>（4K <code>58.9 FPS</code>）、<strong>4K 降噪</strong>（<code>87.8 FPS</code>）与<strong>零光追重打光</strong>（<code>78.6 FPS</code>）。"
+        num: "04 / 06 · 性能剖析与 32 芯实测",
+        rail: "32 芯整集群（8 机 3.064 TB HBM）实测扩展卡片 + 5 张全宽性能剖析大图（公开包括负优化在内的完整过程）。",
+        title: "<em>587×</em> 性能演进与 32 芯集群扩展（3.06 TB HBM）。",
+        lead: "从单芯到完整 <strong>8 机 32 芯 TPU v5p-64 集群</strong>（<code>3.064 TB HBM</code>，仅 <code>395.07 s</code> 一次跑通全部 5 套极限压测）的每一项数字均有 JSON 原始日志对应；随后 5 张全宽性能图完整保留负优化试验与 <code>64 MiB</code> VMEM 溢出边界。"
       },
       c5: {
-        num: "05 / 08 · 训练曲线与具身智能",
-        rail: "4 组真实 TPU 训练收敛曲线与 MuJoCo Menagerie 全宽单场景 PBR 机器人大舞台（G1、Go2、Panda、Aero Hand）。",
-        title: "TPU 显存内闭环训练：<em>可微物理</em>、PPO 与具身机器人。",
-        lead: "下方 4 张全宽矢量图直接抽取自 <code>out/metrics/*.json</code> 真机日志，并附上可逐台切换、全宽无裁剪的 <strong>MuJoCo Menagerie</strong> PBR 机器人大舞台（宇树 G1、Go2、Franka Panda、Aero Hand）。"
+        num: "05 / 06 · 具身智能训练与机器人",
+        rail: "4 组 TPU 显存内训练收敛与吞吐曲线 + 5 台真实机器人 PBR 大舞台（RoboTwin 双臂、G1、Go2、Panda、Aero Hand）。",
+        title: "TPU 显存内训练：<em>可微物理</em>、Vision PPO 与真实机器人。",
+        lead: "物理步进、触觉/雷达传感器、损失计算与梯度反传全部同驻 TPU HBM。下方呈现 4 张全宽训练/传感器遥测图与 <strong>RoboTwin 双臂 + MuJoCo Menagerie</strong> PBR 大舞台。"
       },
       c6: {
-        num: "06 / 08 · 工程复盘与失败案例",
-        rail: "直面真实踩坑：隐藏的 151 MB Gather、反输给 XLA 的初版 Pallas、3 连败才过门的神经着色器，以及被 QA 拦截的真实“翻车图”。",
-        title: "TPU 踩坑实录：<em>负优化复盘</em> 与 QA 淘汰样本。",
-        lead: "只展示完美成片往往掩盖系统落地的真实难度。这一章完整公开 4 个核心工程踩坑/负优化记录，以及 2 张真实被我们 <strong>Visual QA 门禁淘汰</strong>的反面样本（全宽单张呈现、绝不美化）。",
+        num: "06 / 06 · 踩坑、边界与全量数据",
+        rail: "4 个真实负优化复盘、2 张被 QA 拦截的淘汰成片、引自 wenhaochai/rtx-h100 的坦诚对照、21 项可溯源 JSON 账本与 26 景目录。",
+        title: "<em>工程踩坑</em>、坦诚边界与 21 份溯源账本。",
+        lead: "完整公开 4 次真实踩坑/负结果、2 张被 <strong>Visual QA 门禁淘汰</strong>的反面成片、对照 <code>wenhaochai/rtx-h100</code> 的坦诚能力边界、可切换遥测面板、<strong>21 份 GitHub 溯源 JSON 账本</strong>及全部 <strong>26 张无暇单场景</strong>直达目录。",
         pmCards: [
-          ["翻车 -> 破局", "E10 / E11 / E12", "1. 以为求交慢，结果 90% 耗时卡在 151 MB 棋盘格 Gather", "早期 Amdahl 剖面揪出惊人真相：286.5 ms 帧耗时里 >90% 根本不在 BVH，而在一块棋盘地面触发的动态 HBM gather geom_xmat[b_idx, safe_gid]。", "改为静态迭代后着色暴降 4.4x（286.5 -> 64.9 ms），单芯直冲 12,843 FPS、4 芯 50,131 FPS（gather_ops = 0）。"],
-          ["负结论反演", "E14 vs Wave 3", "2. 手写 Pallas 3DGS 反输给纯 XLA 1.81 倍", "初版 MXU 对数空间 Pallas 核（gs3d_pallas）仅跑 658.6 FPS，大幅落后纯 XLA jax_tile（1,193.2 FPS）——原因是 (BT, 64, 128) 对齐填充让写出膨胀 16 倍且触发 65,536 次碎 DMA。", "先如实保留负结论与 jax_tile 基线，随后重做 VMEM 分块 EWA 排序（gs3d_v3），一举实现 119 倍逆袭（142,008 FPS，4 芯装 3 亿高斯）。"],
-          ["3 连败 -> 全过门", "E4 / E5 / E6a -> E6b", "3. Stage-2 神经着色器前 3 轮消融全败", "M1 像素级 MLP 无感受野导致软阴影发虚（27.80 dB）；窄 W32 U-Net 夹爪遮挡错位 10%；Loss 内加 jnp.clip 直接在 Step-1 杀死梯度（卡死 15.20 dB）。", "加入 reflect(V, N) + Fresnel N·V、双 1x1 BRDF 跳连、去 clip 全局梯度裁剪并补强紧握样本后，38.35 dB / 0.9889 SSIM 8/8 项门禁全过。"],
-          ["多机踩坑 -> 已实测打通", "32 芯整集群 395.1 s", "4. 跨节点 MJX 非本地数组与多行 SSH 清理残留", "8 机（32 芯）分布式启动时，mjx.put_model(m, impl='jax') 默认 device=None 会生成跨机数组并触发 IFRT 崩溃；早期多行 PID 换行清理曾锁住 /dev/vfio/3。", "已修补 device=local_devs[0] 与单行 tr 清理并清回 8/8 IDLE；随后在获批的 2 小时 8 机独占窗口内仅用 395.07 s 一次跑通全部 32 芯（3.064 TB HBM）压测：41.1 万 FPS E2E、95.2 万 FPS 3DGS、10.62 亿高斯、638.8 亿 LiDAR 射线/秒、171.8 亿唯一三角面与 8K 1,650 spm，并在 15 分钟内清回 8/8 IDLE 交还团队。"]
+          ["翻车 -> 破局", "棋盘格隐式 Gather 瓶颈", "1. 以为求交慢，结果 90% 耗时卡在 151 MB 棋盘格 Gather", "早期 Amdahl 剖面揪出惊人真相：286.5 ms 帧耗时里 >90% 根本不在 BVH，而在一块棋盘地面触发的动态 HBM gather geom_xmat[b_idx, safe_gid]。", "改为静态迭代后着色暴降 4.4x（286.5 -> 64.9 ms），单芯直冲 12,843 FPS、4 芯 50,131 FPS（gather_ops = 0）。"],
+          ["负结论反演", "3DGS 初版 Pallas 负优化", "2. 手写 Pallas 3DGS 反输给纯 XLA 1.81 倍", "初版 MXU 对数空间 Pallas 核（gs3d_pallas）仅跑 658.6 FPS，大幅落后纯 XLA jax_tile（1,193.2 FPS）——原因是 (BT, 64, 128) 对齐填充让写出膨胀 16 倍且触发 65,536 次碎 DMA。", "先如实保留负结论与 jax_tile 基线，随后重做 VMEM 分块 EWA 排序（gs3d_v3），实现 119 倍逆袭（4 芯 14.2 万 / 32 芯 95.2 万 FPS、10.62 亿高斯）。"],
+          ["3 连败 -> 全过门", "神经着色器门禁消融", "3. Stage-2 神经着色器前 3 轮消融全败", "纯像素级 MLP 无感受野导致软阴影发虚（27.80 dB）；窄 W32 U-Net 夹爪遮挡错位 10%；Loss 内加 jnp.clip 直接在 Step-1 杀死梯度（卡死 15.20 dB）。", "加入 reflect(V, N) + Fresnel N·V、双 1x1 BRDF 跳连、去 clip 全局梯度裁剪并补强紧握样本后，38.35 dB / 0.9889 SSIM 8/8 项门禁全过。"],
+          ["多机踩坑 -> 已实测打通", "32 芯整集群 395.1 s", "4. 跨节点 MJX 非本地数组与多行 SSH 清理残留", "8 机（32 芯）分布式启动时，mjx.put_model(m, impl='jax') 默认 device=None 会生成跨机数组并触发 IFRT 崩溃；早期多行 PID 换行清理曾锁住 /dev/vfio/3。", "修补 device=local_devs[0] 与单行 tr 清理后，在 8 机独占窗口内仅用 395.07 s 跑通全部 32 芯压测：41.1 万 FPS E2E、95.2 万 FPS 3DGS、10.62 亿高斯、638.8 亿 LiDAR 射线/秒、171.8 亿唯一面与 8K 1,650 spm，15 分钟内清回 8/8 IDLE 归还。"]
         ],
         ablationRows: [
           ["Phase-0 锁定硬阈值", ">= 30.0 dB", ">= 28.0 dB", "<= 0.010", "<span class='badge cyan'>必须 8/8 全通过</span>"],
           ["Stage 1 解析直接光基线", "13.83 dB", "—", "—", "仅硬阴影，无软阴影与间接光"],
-          ["E4: M1_pixel_128 (仅 1x1 MLP)", "27.80 dB", "23.52 dB", "0.0500 (7/140)", "<span class='badge fail'>FAIL</span> 缺少空间感受野"],
-          ["E5: M2_spatial_32 (窄通道 W32)", "35.58 dB", "27.79 dB", "0.1000 (14/140)", "<span class='badge fail'>FAIL</span> 接触区域边缘错位"],
-          ["E6a-3: M2_spatial_128 + jnp.clip", "15.20 dB", "—", "—", "<span class='badge fail'>FAIL</span> Step-1 梯度饱和归零"],
-          ["E6b: M2_spatial_128 (24-ch BRDF 终版)", "<strong>38.35 dB</strong>", "<strong>30.31 dB</strong>", "<strong>0.00714 (1/140)</strong>", "<span class='badge ok'>PASS (8/8)</span> SSIM 0.9889, 边缘 0.157 px"]
+          ["M1 像素级 MLP (1x1, 150 ep)", "27.80 dB", "23.52 dB", "0.0500 (7/140)", "<span class='badge fail'>FAIL</span> 缺少空间感受野"],
+          ["M2 空间 U-Net (窄通道 W32)", "35.58 dB", "27.79 dB", "0.1000 (14/140)", "<span class='badge fail'>FAIL</span> 接触区域边缘错位"],
+          ["M2 空间 U-Net + jnp.clip Loss", "15.20 dB", "—", "—", "<span class='badge fail'>FAIL</span> Step-1 梯度饱和归零"],
+          ["M2 空间 U-Net (24-ch BRDF 终版)", "<strong>38.35 dB</strong>", "<strong>30.31 dB</strong>", "<strong>0.00714 (1/140)</strong>", "<span class='badge ok'>PASS (8/8)</span> SSIM 0.9889, 边缘 0.157 px"]
         ],
         rejected: [
           {
@@ -1150,7 +1202,7 @@ window.TPU_RTX_DATA = {
             img: "./assets/postmortem/rejected_openusd_clay.webp",
             banner: "QA 已拦截淘汰 · 早期未绑定贴图的“白模泥塑感”",
             title: "淘汰样本 A：早期 OpenUSD 几何管线直出（v3_w2_openusd_4k）",
-            desc: "问题诊断：在完整接入迪士尼 Ptex/材质节点编译之前，远景植被与水面反射退化成平淡白模。已由第 03 章的黄金日落、珊瑚礁焦散与 Moana×MJX 4K 成片全面替代。"
+            desc: "问题诊断：在完整接入迪士尼 Ptex/材质节点编译之前，远景植被与水面反射退化成平淡白模。已由第 03 章的晴天泻湖、黄金日落与 Moana×MJX 4K 成片全面替代。"
           },
           {
             id: "rejected_garden_seams",
@@ -1159,49 +1211,38 @@ window.TPU_RTX_DATA = {
             title: "淘汰样本 B：早期 32 视角 3DGS 训练可视化（v3_w3_garden_32v_grad）",
             desc: "问题诊断：早期 tile 局部累积边界直接截断了跨 16x16 tile 的高斯尾迹，导致画面出现肉眼可见的方格拼缝与黑底裁切。成片已淘汰并公开展示反面样本，对应 31.31 dB 数值训练日志已单独验证真实。"
           }
-        ]
-      },
-      c7: {
-        num: "07 / 08 · 遥测、账本与索引",
-        rail: "切换五大子系统实测条形图、零溢出 21 项可溯源 JSON 账本，以及全站 25 张独立大图快速直达目录（无小图缩略堆积）。",
-        title: "性能控制台、<em>21 份溯源 JSON</em> 与单场景索引。",
-        lead: "每一项核心数据都能直接点开 GitHub <code>out/metrics/*.json</code> 核对（精简 <code>JSON ↗</code> 链接保证表格零横向溢出）；下方目录提供全站 25 张无裁剪单场景的一键灯箱直达，不再重复堆砌小缩略图。"
-      },
-      c8: {
-        num: "08 / 08 · 32 芯集群扩展与署名",
-        rail: "32 芯 8 机（3.064 TB HBM）实测对比 4 芯基线、坦诚边界、引自 wenhaochai/rtx-h100 的硬件对照、Feiyang Liu 署名与 BibTeX。",
-        title: "<em>32 芯 TPU 集群</em>（3.06 TB 显存）、边界与 <code>rtx-h100</code>。",
-        lead: "汇总 8 机 32 芯 Pod Capstone（<code>3.064 TB</code> HBM，全程 <code>395.07 s</code> 实测收口）与单机 4 芯基线（<code>383 GB</code> HBM）扩展对照、引用 <code>wenhaochai/rtx-h100</code> 的坦诚对比，以及 Feiyang Liu BibTeX 引用卡。",
-        honest: "全页所有指标均来自真机 TPU v5p 实测（单芯、单机 4 芯或 8 机 32 芯分布式集群均已明确标注，零注水外推）。同时坦诚写明 GPU 依然领先的领域：亚秒级互动视口响应、硬件 RT Core 应对随机多反弹分支，以及单卡 Cycles 极速渲染（Chai et al., 2026）。",
+        ],
+        honest: "全页所有指标——涵盖单芯、单机 4 芯（383 GiB HBM）以及完整 8 机 32 芯 TPU v5p-64 集群（3.064 TB HBM，v3_pod_v5p64_capstone.json）——均为真机实测结果，零注水外推。尚未单独上传 JSON 跑分的标准套件（RoboDojo、MuJoCo Playground、ALOHA、ManiSkill）均明确标注为「接口直连兼容」。同时我们坦诚记录 GPU 依然绝对领先的领域：亚秒级互动编辑器响应、硬件 RT Core 应对随机多反弹路径分支，以及单卡 Cycles 渲染速度（Chai et al., 2026）。",
         authorBio: "聚焦编译器原生图形渲染、可微物理仿真与 TPU/AI 加速器高吞吐具身智能系统的研究者与工程师。",
         ack: "第三方资产与参考致谢：Walt Disney Animation Studios Moana Island Scene v2.1（非商业研究许可）；Blender Open Data / Blender Studio 场景（BMW27、Barcelona Pavilion、Barbershop、Classroom、Junkshop、Lone Monk、Monster Under the Bed、Fishy Cat — CC0 / CC-BY）；Mip-NeRF 360 真实摄影测量数据集；Google DeepMind mujoco_menagerie（Apache-2.0 / BSD）；Chai 等（2026）wenhaochai/rtx-h100 H100/RTX PRO 6000 Cycles 基准数据。"
       },
       podStats: [
-        ["基准 1 & 2 · 具身物理 + 3DGS (4 芯 -> 32 芯)", "411,023 FPS E2E  |  952,248 FPS 3DGS", "从 4 芯 5.15 万 FPS 接近线性扩展 8x 至 32 芯 41.10 万 FPS（B=131k）；128² 3DGS 达 95.22 万 FPS，外加 ICI 分布式 10.62 亿高斯 @ 1080p（3.41 s）。"],
+        ["基准 1 & 2 · 具身物理 + 3DGS (4 芯 -> 32 芯)", "411,023 FPS E2E  |  952,248 FPS 3DGS", "从 4 芯 5.15 万 FPS 扩展 7.97x 至 32 芯 41.10 万 FPS（B=131k）；128² 3DGS 达 95.22 万 FPS，外加 ICI 分布式 10.62 亿高斯 @ 1080p（3.41 s）。"],
         ["基准 3 · 128x2048 批量 360° 激光雷达 (32 芯)", "243,676 env-FPS  |  每秒 638.8 亿条射线", "8 机 32 芯上 B=16,384 并发 128x2048 线 LiDAR 仅 67.2 ms（B=32,768 达 229,060 env-FPS / 600.5 亿射线/秒，gather_ops=0）。"],
         ["基准 4 · 几何分片唯一三角面上限 (32 芯)", "171.8 亿唯一非实例化三角面 (1.18 TB HBM)", "ICI jax.lax.pmin 相对 4 芯 21.5 亿实现整整 8x 扩展：171.8 亿唯一面 4K 4.46 s / 8K 8.53 s（85.9 亿面 4K 2.43 s / 8K 4.70 s）。"],
         ["基准 5 · 空间分片原生 8K 3-Bounce 路径追踪 (32 芯)", "7680x4320 达 1,650.2 spm (7.54x 扩展)", "3,318 万像素无偏 3 次反弹蒙特卡洛全局光（5.475 GRays/s）：4 spp 仅 145.4 ms（6.88 FPS），1 spp 达 37.5 ms（26.69 FPS，零回调）。"]
       ],
       compRows: [
-        ["具身视觉 RL、VLA 与触觉", "<strong>单张 XLA 零拷贝图</strong>：端到端 <code>266k FPS</code>、142.6s 生成百万帧、GelSight <code>270.6k/s</code>、Sim-to-VLA 仅 <code>-1.84%</code> 开销", "静态离线渲染器（无交互式 RL 闭环）", "成熟的 CUDA Warp / Isaac 生态与 RTX/H100 工具链"],
-        ["Real-to-Sim 3DGS / 4DGS + 物理", "<strong>零 Gather 原生 TPU</strong>：<code>142k FPS</code>（<code>64²</code>）、4 芯 <code>3 亿</code>高斯 4K、<code>8K garden 29.2 MPix/s</code>、实时 <code>4DGS x MJX</code> 推挤", "仅支持 Cycles Mesh + NRC", "需要独立 CUDA gsplat 与 USD/PhysX 跨端桥接"],
+        ["具身视觉 RL、VLA 与触觉", "<strong>单张 XLA 零拷贝图</strong>：4 芯 <code>266k FPS</code> / 32 芯 <code>411k FPS</code>、142.6s 生成百万帧、GelSight <code>270.6k/s</code>", "静态离线渲染器（无交互式 RL 闭环）", "成熟的 CUDA Warp / Isaac 生态与 RTX/H100 工具链"],
+        ["Real-to-Sim 3DGS / 4DGS + 物理", "<strong>零 Gather 原生 TPU</strong>：<code>14.2 万</code> (4芯) / <code>95.2 万</code> (32芯)、<code>10.62 亿</code>分布式高斯、<code>8K garden 29.2 MPix/s</code>、实时 <code>4DGS x MJX</code>", "仅支持 Cycles Mesh + NRC", "需要独立 CUDA gsplat 与 USD/PhysX 跨端桥接"],
         ["端到端可微物理 + 光追渲染", "<strong>36.08 dB / 末端误差 1.63 cm</strong>：<code>jax.value_and_grad(mjx.step + PBR)</code> 实测 <code>27.9 grad-steps/s</code>", "不可微离线路径追踪器", "需单独组合 Warp 可微物理与 Nvdiffrast"],
-        ["电影 OpenUSD 与 Blender 路径追踪", "<strong>超大场景编译上限</strong>：迪士尼 <em>Moana</em>（<code>223 亿</code>面仅 4.65 GiB）、<code>BMW27 37.65 dB</code>、<code>Monster 36.98 dB</code>", "<strong>绝对速度标杆 (wenhaochai/rtx-h100)</strong>：单卡 H100 达 <code>55,148 spm</code>（7.8× Blender），RTX PRO 6000 OptiX 达 <code>78,297 spm</code>（NRC 39.9 img/s）", "完整 Omniverse / OptiX 实时互动视口"],
+        ["电影 OpenUSD 与 Blender 路径追踪", "<strong>超大场景编译上限</strong>：迪士尼 <em>Moana</em>（<code>223 亿</code>面仅 4.65 GiB）、<code>BMW27 37.65 dB</code>、32 芯 <code>171.8 亿</code>唯一面", "<strong>绝对速度标杆 (wenhaochai/rtx-h100)</strong>：单卡 H100 达 <code>55,148 spm</code>（7.8x Blender），RTX PRO 6000 OptiX 达 <code>78,297 spm</code>（NRC 39.9 img/s）", "完整 Omniverse / OptiX 实时互动视口"],
         ["AI 重打光、降噪与超分 DLSS", "<strong>原生 MXU BF16/INT8</strong>：4K 降噪 <code>87.8 FPS</code>、4K DLSS <code>58.9 FPS</code>、零光追重打光 4K <code>78.6 FPS</code> / 1080p <code>307 FPS</code>", "NRC-scatter <code>40.4 img/s</code>（H100 32-spp）", "专用 Tensor Core 硬件 DLSS 3.5 与光线重建"]
       ],
       ui: {
         copy: "复制", copied: "已复制", zoom4k: "检视原图 ↗", loupe: "1:1 像素放大镜 (L)", raw: "打开完整原图 ↗",
         footerL: "TPU-RTX · Google Cloud TPU v5p (JAX + Pallas Mosaic · 零 host_callbacks · 零 HBM Gather)",
         searchPlaceholder: "搜索实验名称、场景或 JSON 文件名...",
-        b_mjx: "MJX 与具身仿真 (w0/w1/w6)", b_gs3d: "3DGS / 4DGS / 3 亿高斯 (w3)", b_cinema: "Moana / 布料 / Blender (w2/w5/w7)", b_dlss: "TPU-DLSS 3.5 与重打光 (w4)", b_fx: "路径追踪 / ReSTIR / 光学 (w7/w6)",
-        g_all: "全部单场景 (25)", g_film: "Moana 与 Blender Studio (10)", g_optics: "物理光学与焦散 (4)", g_gs3d: "实景 3DGS / Bistro (5)", g_robotics: "Menagerie PBR 机器人 (4)", g_rej: "QA 淘汰案例 (2)",
+        b_mjx: "具身与机器人仿真", b_gs3d: "3DGS / 4DGS / 10.6 亿集群", b_cinema: "Moana / 布料 / Blender", b_dlss: "TPU-DLSS 3.5 与重打光", b_fx: "路径追踪与物理光学",
+        g_all: "全部单场景 (26)", g_film: "Moana 与 Blender Studio (10)", g_optics: "物理光学与焦散 (3)", g_gs3d: "实景 3DGS / Bistro (6)", g_robotics: "Menagerie 与 RoboTwin (5)", g_rej: "QA 淘汰案例 (2)",
         th1: "任务类型", th2: "TPU-RTX (Google TPU v5p)", th3: "GPU Cycles (wenhaochai/rtx-h100)", th4: "NVIDIA Isaac Sim / OptiX",
         gvt1: "对比维度", gvt2: "Google Cloud TPU v5p (TPU-RTX)", gvt3: "NVIDIA GPU (RTX / H100 / Isaac)",
+        bs1: "Benchmark / 套件", bs2: "适配模块栈", bs3: "状态", bs4: "真机实测指标或兼容范围",
         ab1: "Stage-2 神经着色器消融阶段", ab2: "PSNR (dB)", ab3: "夹爪接触区 PSNR", ab4: "遮挡错位率", ab5: "门禁结果与归因",
         ld_all: "全部 (21)", ld_rob: "具身与仿真", ld_film: "电影与布料", ld_gs: "3DGS/4DGS", ld_nn: "神经/光学",
         lt1: "实验项目", lt2: "配置与规模", lt3: "实测吞吐", lt4: "精度与对齐状态", lt5: "JSON",
-        ev_t: "时间顺序步骤包络图 · 公开负优化实验", ev_h: "587x 光追管线演进曲线（453 -> 266,209 FPS）", ev_s: "按时间标注每次新高及平缓/负优化实验（参考 wenhaochai/rtx-h100 图表范式）。",
-        gs_t: "对数尺度反转 · 3D 高斯溅射", gs_h: "3DGS 演进曲线：从 Pallas 负结论（-1.81x）逆袭至 14.2 万 FPS / 3 亿高斯", gs_s: "放弃膨胀写出的初版 Pallas 后重构 VMEM 分块 EWA，实现 142,008 FPS 与 3 亿高斯同驻显存。",
+        ev_t: "时间顺序步骤包络图 · 公开负优化实验", ev_h: "587x 光追管线演进曲线（453 -> 266,209 FPS · 32 芯 411,023 FPS）", ev_s: "按时间标注每次新高及平缓/负优化实验（参考 wenhaochai/rtx-h100 图表范式）。",
+        gs_t: "对数尺度反转 · 3D 高斯溅射", gs_h: "3DGS 演进曲线：负优化 (-1.81x) -> 14.2 万 (4芯) -> 95.2 万 FPS (32芯)", gs_s: "放弃膨胀写出的初版 Pallas 后重构 VMEM 分块 EWA，实现 142,008 FPS (4芯) 与 952,248 FPS + 10.62 亿高斯 (32芯)。",
         vm_t: "硬件物理边界 · 真机扫描", vm_h: "64 MiB VMEM 溢出悬崖（tile_size = 512 骤降 -24%）", vm_s: "单芯 TPU v5p（B=1024）下随 tile_size 从 64 扫至 512 的 E2E FPS 实测。",
         mx_t: "MXU 量化权衡 · 精度 vs 帧率", mx_h: "FP32 vs BF16 vs INT8 W8A8 MXU 精度与吞吐帕累托", mx_s: "BF16 在零 PSNR 掉点（20.276 dB）下将原生 4K 帧率翻倍至 2.11x（78.6 vs 37.2 FPS）；INT8 QAT 仅降 0.047 dB。",
         orb_t: "视角泛化检验 · CYCLES EXR", orb_h: "主视角 vs 多角度留出环绕轨迹 PSNR 对齐", orb_s: "同时公开单一主视角与多机位留出环绕平均 PSNR，防止过拟合单一角度。",

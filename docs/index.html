@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TPU-RTX — Native Ray Tracing, Path Tracing &amp; 3DGS on Google TPU | Feiyang Liu</title>
+  <title>TPU-RTX — Turning Google TPUs into Real-Time Ray-Tracing Engines | Feiyang Liu</title>
   <meta name="author" content="Feiyang Liu" />
   <meta name="description" content="TPU-RTX: Native Google Cloud TPU v5p ray tracing, path tracing, 1.06B-splat 3DGS, 22.30B-tri Moana OpenUSD, 17.18B unique tris &amp; 411k FPS Physical AI by Feiyang Liu." />
 
@@ -15,7 +15,7 @@
   <meta property="og:url" content="https://zaychikliu.github.io/tpu-rtx/" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="TPU-RTX by Feiyang Liu — Native Ray Tracing on Google Cloud TPU v5p" />
-  <meta name="twitter:description" content="GPU vs TPU architecture & tradeoffs, rtx-h100-grade profiling, 19 split-slider comparisons, 23 uncropped standalone scenes &amp; traceable JSON ledger." />
+  <meta name="twitter:description" content="6-chapter interactive monograph: GPU vs TPU silicon, 8 drop-in software retrofits, 19 visual split sliders, 32-chip Pod scaling, Embodied AI &amp; 21-row JSON ledger." />
   <meta name="twitter:image" content="https://zaychikliu.github.io/tpu-rtx/assets/og-cover.jpg" />
 
   <!-- Fonts -->
@@ -56,13 +56,11 @@
 
       <nav class="nav-links" aria-label="Chapters">
         <a href="#ch-01" data-nav="ch-01" data-i18n="nav.c1">01 GPU vs TPU</a>
-        <a href="#ch-02" data-nav="ch-02" data-i18n="nav.c2">02 Evolution</a>
-        <a href="#ch-03" data-nav="ch-03" data-i18n="nav.c3">03 Film &amp; Optics</a>
-        <a href="#ch-04" data-nav="ch-04" data-i18n="nav.c4">04 3DGS &amp; Neural</a>
-        <a href="#ch-05" data-nav="ch-05" data-i18n="nav.c5">05 Training &amp; AI</a>
-        <a href="#ch-06" data-nav="ch-06" data-i18n="nav.c6">06 Post-Mortems</a>
-        <a href="#ch-07" data-nav="ch-07" data-i18n="nav.c7">07 Ledger &amp; Index</a>
-        <a href="#ch-08" data-nav="ch-08" data-i18n="nav.c8">08 Limits</a>
+        <a href="#ch-02" data-nav="ch-02" data-i18n="nav.c2">02 Software &amp; Bench</a>
+        <a href="#ch-03" data-nav="ch-03" data-i18n="nav.c3">03 Visual Proof</a>
+        <a href="#ch-04" data-nav="ch-04" data-i18n="nav.c4">04 Perf &amp; 32-Chip</a>
+        <a href="#ch-05" data-nav="ch-05" data-i18n="nav.c5">05 Embodied AI</a>
+        <a href="#ch-06" data-nav="ch-06" data-i18n="nav.c6">06 Limits &amp; Data</a>
       </nav>
 
       <div class="nav-controls">
@@ -82,7 +80,7 @@
       <div class="hero-meta-row">
         <span class="hero-kicker">
           <span class="kicker-dot" aria-hidden="true"></span>
-          <span data-i18n="hero.kicker">LIVE GOOGLE CLOUD TPU v5p SILICON · ZERO HOST_CALLBACK · ZERO GATHER_OPS</span>
+          <span data-i18n="hero.kicker">LIVE GOOGLE CLOUD TPU v5p SILICON · 4-CHIP &amp; 32-CHIP POD (3.064 TB HBM)</span>
         </span>
         <span class="hero-byline">
           <span data-i18n="hero.by">By</span> <strong>Feiyang Liu</strong> · <span>2026</span> · <span data-i18n="hero.license">Apache-2.0</span>
@@ -95,17 +93,17 @@
         <p class="hero-lead" id="hero-lead"></p>
         <div class="hero-actions">
           <div class="btn-row">
-            <a class="cta-btn primary" href="#ch-01" data-i18n="hero.ctaStart">GPU vs TPU Architecture</a>
-            <a class="cta-btn" href="#ch-07" data-i18n="hero.ctaGallery">Ledger &amp; Plate Index</a>
+            <a class="cta-btn primary" href="#ch-03" data-i18n="hero.ctaStart">Explore Visual Proof</a>
+            <a class="cta-btn" href="#ch-02" data-i18n="hero.ctaGallery">Software &amp; Benchmarks</a>
           </div>
-          <span class="verify-stamp" data-i18n="hero.stamp">Pure Single-Scene Cinema Monograph · Zero Cropped Frames · Zero Collages</span>
+          <span class="verify-stamp" data-i18n="hero.stamp">Single-Scene Cinema Monograph · Zero Cropped Borders · Zero Collages</span>
         </div>
       </div>
 
       <!-- Uncropped Single-Scene 3-Plate Cinema Hero Stage -->
       <div class="cinema-stage">
         <div class="cinema-viewport" id="hero-stage-view" title="Click to open Darkroom Lightbox">
-          <img id="hero-stage-img" src="./assets/singles/moana_sunset.webp" alt="Disney Moana Island Sunset Lagoon 4K on TPU v5p" />
+          <img id="hero-stage-img" src="./assets/singles/moana_mjx_beach.webp" alt="Live MJX Robots on Disney Moana Island Beach 4K" />
         </div>
         <div class="cinema-hud-bar">
           <span id="hero-hud-left"></span>
@@ -113,29 +111,41 @@
         </div>
         <div class="cinema-tabs" id="hero-tabs">
           <button class="cinema-tab active" data-hero="0" type="button">
-            <span class="cinema-tab-idx" data-i18n="hero.t0i">SCENE 01 · OPENUSD SUNSET</span>
-            <span class="cinema-tab-title" data-i18n="hero.t0t">Disney Moana Lagoon Sunset (22.30B Tris, 4K)</span>
+            <span class="cinema-tab-idx" data-i18n="hero.t0i">SCENE 01 · FILM × PHYSICAL AI</span>
+            <span class="cinema-tab-title" data-i18n="hero.t0t">Live MJX Robots on 22.30B-Tri Moana Beach (4K)</span>
           </button>
           <button class="cinema-tab" data-hero="1" type="button">
-            <span class="cinema-tab-idx" data-i18n="hero.t1i">SCENE 02 · FILM × MJX</span>
-            <span class="cinema-tab-title" data-i18n="hero.t1t">Live MJX Robots on Moana Beach (Native 4K)</span>
+            <span class="cinema-tab-idx" data-i18n="hero.t1i">SCENE 02 · REAL-TO-SIM 3DGS</span>
+            <span class="cinema-tab-title" data-i18n="hero.t1t">Live MJX Robots in 10M-Splat Amazon Bistro (4K)</span>
           </button>
           <button class="cinema-tab" data-hero="2" type="button">
-            <span class="cinema-tab-idx" data-i18n="hero.t2i">SCENE 03 · REAL-WORLD 3DGS</span>
-            <span class="cinema-tab-title" data-i18n="hero.t2t">Mip-NeRF 360 Garden @ Native 4K (SH3, 0 Gather)</span>
+            <span class="cinema-tab-idx" data-i18n="hero.t2i">SCENE 03 · BLENDER CYCLES</span>
+            <span class="cinema-tab-title" data-i18n="hero.t2t">Barcelona Pavilion (54.91M Tris, 4K)</span>
           </button>
         </div>
       </div>
 
-      <!-- 8-Cell Hairline KPI Ledger -->
-      <div class="kpi-ledger" id="kpi-ledger"></div>
+      <!-- 4 Big Clean KPI Cards -->
+      <div class="kpi-ledger" id="kpi-ledger" style="margin-bottom: 24px;"></div>
+
+      <!-- 4-Layer System Stack Overview -->
+      <div class="chart-card" style="margin-bottom: 0;">
+        <div class="chart-card-head">
+          <div>
+            <div class="chart-card-tag" data-i18n="hero.stackTag">SYSTEM STACK OVERVIEW · 10-SECOND MAP</div>
+            <div class="chart-card-title" data-i18n="hero.stackTitle">How TPU-RTX Connects TPU v5p Silicon to Robotics, OpenUSD, Blender &amp; 3DGS</div>
+            <div class="chart-card-sub" data-i18n="hero.stackSub">Four clean layers inside one zero-copy XLA HLO compilation graph: Silicon -> 3 Core Kernels -> 8 Software Adapters -> Verified Benchmarks.</div>
+          </div>
+        </div>
+        <div id="chart-system-stack"></div>
+      </div>
     </section>
 
-    <!-- 01. GPU VS TPU ARCHITECTURE, TRADEOFFS & SILICON DESIGN (UPFRONT) -->
+    <!-- 01. WHY TPU? GPU VS TPU SILICON & TRADEOFFS -->
     <section class="chapter reveal" id="ch-01">
       <div class="chapter-grid">
         <aside class="chapter-rail">
-          <div class="chapter-num" data-i18n="c1.num">01 / 08 · GPU VS TPU</div>
+          <div class="chapter-num" data-i18n="c1.num">01 / 06 · WHY TPU?</div>
           <div class="chapter-kicker" data-i18n="c1.rail">First principles: how SIMT RTX GPUs and Systolic TPU MXUs execute ray tracing differently — and where each wins or loses.</div>
         </aside>
         <div>
@@ -153,7 +163,7 @@
             <div id="chart-gpu-vs-tpu"></div>
           </div>
 
-          <div class="table-wrap">
+          <div class="table-wrap" style="margin-bottom: 0;">
             <table>
               <thead>
                 <tr>
@@ -165,65 +175,50 @@
               <tbody id="gvt-tbody"></tbody>
             </table>
           </div>
+        </div>
+      </div>
+    </section>
 
-          <div class="pillar-grid" id="c1-pillars"></div>
+    <!-- 02. SOFTWARE RETROFITS & SUPPORTED BENCHMARKS -->
+    <section class="chapter reveal" id="ch-02">
+      <div class="chapter-grid">
+        <aside class="chapter-rail">
+          <div class="chapter-num" data-i18n="c2.num">02 / 06 · SOFTWARE &amp; BENCH</div>
+          <div class="chapter-kicker" data-i18n="c2.rail">All 8 rebuilt software adapters, 9-row supported benchmark matrix (verified vs. drop-in ready), and 5-line SDK quickstart.</div>
+        </aside>
+        <div>
+          <h2 class="chapter-title" id="c2-title"></h2>
+          <p class="chapter-lead" id="c2-lead"></p>
 
-          <div class="diagram-frame">
-            <svg class="arch-svg" viewBox="0 0 960 250" role="img" aria-label="TPU-RTX Zero-Copy HBM Architecture Diagram">
-              <defs>
-                <marker id="arr-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                  <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--accent)" />
-                </marker>
-                <marker id="arr-c" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                  <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--cyan)" />
-                </marker>
-              </defs>
-              <rect x="8" y="8" width="944" height="234" rx="8" fill="none" stroke="var(--hairline-strong)" stroke-dasharray="6 4" />
-              <text x="24" y="30" class="sub" id="svg-hbm-banner">SINGLE XLA HLO GRAPH · ZERO HOST_CALLBACK · ZERO HBM GATHER_OPS</text>
+          <div class="subsec-head" style="margin-top: 0;">
+            <div class="subsec-tag" data-i18n="c2.ecoTag">8 DROP-IN ADAPTERS · CLICKABLE GITHUB SOURCE</div>
+            <h3 class="subsec-title" data-i18n="c2.ecoTitle">Rebuilt Simulators, DCC Compilers &amp; Rendering APIs for Google TPU</h3>
+            <p class="subsec-sub" data-i18n="c2.ecoSub">Click any file badge to inspect its XLA / Pallas Mosaic implementation inside tpu_mjx_render/adapters/.</p>
+          </div>
+          <div class="adapter-grid" id="adapter-grid"></div>
 
-              <rect x="24" y="48" width="190" height="118" rx="6" class="box" />
-              <text x="38" y="74" class="lbl">HBM STATE / ASSETS</text>
-              <text x="38" y="96" class="sub">mjx.Data (B=8192)</text>
-              <text x="38" y="114" class="sub">OpenUSD / .blend Packs</text>
-              <text x="38" y="132" class="sub">3DGS / 4DGS (up to 300M)</text>
-              <text x="38" y="150" class="sub">95.74 GiB HBM / chip</text>
-
-              <line x1="214" y1="107" x2="254" y2="107" class="arrow" marker-end="url(#arr-a)" />
-
-              <rect x="256" y="48" width="230" height="118" rx="6" class="box-accent" />
-              <text x="270" y="74" class="lbl">PALLAS MOSAIC (64 MiB VMEM)</text>
-              <text x="270" y="96" class="sub">3-Level 64-Ary Wide-BVH</text>
-              <text x="270" y="114" class="sub">pltpu.async_copy Leaf Stream</text>
-              <text x="270" y="132" class="sub">Fused GGX+AO+Shadows / EWA</text>
-              <text x="270" y="150" class="sub">Zero HBM G-Buffer Roundtrip</text>
-
-              <line x1="486" y1="107" x2="526" y2="107" class="arrow" marker-end="url(#arr-a)" />
-
-              <rect x="528" y="48" width="196" height="118" rx="6" class="box-cyan" />
-              <text x="542" y="74" class="lbl">BF16 / INT8 MXU</text>
-              <text x="542" y="96" class="sub">TPU-DLSS 3.5 (58.9 FPS 4K)</text>
-              <text x="542" y="114" class="sub">4K Denoiser (11.39 ms)</text>
-              <text x="542" y="132" class="sub">Static Relight (78.6 FPS 4K)</text>
-              <text x="542" y="150" class="sub">459 TFLOP/s · barrier()</text>
-
-              <line x1="724" y1="107" x2="764" y2="107" class="arrow" marker-end="url(#arr-a)" />
-
-              <rect x="766" y="48" width="170" height="118" rx="6" class="box" />
-              <text x="780" y="74" class="lbl">OUTPUT / POLICY</text>
-              <text x="780" y="96" class="sub">4K/8K Cinema EXR/AgX</text>
-              <text x="780" y="114" class="sub">PPO / ViT-Tiny VLA</text>
-              <text x="780" y="132" class="sub">128×2048 LiDAR + GelSight</text>
-              <text x="780" y="150" class="sub">jax.grad Pixel→Torque</text>
-
-              <path d="M 851 166 L 851 206 L 119 206 L 119 169" class="arrow-cyan" marker-end="url(#arr-c)" />
-              <text x="330" y="224" class="sub">END-TO-END jax.value_and_grad · MULTI-CHIP shard_map + ICI pmin / all_gather</text>
-            </svg>
-            <div class="diagram-cap" id="c1-diag-cap"></div>
+          <div class="subsec-head">
+            <div class="subsec-tag" data-i18n="c2.bmkTag">SUPPORTED BENCHMARKS · VERIFIED VS. DROP-IN READY</div>
+            <h3 class="subsec-title" data-i18n="c2.bmkTitle">Robotics, Embodied AI &amp; Graphics Benchmark Coverage</h3>
+            <p class="subsec-sub" data-i18n="c2.bmkSub">Explicit distinction between directly measured live TPU v5p benchmarks and API-compatible drop-in MJCF / OpenUSD suites.</p>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th data-i18n="bs.h1">Benchmark / Suite</th>
+                  <th data-i18n="bs.h2">Adapter Stack</th>
+                  <th data-i18n="bs.h3">Status</th>
+                  <th data-i18n="bs.h4">Measured Result or Compatibility Scope</th>
+                </tr>
+              </thead>
+              <tbody id="bench-support-tbody"></tbody>
+            </table>
           </div>
 
           <div class="code-panel">
             <div class="code-bar">
-              <span data-i18n="c1.sdkBar">Quickstart SDK · 8 Ecosystem Adapters under tpu_mjx_render.adapters</span>
+              <span data-i18n="c2.sdkBar">Quickstart SDK · Unified Entry Point for Physical AI &amp; Rendering</span>
               <button class="copy-btn" type="button" id="copy-sdk-btn" data-i18n="common.copy">Copy</button>
             </div>
             <pre class="code-body" id="sdk-code">import tpu_rtx
@@ -236,39 +231,80 @@ obs = tpu_rtx.render(mjx_data, scene)  # -&gt; {"rgb", "depth", "normal", "seg_i
       </div>
     </section>
 
-    <!-- 02. SYSTEM EVOLUTION, GENERALIZATION & HARDWARE PROFILING -->
-    <section class="chapter reveal" id="ch-02">
+    <!-- 03. VISUAL PROOF: FILM, PHYSICAL OPTICS & REAL-WORLD 3DGS -->
+    <section class="chapter reveal" id="ch-03">
       <div class="chapter-grid">
         <aside class="chapter-rail">
-          <div class="chapter-num" data-i18n="c2.num">02 / 08 · EVOLUTION &amp; PROFILING</div>
-          <div class="chapter-kicker" data-i18n="c2.rail">Chronological step-envelope optimization log (including negative runs), 3DGS pivot, 64 MiB VMEM cliff, MXU Pareto, and Hero vs. Held-Out Orbit PSNR.</div>
+          <div class="chapter-num" data-i18n="c3.num">03 / 06 · VISUAL PROOF</div>
+          <div class="chapter-kicker" data-i18n="c3.rail">All visual comparisons in one place: 6 Blender Cycles split sliders, 8 optical/cloth sliders, 5 clean 4K/8K cinema plates, 5 4K 3DGS stages &amp; 5 neural sliders.</div>
         </aside>
         <div>
-          <h2 class="chapter-title" id="c2-title"></h2>
-          <p class="chapter-lead" id="c2-lead"></p>
+          <h2 class="chapter-title" id="c3-title"></h2>
+          <p class="chapter-lead" id="c3-lead"></p>
 
-          <!-- Full-width rtx-h100 style Chronological Optimization Envelope -->
-          <div class="chart-card">
-            <div class="chart-card-head">
-              <div>
-                <div class="chart-card-tag" data-i18n="ch.evoTag">CHRONOLOGICAL STEP-ENVELOPE · NEGATIVE RUNS EXPOSED</div>
-                <div class="chart-card-title" data-i18n="ch.evoTitle">587× Optimization Trajectory (453 → 266,209 FPS)</div>
-                <div class="chart-card-sub" data-i18n="ch.evoSub">Every new throughput envelope plus negative/flat runs plotted on live TPU v5p (inspired by wenhaochai/rtx-h100).</div>
-              </div>
+          <!-- Slider Lab 1: TPU-RTX vs Blender Cycles Ground Truth (6 Scenes, borders cleanly trimmed) -->
+          <div class="compare-lab" id="compare-blender"></div>
+
+          <!-- Slider Lab 2: Physical Optics, Bokeh, ReSTIR & Deformable Cloth (8 Effects) -->
+          <div class="compare-lab" id="compare-optics"></div>
+
+          <!-- Full-Width Standalone Single-Scene Cinema Plates (ZERO Defects, ZERO Collages) -->
+          <div class="spread-stack" id="spread-ch3"></div>
+
+          <!-- Full-Width Standalone 4K 3DGS Stage Switcher (5 Scenes incl. RoboWild Panda 4K) -->
+          <div class="cinema-stage" id="stage-3dgs">
+            <div class="cinema-viewport" id="stage-3dgs-view" title="Click to inspect full 4K scene in Darkroom Lightbox">
+              <img id="stage-3dgs-img" src="./assets/singles/robowild_panda_4k.webp" alt="Franka Panda inside Mip-NeRF 360 Kitchen 4K" />
             </div>
-            <div id="chart-evolution"></div>
-            <div class="chart-foot"><span>Source: v2_live_*.json, v3_w0_wave2_100k_fps.json</span><span>host_callbacks = 0</span></div>
+            <div class="cinema-hud-bar">
+              <span id="stage-3dgs-hudL"></span>
+              <span id="stage-3dgs-hudR"></span>
+            </div>
+            <div class="cinema-tabs cols-5" id="stage-3dgs-tabs"></div>
           </div>
 
-          <div class="charts-2col">
+          <!-- Slider Lab 3: 4DGS Push, 4K Denoiser, TPU-DLSS 3.5 & Relighting (5 Presets) -->
+          <div class="compare-lab" id="compare-neural" style="margin-bottom: 0;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04. PERFORMANCE PROFILING & 32-CHIP POD SCALING -->
+    <section class="chapter reveal" id="ch-04">
+      <div class="chapter-grid">
+        <aside class="chapter-rail">
+          <div class="chapter-num" data-i18n="c4.num">04 / 06 · PERF &amp; 32-CHIP</div>
+          <div class="chapter-kicker" data-i18n="c4.rail">Verified 32-chip (8-host, 3.064 TB HBM) scaling highlights plus 5 full-width profiling charts (no hidden negative runs).</div>
+        </aside>
+        <div>
+          <h2 class="chapter-title" id="c4-title"></h2>
+          <p class="chapter-lead" id="c4-lead"></p>
+
+          <!-- Promoted Live 32-Chip Pod Scaling Summary Cards -->
+          <div class="pod-list" id="pod-list"></div>
+
+          <!-- 5 Full-Width Single-Column Profiling Charts -->
+          <div class="charts-2col" style="margin-bottom: 0;">
+            <div class="chart-card">
+              <div class="chart-card-head">
+                <div>
+                  <div class="chart-card-tag" data-i18n="ch.evoTag">CHRONOLOGICAL STEP-ENVELOPE · NEGATIVE RUNS EXPOSED</div>
+                  <div class="chart-card-title" data-i18n="ch.evoTitle">587× Optimization Trajectory on TPU v5p (453 → 266,209 FPS · 32c: 411,023 FPS)</div>
+                  <div class="chart-card-sub" data-i18n="ch.evoSub">Every throughput step plus negative/flat runs plotted cleanly (inspired by wenhaochai/rtx-h100).</div>
+                </div>
+              </div>
+              <div id="chart-evolution"></div>
+              <div class="chart-foot"><span>Source: v2_live_*.json, v3_w0_wave2_100k_fps.json, v3_pod_v5p64_capstone.json</span><span>host_callbacks = 0</span></div>
+            </div>
+
             <div class="chart-card">
               <div>
                 <div class="chart-card-tag" data-i18n="ch.gsTag">LOG-SCALE PIVOT · 3D GAUSSIAN SPLATTING</div>
-                <div class="chart-card-title" data-i18n="ch.gsTitle">3DGS Trajectory: Negative Pallas (-1.81×) → 142k FPS / 300M</div>
-                <div class="chart-card-sub" data-i18n="ch.gsSub">Replacing padded Pallas DMA writes with chunked VMEM EWA unlocks 142,008 FPS &amp; 300M splats in 4c HBM.</div>
+                <div class="chart-card-title" data-i18n="ch.gsTitle">3DGS Trajectory: Negative Pallas (-1.81×) → 142k (4c) → 952k FPS (32c Pod)</div>
+                <div class="chart-card-sub" data-i18n="ch.gsSub">Replacing padded Pallas DMA writes with chunked VMEM EWA unlocks 142k (4c) and 952,248 FPS + 1.062B splats (32c Pod).</div>
               </div>
               <div id="chart-gs3d-evo"></div>
-              <div class="chart-foot"><span>Source: v2_live_assets_1c.json, v3_w3_gs3d_v3.json, v3_w3_wave6_4dgs_300m.json</span><span>gather_ops = 0</span></div>
+              <div class="chart-foot"><span>Source: v2_live_assets_1c.json, v3_w3_gs3d_v3.json, v3_pod_v5p64_capstone.json</span><span>gather_ops = 0</span></div>
             </div>
 
             <div class="chart-card">
@@ -305,64 +341,12 @@ obs = tpu_rtx.render(mjx_data, scene)  # -&gt; {"rgb", "depth", "normal", "seg_i
       </div>
     </section>
 
-    <!-- 03. FEATURE-FILM OPENUSD, BLENDER STUDIO, CLOTH & OPTICS -->
-    <section class="chapter reveal" id="ch-03">
-      <div class="chapter-grid">
-        <aside class="chapter-rail">
-          <div class="chapter-num" data-i18n="c3.num">03 / 08 · FILM, CLOTH &amp; OPTICS</div>
-          <div class="chapter-kicker" data-i18n="c3.rail">Two interactive left/right sliders (6 Blender Cycles scenes + 8 optical/cloth effects) plus 5 full-width standalone 4K/8K Moana &amp; Caustics plates.</div>
-        </aside>
-        <div>
-          <h2 class="chapter-title" id="c3-title"></h2>
-          <p class="chapter-lead" id="c3-lead"></p>
-
-          <!-- Slider Lab 1: TPU-RTX vs Blender Cycles Ground Truth (6 Scenes) -->
-          <div class="compare-lab" id="compare-blender"></div>
-
-          <!-- Slider Lab 2: Physical Optics, Bokeh, ReSTIR & Deformable Cloth (8 Effects) -->
-          <div class="compare-lab" id="compare-optics"></div>
-
-          <!-- Full-Width Standalone Single-Scene Plates (ZERO Collages) -->
-          <div class="spread-stack" id="spread-ch3"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 04. REAL-WORLD 3DGS / 4DGS & NEURAL SILICON -->
-    <section class="chapter reveal" id="ch-04">
-      <div class="chapter-grid">
-        <aside class="chapter-rail">
-          <div class="chapter-num" data-i18n="c4.num">04 / 08 · 3DGS &amp; NEURAL SILICON</div>
-          <div class="chapter-kicker" data-i18n="c4.rail">Interactive 4K Single-Scene Mip-NeRF 360 + Bistro switcher + 5-preset 4DGS / DLSS / Denoiser / Relight split slider.</div>
-        </aside>
-        <div>
-          <h2 class="chapter-title" id="c4-title"></h2>
-          <p class="chapter-lead" id="c4-lead"></p>
-
-          <!-- Full-Width Standalone 4K 3DGS Stage Switcher (5 Scenes) -->
-          <div class="cinema-stage" id="stage-3dgs">
-            <div class="cinema-viewport" id="stage-3dgs-view" title="Click to inspect full 4K scene in Darkroom Lightbox">
-              <img id="stage-3dgs-img" src="./assets/singles/garden_4k.webp" alt="Mip-NeRF 360 Garden Native 4K" />
-            </div>
-            <div class="cinema-hud-bar">
-              <span id="stage-3dgs-hudL"></span>
-              <span id="stage-3dgs-hudR"></span>
-            </div>
-            <div class="cinema-tabs cols-5" id="stage-3dgs-tabs"></div>
-          </div>
-
-          <!-- Slider Lab 3: 4DGS Push, TPU-DLSS 3.5, 4K Denoiser & Relighting (5 Presets) -->
-          <div class="compare-lab" id="compare-neural"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 05. EMBODIED PHYSICAL AI & LIVE TRAINING CURVES -->
+    <!-- 05. EMBODIED AI TRAINING & REAL ROBOTS -->
     <section class="chapter reveal" id="ch-05">
       <div class="chapter-grid">
         <aside class="chapter-rail">
-          <div class="chapter-num" data-i18n="c5.num">05 / 08 · TRAINING &amp; PHYSICAL AI</div>
-          <div class="chapter-kicker" data-i18n="c5.rail">Four live TPU convergence &amp; throughput plots + full-width MuJoCo Menagerie PBR robot stage (G1, Go2, Panda, Aero Hand).</div>
+          <div class="chapter-num" data-i18n="c5.num">05 / 06 · EMBODIED AI</div>
+          <div class="chapter-kicker" data-i18n="c5.rail">Four live TPU convergence &amp; throughput plots + 5-tab PBR robot switcher (RoboTwin Bimanual, G1, Go2, Panda, Aero Hand).</div>
         </aside>
         <div>
           <h2 class="chapter-title" id="c5-title"></h2>
@@ -373,7 +357,7 @@ obs = tpu_rtx.render(mjx_data, scene)  # -&gt; {"rgb", "depth", "normal", "seg_i
               <div>
                 <div class="chart-card-tag" data-i18n="ch.dpTag">PIXEL-TO-TORQUE · ZERO STATE LABELS</div>
                 <div class="chart-card-title" data-i18n="ch.dpTitle">End-to-End jax.grad(mjx.step + PBR) Servoing (240 iters in 8.61 s)</div>
-                <div class="chart-card-sub" data-i18n="ch.dpSub">Pure RGB L2 pixel loss drives 7-DOF joint torques from 17.55 dB -> 36.08 dB while cutting EE 3D error from 16.03 cm -> 1.63 cm.</div>
+                <div class="chart-card-sub" data-i18n="ch.dpSub">Pure RGB L2 pixel loss drives 7-DOF joint torques from 17.55 dB -&gt; 36.08 dB while cutting EE 3D error from 16.03 cm -&gt; 1.63 cm.</div>
               </div>
               <div id="chart-train-diffphys"></div>
               <div class="chart-foot"><span>Source: v3_w0_taskB.json</span><span>27.87 grad-steps/s</span></div>
@@ -406,31 +390,31 @@ obs = tpu_rtx.render(mjx_data, scene)  # -&gt; {"rgb", "depth", "normal", "seg_i
                 <div class="chart-card-sub" data-i18n="ch.vlaSub">Measured end-to-end multimodal factory data generation, online transformer training, and autonomous perception parity.</div>
               </div>
               <div id="chart-vla-surround"></div>
-              <div class="chart-foot"><span>Source: v3_w1_wave4_vla_tactile_factory.json, v3_w6_wave5_surround_bokeh.json</span><span>0 host callbacks</span></div>
+              <div class="chart-foot"><span>Source: v3_w1_wave4_vla_tactile_factory.json, v3_w6_wave5_surround_bokeh.json, v3_pod_v5p64_capstone.json</span><span>0 host callbacks</span></div>
             </div>
           </div>
 
-          <!-- Full-Width Standalone Menagerie PBR Stage Switcher (4 Robots) -->
-          <div class="cinema-stage" id="stage-menagerie">
-            <div class="cinema-viewport" id="stage-menagerie-view" title="Click to inspect Menagerie PBR render in Darkroom Lightbox">
-              <img id="stage-menagerie-img" src="./assets/singles/menagerie_g1.webp" alt="Unitree G1 Humanoid in TPU-RTX Wide-BVH-64" />
+          <!-- Full-Width Standalone Robot PBR Stage Switcher (5 Robots incl. RoboTwin) -->
+          <div class="cinema-stage" id="stage-menagerie" style="margin-bottom: 0;">
+            <div class="cinema-viewport" id="stage-menagerie-view" title="Click to inspect Robot PBR render in Darkroom Lightbox">
+              <img id="stage-menagerie-img" src="./assets/singles/robotwin_bimanual.webp" alt="RoboTwin Bimanual Tabletop in TPU-RTX Wide-BVH-64" />
             </div>
             <div class="cinema-hud-bar">
               <span id="stage-menagerie-hudL"></span>
               <span id="stage-menagerie-hudR"></span>
             </div>
-            <div class="cinema-tabs cols-4" id="stage-menagerie-tabs"></div>
+            <div class="cinema-tabs cols-5" id="stage-menagerie-tabs"></div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- 06. ENGINEERING POST-MORTEMS & QA-REJECTED FAILURE CASES -->
+    <!-- 06. POST-MORTEMS, HONEST LIMITS, 21-ROW DATA LEDGER & COLOPHON -->
     <section class="chapter reveal" id="ch-06">
       <div class="chapter-grid">
         <aside class="chapter-rail">
-          <div class="chapter-num" data-i18n="c6.num">06 / 08 · POST-MORTEMS</div>
-          <div class="chapter-kicker" data-i18n="c6.rail">Real bottlenecks, negative Pallas benchmarks, neural shader ablations, multi-host pitfalls, and full-width QA-rejected renders.</div>
+          <div class="chapter-num" data-i18n="c6.num">06 / 06 · LIMITS &amp; DATA</div>
+          <div class="chapter-kicker" data-i18n="c6.rail">Real TPU post-mortems, QA-rejected failures, honest comparison citing wenhaochai/rtx-h100, 21-row JSON ledger, plate index &amp; BibTeX.</div>
         </aside>
         <div>
           <h2 class="chapter-title" id="c6-title"></h2>
@@ -454,28 +438,33 @@ obs = tpu_rtx.render(mjx_data, scene)  # -&gt; {"rgb", "depth", "normal", "seg_i
           </div>
 
           <div class="rejected-pair" id="rejected-pair"></div>
-        </div>
-      </div>
-    </section>
 
-    <!-- 07. TELEMETRY CONSOLE, ZERO-OVERFLOW JSON LEDGER & PLATE DIRECTORY -->
-    <section class="chapter reveal" id="ch-07">
-      <div class="chapter-grid">
-        <aside class="chapter-rail">
-          <div class="chapter-num" data-i18n="c7.num">07 / 08 · TELEMETRY &amp; LEDGER</div>
-          <div class="chapter-kicker" data-i18n="c7.rail">Interactive subsystem bars, zero-overflow 20-row JSON telemetry ledger, and quick-jump directory for all 25 standalone renders (no tiny thumbnail clutter).</div>
-        </aside>
-        <div>
-          <h2 class="chapter-title" id="c7-title"></h2>
-          <p class="chapter-lead" id="c7-lead"></p>
+          <div class="honest-box">
+            <h3 data-i18n="c6.honestHead">TRANSPARENCY NOTE · VERIFIED 1c / 4c / 32c MEASUREMENTS &amp; GPU BOUNDARIES</h3>
+            <p id="c6-honest-body"></p>
+          </div>
 
-          <div class="bench-panel" id="ch-07-bench">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th data-i18n="tbl.h1">Workload</th>
+                  <th data-i18n="tbl.h2">TPU-RTX (Google TPU v5p)</th>
+                  <th data-i18n="tbl.h3">GPU Cycles (wenhaochai/rtx-h100)</th>
+                  <th data-i18n="tbl.h4">NVIDIA Isaac Sim / OptiX</th>
+                </tr>
+              </thead>
+              <tbody id="comp-tbody"></tbody>
+            </table>
+          </div>
+
+          <div class="bench-panel" id="ch-06-bench">
             <div class="tab-strip" id="bench-tabs">
-              <button class="tab-btn active" data-bench="mjx" type="button" data-i18n="bench.t_mjx">MJX &amp; Robotics (w0/w1/w6)</button>
-              <button class="tab-btn" data-bench="gs3d" type="button" data-i18n="bench.t_gs3d">3DGS / 4DGS / 300M (w3)</button>
-              <button class="tab-btn" data-bench="cinema" type="button" data-i18n="bench.t_cinema">Moana &amp; Blender Studio (w2/w5/w7)</button>
-              <button class="tab-btn" data-bench="dlss" type="button" data-i18n="bench.t_dlss">TPU-DLSS 3.5 &amp; Relight (w4)</button>
-              <button class="tab-btn" data-bench="fx" type="button" data-i18n="bench.t_fx">Path Tracing, ReSTIR &amp; Optics (w7/w6)</button>
+              <button class="tab-btn active" data-bench="mjx" type="button" data-i18n="bench.t_mjx">Robotics &amp; Embodied AI</button>
+              <button class="tab-btn" data-bench="gs3d" type="button" data-i18n="bench.t_gs3d">3DGS / 4DGS / 1.06B Pod</button>
+              <button class="tab-btn" data-bench="cinema" type="button" data-i18n="bench.t_cinema">Moana, Cloth &amp; Blender</button>
+              <button class="tab-btn" data-bench="dlss" type="button" data-i18n="bench.t_dlss">TPU-DLSS 3.5 &amp; Relight</button>
+              <button class="tab-btn" data-bench="fx" type="button" data-i18n="bench.t_fx">Path Tracing &amp; Optics</button>
             </div>
             <div id="bench-content"></div>
           </div>
@@ -508,57 +497,22 @@ obs = tpu_rtx.render(mjx_data, scene)  # -&gt; {"rgb", "depth", "normal", "seg_i
           </div>
 
           <div class="tab-strip" id="plate-filters">
-            <button class="tab-btn active" data-filter="all" type="button" data-i18n="gal.all">All Standalone Plates (25)</button>
+            <button class="tab-btn active" data-filter="all" type="button" data-i18n="gal.all">All Standalone Plates (26)</button>
             <button class="tab-btn" data-filter="film" type="button" data-i18n="gal.film">Moana &amp; Blender Studio (10)</button>
-            <button class="tab-btn" data-filter="optics" type="button" data-i18n="gal.optics">Physical Optics &amp; Caustics (4)</button>
-            <button class="tab-btn" data-filter="gs3d" type="button" data-i18n="gal.gs3d">Real-World 3DGS / Bistro (5)</button>
-            <button class="tab-btn" data-filter="robotics" type="button" data-i18n="gal.robotics">Menagerie PBR Robots (4)</button>
+            <button class="tab-btn" data-filter="optics" type="button" data-i18n="gal.optics">Physical Optics (3)</button>
+            <button class="tab-btn" data-filter="gs3d" type="button" data-i18n="gal.gs3d">Real-World 3DGS / Bistro (6)</button>
+            <button class="tab-btn" data-filter="robotics" type="button" data-i18n="gal.robotics">Menagerie &amp; RoboTwin (5)</button>
             <button class="tab-btn" data-filter="rejected" type="button" data-i18n="gal.rej">QA-Rejected (2)</button>
           </div>
-          <div class="plate-directory" id="plate-directory"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 08. 4-CHIP CEILING, HONEST BOUNDARIES & COLOPHON -->
-    <section class="chapter reveal" id="ch-08">
-      <div class="chapter-grid">
-        <aside class="chapter-rail">
-          <div class="chapter-num" data-i18n="c8.num">08 / 08 · LIMITS &amp; COLOPHON</div>
-          <div class="chapter-kicker" data-i18n="c8.rail">Single-host 4-chip ceiling, honest 32-chip pod queue status, hardware comparison citing wenhaochai/rtx-h100, Feiyang Liu colophon &amp; BibTeX.</div>
-        </aside>
-        <div>
-          <h2 class="chapter-title" id="c8-title"></h2>
-          <p class="chapter-lead" id="c8-lead"></p>
-
-          <div class="pod-list" id="pod-list"></div>
-
-          <div class="honest-box">
-            <h3 data-i18n="c8.honestHead">TRANSPARENCY NOTE · VERIFIED 4-CHIP SCOPE &amp; 32-CHIP QUEUE STATUS</h3>
-            <p id="c8-honest-body"></p>
-          </div>
-
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th data-i18n="tbl.h1">Workload</th>
-                  <th data-i18n="tbl.h2">TPU-RTX (Google TPU v5p)</th>
-                  <th data-i18n="tbl.h3">GPU Cycles (rtx-h100)</th>
-                  <th data-i18n="tbl.h4">NVIDIA Isaac Sim / OptiX</th>
-                </tr>
-              </thead>
-              <tbody id="comp-tbody"></tbody>
-            </table>
-          </div>
+          <div class="plate-directory" id="plate-directory" style="margin-bottom: 26px;"></div>
 
           <div class="colophon-grid">
             <div class="author-card">
               <div>
-                <div class="author-kicker" data-i18n="c8.authorRole">AUTHOR &amp; ARCHITECT</div>
+                <div class="author-kicker" data-i18n="c6.authorRole">AUTHOR &amp; ARCHITECT</div>
                 <div class="author-name">Feiyang Liu</div>
               </div>
-              <p class="author-bio" id="c8-author-bio"></p>
+              <p class="author-bio" id="c6-author-bio"></p>
               <div class="btn-row">
                 <a class="cta-btn primary" href="https://github.com/ZaychikLiu/tpu-rtx" target="_blank" rel="noopener">GitHub: ZaychikLiu/tpu-rtx ↗</a>
               </div>
@@ -566,7 +520,7 @@ obs = tpu_rtx.render(mjx_data, scene)  # -&gt; {"rgb", "depth", "normal", "seg_i
 
             <div class="code-panel">
               <div class="code-bar">
-                <span data-i18n="c8.bibBar">BibTeX Citation · Apache-2.0</span>
+                <span data-i18n="c6.bibBar">BibTeX Citation · Apache-2.0</span>
                 <button class="copy-btn" type="button" id="copy-bib-btn" data-i18n="common.copy">Copy</button>
               </div>
               <pre class="code-body" id="bib-code">@misc{liu2026tpurtx,
@@ -579,7 +533,7 @@ obs = tpu_rtx.render(mjx_data, scene)  # -&gt; {"rgb", "depth", "normal", "seg_i
             </div>
           </div>
 
-          <p class="ack-note" id="c8-ack"></p>
+          <p class="ack-note" id="c6-ack"></p>
         </div>
       </div>
     </section>
@@ -593,7 +547,7 @@ obs = tpu_rtx.render(mjx_data, scene)  # -&gt; {"rgb", "depth", "normal", "seg_i
   <!-- DARKROOM LIGHTBOX + 1:1 NATIVE PIXEL LOUPE -->
   <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="High-Resolution Image Inspector">
     <div class="lb-topbar">
-      <span class="lb-counter" id="lb-counter">01 / 25</span>
+      <span class="lb-counter" id="lb-counter">01 / 26</span>
       <div class="lb-controls">
         <button class="lb-btn" id="lb-prev" type="button">← Prev</button>
         <button class="lb-btn" id="lb-next" type="button">Next →</button>

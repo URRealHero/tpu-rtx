@@ -10,6 +10,75 @@ window.TPU_RTX_CHARTS = (function () {
     return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
+  function renderSystemStack(el, lang) {
+    const zh = lang === "zh";
+    el.innerHTML = `
+      <svg class="svg-chart" viewBox="0 0 960 358" role="img" aria-label="TPU-RTX 4-Layer System Stack Overview">
+        <!-- Layer 4: Benchmarks & Applications -->
+        <rect x="8" y="8" width="944" height="74" rx="8" fill="var(--bg-elev)" stroke="var(--hairline-strong)" />
+        <text x="24" y="30" class="val-lbl" style="fill:var(--ok);font-size:12px;">
+          ${zh ? "LAYER 4 · 已验证具身智能、机器人与电影级基准套件" : "LAYER 4 · VERIFIED ROBOTICS, EMBODIED AI &amp; FILM BENCHMARKS"}
+        </text>
+        <text x="24" y="51" class="sub-lbl" style="font-size:10.8px;fill:var(--text-secondary);">
+          ${zh ? "具身基准：RoboTwin (12.4万 FPS) · RoboWild (4DGS×MJX) · MuJoCo Menagerie · 千帧工厂 VLA+GelSight" : "Embodied AI: RoboTwin (123.9k FPS) · RoboWild (4DGS×MJX) · MuJoCo Menagerie · Factory VLA+GelSight"}
+        </text>
+        <text x="24" y="69" class="sub-lbl" style="font-size:10.8px;fill:var(--muted);">
+          ${zh ? "感知与图形：Vision RL · 双 128 线 LiDAR (63.9B/s) · Blender 8 大场景 · Moana (223 亿面) · Mip-NeRF 360" : "Sensors &amp; Cinema: Vision RL · Dual 128-Beam LiDAR (63.9B/s) · Blender 8 Scenes · Moana (22.3B) · Mip-NeRF 360"}
+        </text>
+
+        <!-- Layer 3: 8 Drop-In Software Retrofits -->
+        <rect x="8" y="94" width="944" height="84" rx="8" fill="var(--bg-elev)" stroke="var(--cyan)" />
+        <text x="24" y="116" class="val-lbl" style="fill:var(--cyan);font-size:12px;">
+          ${zh ? "LAYER 3 · 8 大 DROP-IN 底层软件改造适配器 (tpu_mjx_render/adapters/)" : "LAYER 3 · 8 DROP-IN SOFTWARE RETROFIT ADAPTERS (tpu_mjx_render/adapters/)"}
+        </text>
+        <rect x="24" y="126" width="220" height="40" rx="5" fill="var(--bg-card)" stroke="var(--hairline)" />
+        <text x="34" y="143" class="val-lbl" style="font-size:10.5px;">mjx_universal + isaac_rep</text>
+        <text x="34" y="158" class="sub-lbl" style="font-size:9.8px;">${zh ? "MuJoCo / DR / LiDAR / 视触觉" : "MuJoCo / DR / LiDAR / Tactile"}</text>
+
+        <rect x="254" y="126" width="220" height="40" rx="5" fill="var(--bg-card)" stroke="var(--hairline)" />
+        <text x="264" y="143" class="val-lbl" style="font-size:10.5px;">blend_compiler + openusd</text>
+        <text x="264" y="158" class="sub-lbl" style="font-size:9.8px;">${zh ? ".blend Cycles / OpenUSD 直编" : ".blend Cycles / OpenUSD USD"}</text>
+
+        <rect x="484" y="126" width="220" height="40" rx="5" fill="var(--bg-card)" stroke="var(--hairline)" />
+        <text x="494" y="143" class="val-lbl" style="font-size:10.5px;">tpu_optix + tpu_gsplat</text>
+        <text x="494" y="158" class="sub-lbl" style="font-size:9.8px;">${zh ? "OptiX SDK / 布料 / 3DGS+4DGS" : "OptiX SDK / Cloth / 3DGS+4DGS"}</text>
+
+        <rect x="714" y="126" width="222" height="40" rx="5" fill="var(--bg-card)" stroke="var(--hairline)" />
+        <text x="724" y="143" class="val-lbl" style="font-size:10.5px;">tpu_dlss + tpu_restir</text>
+        <text x="724" y="158" class="sub-lbl" style="font-size:9.8px;">${zh ? "DLSS 3.5 / 重打光 / ReSTIR" : "DLSS 3.5 / Relight / ReSTIR"}</text>
+
+        <!-- Layer 2: 3 Zero-Copy Core Kernels -->
+        <rect x="8" y="190" width="944" height="74" rx="8" fill="var(--bg-elev)" stroke="var(--accent)" />
+        <text x="24" y="211" class="val-lbl" style="fill:var(--accent);font-size:12px;">
+          ${zh ? "LAYER 2 · 三大零拷贝 TPU 原生渲染与物理核（host_callbacks = 0 · gather_ops = 0）" : "LAYER 2 · THREE ZERO-COPY CORE KERNELS (host_callbacks = 0 · gather_ops = 0)"}
+        </text>
+        <rect x="24" y="221" width="292" height="34" rx="5" fill="var(--bg-card)" stroke="var(--hairline-strong)" />
+        <text x="36" y="236" class="val-lbl" style="font-size:11px;">${zh ? "1. Wide-BVH-64 光追与路径追踪" : "1. Wide-BVH-64 Ray &amp; Path Tracing"}</text>
+        <text x="36" y="250" class="sub-lbl" style="font-size:10px;">${zh ? "3 级 64 叉 + VMEM 核融合 + AgX" : "3-Level 64-Ary + In-VMEM Fusion + AgX"}</text>
+
+        <rect x="334" y="221" width="292" height="34" rx="5" fill="var(--bg-card)" stroke="var(--hairline-strong)" />
+        <text x="346" y="236" class="val-lbl" style="font-size:11px;">${zh ? "2. 分块 VMEM 3DGS / 4DGS 光栅器" : "2. Chunked-VMEM 3DGS / 4DGS Engine"}</text>
+        <text x="346" y="250" class="sub-lbl" style="font-size:10px;">${zh ? "零动态 Gather · 10.62 亿高斯分布式" : "Zero Gather · Up to 1.06B Distributed Splats"}</text>
+
+        <rect x="644" y="221" width="292" height="34" rx="5" fill="var(--bg-card)" stroke="var(--hairline-strong)" />
+        <text x="656" y="236" class="val-lbl" style="font-size:11px;">${zh ? "3. MXU 神经重建 + jax.grad 可微闭环" : "3. MXU Neural + jax.grad Diff Physics"}</text>
+        <text x="656" y="250" class="sub-lbl" style="font-size:10px;">${zh ? "4K 降噪/DLSS/重打光 + 像素到力矩反传" : "4K Denoise/DLSS/Relight + Pixel-to-Torque"}</text>
+
+        <!-- Layer 1: Google Cloud TPU v5p Silicon -->
+        <rect x="8" y="276" width="944" height="74" rx="8" fill="var(--accent-soft)" stroke="var(--accent)" />
+        <text x="24" y="299" class="val-lbl" style="fill:var(--accent);font-size:12px;">
+          ${zh ? "LAYER 1 · GOOGLE CLOUD TPU v5p 硬件底座（实测单芯 → 4 芯 383 GB → 32 芯 3.064 TB HBM）" : "LAYER 1 · GOOGLE CLOUD TPU v5p SILICON (LIVE 1-CHIP → 4-CHIP 383 GB → 32-CHIP 3.064 TB HBM)"}
+        </text>
+        <text x="24" y="321" class="sub-lbl" style="font-size:11px;fill:var(--text);">
+          ${zh ? "459 TFLOP/s BF16/INT8 脉动阵列 MXU  ·  64 MiB 软件直控 VMEM  ·  95.74 GiB HBM/芯  ·  3D Torus ICI" : "459 TFLOP/s BF16/INT8 Systolic MXU  ·  64 MiB SW-Managed VMEM  ·  95.74 GiB HBM/chip  ·  3D Torus ICI"}
+        </text>
+        <text x="24" y="339" class="sub-lbl" style="font-size:10.5px;fill:var(--text-secondary);">
+          ${zh ? "物理仿真、光线追踪、传感器建模与策略训练同驻单张 XLA 计算图，彻底消灭跨端拷贝。" : "Physics, ray tracing, tactile/LiDAR simulation &amp; RL/VLA gradients share one XLA HLO graph with zero CPU copies."}
+        </text>
+      </svg>
+    `;
+  }
+
   function renderGpuVsTpu(el, lang) {
     const zh = lang === "zh";
     el.innerHTML = `
@@ -89,20 +158,20 @@ window.TPU_RTX_CHARTS = (function () {
   /* rtx-h100-inspired chronological Step-Envelope Optimization Curve (including negative/flat runs) */
   function renderEvolution(el, lang) {
     const zh = lang === "zh";
-    const W = 960, H = 315, padL = 62, padR = 46, padT = 30, padB = 48;
+    const W = 960, H = 315, padL = 62, padR = 56, padT = 30, padB = 48;
     const plotW = W - padL - padR, plotH = H - padT - padB;
     const minL = 2.4, maxL = 6.18;
 
     const runs = [
-      { id: "E2b",    fps: 453.3,   best: 453.3,   lbl: "453",       note: "E2b Naive",    neg: false, dy: -11 },
-      { id: "E2c-64", fps: 854.3,   best: 854.3,   lbl: "854",       note: "E2c tile=64",  neg: false, dy: -11 },
-      { id: "E2c-512",fps: 616.7,   best: 854.3,   lbl: "617 (-24%)",note: "tile=512 spill",neg: true,  dy: 20 },
-      { id: "E9",     fps: 4883.3,  best: 4883.3,  lbl: "4,883",     note: "E9 Pallas",    neg: false, dy: -11 },
-      { id: "E10",    fps: 4845.0,  best: 4883.3,  lbl: "4,845 (flat)",note: "E10 +1.3%",  neg: true,  dy: 20 },
-      { id: "E12",    fps: 12843.5, best: 12843.5, lbl: "12.8k",     note: "E12 0-Gather", neg: false, dy: -11 },
-      { id: "E13",    fps: 50131.0, best: 50131.0, lbl: "50.1k",     note: "E13 4-Chip",   neg: false, dy: -11 },
-      { id: "V3",     fps: 266209,  best: 266209,  lbl: "266,209",   note: "V3 Fused",     neg: false, dy: -11 },
-      { id: "V3-Eq",  fps: 921309,  best: 921309,  lbl: "921,309",   note: "V3 Equiv",     neg: false, dy: -11 }
+      { id: "Naive",  fps: 453.3,   best: 453.3,   lbl: "453",       note: zh ? "朴素 XLA" : "Naive XLA",    neg: false, dy: -11 },
+      { id: "Tile64", fps: 854.3,   best: 854.3,   lbl: "854",       note: "Tile=64",                      neg: false, dy: -11 },
+      { id: "Spill",  fps: 616.7,   best: 854.3,   lbl: "617 (-24%)",note: zh ? "512 溢出" : "512 Spill",   neg: true,  dy: 20 },
+      { id: "Pal1",   fps: 4883.3,  best: 4883.3,  lbl: "4,883",     note: zh ? "初版 Pallas" : "Pallas v1",neg: false, dy: -11 },
+      { id: "Flat",   fps: 4845.0,  best: 4883.3,  lbl: "4,845 (flat)",note: zh ? "持平尝试" : "Flat Pass", neg: true,  dy: 20 },
+      { id: "NoGat",  fps: 12843.5, best: 12843.5, lbl: "12.8k",     note: zh ? "消除 Gather" : "0-Gather", neg: false, dy: -11 },
+      { id: "4c",     fps: 50131.0, best: 50131.0, lbl: "50.1k",     note: zh ? "4 芯并行" : "4-Chip",      neg: false, dy: -11 },
+      { id: "Fused",  fps: 266209,  best: 266209,  lbl: "266,209",   note: zh ? "片上核融合" : "VMEM Fused",neg: false, dy: -11 },
+      { id: "Equiv",  fps: 921309,  best: 921309,  lbl: "921,309",   note: zh ? "纯渲染等效" : "Pure Render",neg: false, dy: -11 }
     ];
 
     const sx = (i) => padL + (i / (runs.length - 1)) * plotW;
@@ -125,7 +194,7 @@ window.TPU_RTX_CHARTS = (function () {
     const ptsSvg = runs.map((r, i) => {
       const x = sx(i), y = sy(r.fps);
       const col = r.neg ? "var(--warn)" : (i >= 7 ? "var(--cyan)" : "var(--accent)");
-      const anchor = i === runs.length - 1 ? "end" : (i === 0 ? "start" : "middle");
+      const anchor = i === runs.length - 1 ? "middle" : (i === 0 ? "start" : "middle");
       return `
         <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.neg ? 4.8 : 5.4}" fill="${col}" stroke="var(--bg-card)" stroke-width="1.6" />
         <text x="${x.toFixed(1)}" y="${(y + r.dy).toFixed(1)}" text-anchor="${anchor}" class="val-lbl" style="fill:${col};font-size:11px">${r.lbl}</text>
@@ -253,7 +322,7 @@ window.TPU_RTX_CHARTS = (function () {
 
   function renderVmemCliff(el, lang) {
     const zh = lang === "zh";
-    const W = 960, H = 300, padL = 70, padR = 44, padT = 32, padB = 44;
+    const W = 960, H = 300, padL = 70, padR = 72, padT = 32, padB = 44;
     const plotW = W - padL - padR, plotH = H - padT - padB;
     const pts = [
       { tile: 64, fps: 854.3, tag: "854.3 FPS" },
@@ -503,6 +572,7 @@ window.TPU_RTX_CHARTS = (function () {
 
   function renderAll(lang) {
     const map = [
+      ["chart-system-stack", renderSystemStack],
       ["chart-gpu-vs-tpu", renderGpuVsTpu],
       ["chart-evolution", renderEvolution],
       ["chart-gs3d-evo", renderGs3dEvo],

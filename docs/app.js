@@ -243,7 +243,7 @@
       film: { en: "Moana & Studio", zh: "电影/Studio" },
       optics: { en: "Optics", zh: "物理光学" },
       gs3d: { en: "Real 3DGS", zh: "实景 3DGS" },
-      robotics: { en: "Menagerie", zh: "机器人" },
+      robotics: { en: "Menagerie & RoboTwin", zh: "具身机器人" },
       rejected: { en: "QA-Rejected", zh: "QA 淘汰" }
     };
 
@@ -312,23 +312,25 @@
 
     const mapI18n = {
       "nav.c1": t.nav.c1, "nav.c2": t.nav.c2, "nav.c3": t.nav.c3, "nav.c4": t.nav.c4,
-      "nav.c5": t.nav.c5, "nav.c6": t.nav.c6, "nav.c7": t.nav.c7, "nav.c8": t.nav.c8,
+      "nav.c5": t.nav.c5, "nav.c6": t.nav.c6,
       "hero.kicker": t.hero.kicker, "hero.by": t.hero.by, "hero.license": t.hero.license,
       "hero.ctaStart": t.hero.ctaStart, "hero.ctaGallery": t.hero.ctaGallery, "hero.stamp": t.hero.stamp,
       "hero.t0i": t.hero.t0i, "hero.t0t": t.hero.t0t,
       "hero.t1i": t.hero.t1i, "hero.t1t": t.hero.t1t,
       "hero.t2i": t.hero.t2i, "hero.t2t": t.hero.t2t,
-      "c1.num": t.c1.num, "c1.rail": t.c1.rail, "c1.gvtTag": t.c1.gvtTag, "c1.gvtTitle": t.c1.gvtTitle, "c1.gvtSub": t.c1.gvtSub, "c1.sdkBar": t.c1.sdkBar,
-      "c2.num": t.c2.num, "c2.rail": t.c2.rail,
+      "hero.stackTag": t.hero.stackTag, "hero.stackTitle": t.hero.stackTitle, "hero.stackSub": t.hero.stackSub,
+      "c1.num": t.c1.num, "c1.rail": t.c1.rail, "c1.gvtTag": t.c1.gvtTag, "c1.gvtTitle": t.c1.gvtTitle, "c1.gvtSub": t.c1.gvtSub,
+      "c2.num": t.c2.num, "c2.rail": t.c2.rail, "c2.sdkBar": t.c2.sdkBar,
+      "c2.ecoTag": t.c2.ecoTag, "c2.ecoTitle": t.c2.ecoTitle, "c2.ecoSub": t.c2.ecoSub,
+      "c2.bmkTag": t.c2.bmkTag, "c2.bmkTitle": t.c2.bmkTitle, "c2.bmkSub": t.c2.bmkSub,
+      "bs.h1": t.ui.bs1, "bs.h2": t.ui.bs2, "bs.h3": t.ui.bs3, "bs.h4": t.ui.bs4,
       "c3.num": t.c3.num, "c3.rail": t.c3.rail,
       "c4.num": t.c4.num, "c4.rail": t.c4.rail,
       "c5.num": t.c5.num, "c5.rail": t.c5.rail,
       "c6.num": t.c6.num, "c6.rail": t.c6.rail,
-      "c7.num": t.c7.num, "c7.rail": t.c7.rail,
-      "c8.num": t.c8.num, "c8.rail": t.c8.rail,
-      "c8.honestHead": state.lang === "zh" ? "透明度声明 · 已实测 4 芯边界与 32 芯排队进展" : "TRANSPARENCY NOTE · VERIFIED 4-CHIP SCOPE & 32-CHIP QUEUE STATUS",
-      "c8.authorRole": state.lang === "zh" ? "作者与系统架构" : "AUTHOR & ARCHITECT",
-      "c8.bibBar": state.lang === "zh" ? "BibTeX 引用 · Apache-2.0 协议" : "BibTeX Citation · Apache-2.0",
+      "c6.honestHead": state.lang === "zh" ? "透明度声明 · 1 芯 / 4 芯 / 32 芯实测范围与 GPU 领先边界" : "TRANSPARENCY NOTE · VERIFIED 1c / 4c / 32c MEASUREMENTS & GPU BOUNDARIES",
+      "c6.authorRole": state.lang === "zh" ? "作者与系统架构" : "AUTHOR & ARCHITECT",
+      "c6.bibBar": state.lang === "zh" ? "BibTeX 引用 · Apache-2.0 协议" : "BibTeX Citation · Apache-2.0",
       "bench.t_mjx": t.ui.b_mjx, "bench.t_gs3d": t.ui.b_gs3d, "bench.t_cinema": t.ui.b_cinema,
       "bench.t_dlss": t.ui.b_dlss, "bench.t_fx": t.ui.b_fx,
       "gal.all": t.ui.g_all, "gal.film": t.ui.g_film, "gal.optics": t.ui.g_optics,
@@ -371,7 +373,7 @@
       )
       .join("");
 
-    ["c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"].forEach((id) => {
+    ["c1", "c2", "c3", "c4", "c5", "c6"].forEach((id) => {
       document.getElementById(`${id}-title`).innerHTML = t[id].title;
       document.getElementById(`${id}-lead`).innerHTML = t[id].lead;
     });
@@ -380,17 +382,24 @@
       .map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`)
       .join("");
 
-    document.getElementById("c1-pillars").innerHTML = t.c1.pillars
+    const GH_ADAPTER_BASE = "https://github.com/ZaychikLiu/tpu-rtx/blob/main/tpu_mjx_render/adapters/";
+    document.getElementById("adapter-grid").innerHTML = t.c2.adapters
       .map(
-        ([tag, h3, p]) => `
-        <div class="pillar-card">
-          <div class="pillar-tag">${tag}</div>
-          <h3>${h3}</h3>
-          <p>${p}</p>
+        ([name, file, desc, stat]) => `
+        <div class="adapter-card">
+          <div class="adapter-top">
+            <div class="adapter-name">${name}</div>
+            <a class="adapter-mod" href="${GH_ADAPTER_BASE}${file}" target="_blank" rel="noopener">${file} ↗</a>
+          </div>
+          <p class="adapter-desc">${desc}</p>
+          <div class="adapter-stat">${stat}</div>
         </div>`
       )
       .join("");
-    document.getElementById("c1-diag-cap").textContent = t.c1.diagCap;
+
+    document.getElementById("bench-support-tbody").innerHTML = t.c2.benchSupportRows
+      .map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`)
+      .join("");
 
     document.getElementById("pod-list").innerHTML = t.podStats
       .map(
@@ -403,13 +412,13 @@
       )
       .join("");
 
-    document.getElementById("c8-honest-body").innerHTML = t.c8.honest;
+    document.getElementById("c6-honest-body").innerHTML = t.c6.honest;
     document.getElementById("comp-tbody").innerHTML = t.compRows
       .map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`)
       .join("");
 
-    document.getElementById("c8-author-bio").textContent = t.c8.authorBio;
-    document.getElementById("c8-ack").textContent = t.c8.ack;
+    document.getElementById("c6-author-bio").textContent = t.c6.authorBio;
+    document.getElementById("c6-ack").textContent = t.c6.ack;
     document.getElementById("footer-left").textContent = t.ui.footerL;
 
     if (window.TPU_RTX_CHARTS) {
