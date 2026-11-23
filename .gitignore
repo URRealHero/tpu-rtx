@@ -13,7 +13,9 @@ __pycache__/
 *.usd
 *.usdc
 *.usdz
+*.tar
 *.tar.xz
 *.tar.gz
 out/data/
+out/videos/
 assets_cache/

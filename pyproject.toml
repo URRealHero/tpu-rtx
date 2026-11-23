@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "tpu-rtx"
 version = "0.3.0"
-description = "TPU-RTX: Zero-Copy RTX-Class Ray Tracing, Multi-Bounce Path Tracing, 3DGS, OpenUSD/Blender Compiler & Physical AI Rendering natively on Google Cloud TPU v5p"
+description = "Native ray tracing, path tracing, 3DGS, OpenUSD/Blender compilation, and differentiable Physical AI rendering on Google Cloud TPU v5p"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
