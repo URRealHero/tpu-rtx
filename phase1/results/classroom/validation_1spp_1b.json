@@ -1,0 +1,43 @@
+{
+ "real_vs_ref": {
+  "psnr_db": 18.046277809870425,
+  "ssim": 0.7327427268028259
+ },
+ "twin1_vs_ref": {
+  "psnr_db": 18.030684193019397,
+  "ssim": 0.7315703630447388
+ },
+ "twin2_vs_ref": {
+  "psnr_db": 18.033256613590645,
+  "ssim": 0.7318739295005798
+ },
+ "real_vs_twin1_psnr_db": 16.809655487336904,
+ "real_vs_twin2_psnr_db": 16.817104150318475,
+ "twin1_vs_twin2_psnr_db (noise floor)": 16.79864089331926,
+ "mean_srgb": {
+  "real": [
+   0.056453920900821686,
+   0.05544373020529747,
+   0.05479789152741432
+  ],
+  "twin1": [
+   0.05665622279047966,
+   0.05565620958805084,
+   0.05500556901097298
+  ],
+  "ref": [
+   0.07922522723674774,
+   0.07799763232469559,
+   0.07725609093904495
+  ]
+ },
+ "inputs": {
+  "real": "$PHASE1/runs/real_smoke/tpurtx_real.npy",
+  "twins": [
+   "$PHASE1/runs/twin_val/t_1spp_1b_s1_srgb.npy",
+   "$PHASE1/runs/twin_val/t_1spp_1b_s2_srgb.npy"
+  ],
+  "ref": "$PHASE1/runs/twin_val/ref_256spp_1b_srgb.npy",
+  "out": "$PHASE1/runs/twin_val/validation_1spp_1b.json"
+ }
+}

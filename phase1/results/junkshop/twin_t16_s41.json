@@ -1,0 +1,408 @@
+{
+ "tag": "t16_s41",
+ "what": "CPU twin of TPU-RTX bvh_pbr_pt (NumPy shading port + Embree ray casts)",
+ "scene": "junkshop",
+ "res": "320x640",
+ "spp": 16,
+ "max_bounces": 3,
+ "seed": 41,
+ "falloff_soften": 0.08,
+ "clamps": true,
+ "build_s": 7.5,
+ "render_s": 21.9,
+ "psnr_vs_gt_db": 10.835,
+ "ssim_vs_gt": 0.2221,
+ "psnr_standardview_vs_gt_db": 11.615,
+ "mean_linear_rgb": [
+  0.08156,
+  0.11276,
+  0.17125
+ ],
+ "stats": [
+  {
+   "sample": 0,
+   "bounce": 0,
+   "alive": 204800,
+   "hit": 204793,
+   "glass": 12695,
+   "emit": 0
+  },
+  {
+   "sample": 0,
+   "bounce": 1,
+   "alive": 203073,
+   "hit": 108722,
+   "glass": 7614,
+   "emit": 0
+  },
+  {
+   "sample": 0,
+   "bounce": 2,
+   "alive": 108440,
+   "hit": 74979,
+   "glass": 8068,
+   "emit": 0
+  },
+  {
+   "sample": 1,
+   "bounce": 0,
+   "alive": 204800,
+   "hit": 204793,
+   "glass": 12667,
+   "emit": 0
+  },
+  {
+   "sample": 1,
+   "bounce": 1,
+   "alive": 203060,
+   "hit": 108798,
+   "glass": 7781,
+   "emit": 0
+  },
+  {
+   "sample": 1,
+   "bounce": 2,
+   "alive": 108485,
+   "hit": 75406,
+   "glass": 8094,
+   "emit": 0
+  },
+  {
+   "sample": 2,
+   "bounce": 0,
+   "alive": 204800,
+   "hit": 204795,
+   "glass": 12664,
+   "emit": 0
+  },
+  {
+   "sample": 2,
+   "bounce": 1,
+   "alive": 203122,
+   "hit": 108743,
+   "glass": 7683,
+   "emit": 0
+  },
+  {
+   "sample": 2,
+   "bounce": 2,
+   "alive": 108429,
+   "hit": 75270,
+   "glass": 8050,
+   "emit": 0
+  },
+  {
+   "sample": 3,
+   "bounce": 0,
+   "alive": 204800,
+   "hit": 204793,
+   "glass": 12668,
+   "emit": 0
+  },
+  {
+   "sample": 3,
+   "bounce": 1,
+   "alive": 203099,
+   "hit": 109222,
+   "glass": 7673,
+   "emit": 0
+  },
+  {
+   "sample": 3,
+   "bounce": 2,
+   "alive": 108884,
+   "hit": 75477,
+   "glass": 7991,
+   "emit": 0
+  },
+  {
+   "sample": 4,
+   "bounce": 0,
+   "alive": 204800,
+   "hit": 204793,
+   "glass": 12672,
+   "emit": 0
+  },
+  {
+   "sample": 4,
+   "bounce": 1,
+   "alive": 203116,
+   "hit": 108888,
+   "glass": 7616,
+   "emit": 0
+  },
+  {
+   "sample": 4,
+   "bounce": 2,
+   "alive": 108558,
+   "hit": 75258,
+   "glass": 8096,
+   "emit": 0
+  },
+  {
+   "sample": 5,
+   "bounce": 0,
+   "alive": 204800,
+   "hit": 204799,
+   "glass": 12697,
+   "emit": 0
+  },
+  {
+   "sample": 5,
+   "bounce": 1,
+   "alive": 203123,
+   "hit": 108796,
+   "glass": 7701,
+   "emit": 0
+  },
+  {
+   "sample": 5,
+   "bounce": 2,
+   "alive": 108480,
+   "hit": 75040,
+   "glass": 8144,
+   "emit": 0
+  },
+  {
+   "sample": 6,
+   "bounce": 0,
+   "alive": 204800,
+   "hit": 204797,
+   "glass": 12663,
+   "emit": 0
+  },
+  {
+   "sample": 6,
+   "bounce": 1,
+   "alive": 203020,
+   "hit": 108830,
+   "glass": 7613,
+   "emit": 0
+  },
+  {
+   "sample": 6,
+   "bounce": 2,
+   "alive": 108487,
+   "hit": 75214,
+   "glass": 8061,
+   "emit": 0
+  },
+  {
+   "sample": 7,
+   "bounce": 0,
+   "alive": 204800,
+   "hit": 204796,
+   "glass": 12694,
+   "emit": 0
+  },
+  {
+   "sample": 7,
+   "bounce": 1,
+   "alive": 203109,
+   "hit": 108534,
+   "glass": 7635,
+   "emit": 0
+  },
+  {
+   "sample": 7,
+   "bounce": 2,
+   "alive": 108221,
+   "hit": 75177,
+   "glass": 8108,
+   "emit": 0
+  },
+  {
+   "sample": 8,
+   "bounce": 0,
+   "alive": 204800,
+   "hit": 204797,
+   "glass": 12683,
+   "emit": 0
+  },
+  {
+   "sample": 8,
+   "bounce": 1,
+   "alive": 203120,
+   "hit": 109023,
+   "glass": 7592,
+   "emit": 0
+  },
+  {
+   "sample": 8,
+   "bounce": 2,
+   "alive": 108687,
+   "hit": 75397,
+   "glass": 8102,
+   "emit": 0
+  },
+  {
+   "sample": 9,
+   "bounce": 0,
+   "alive": 204800,
+   "hit": 204796,
+   "glass": 12663,
+   "emit": 0
+  },
+  {
+   "sample": 9,
+   "bounce": 1,
+   "alive": 202982,
+   "hit": 108664,
+   "glass": 7651,
+   "emit": 0
+  },
+  {
+   "sample": 9,
+   "bounce": 2,
+   "alive": 108354,
+   "hit": 75342,
+   "glass": 8096,
+   "emit": 0
+  },
+  {
+   "sample": 10,
+   "bounce": 0,
+   "alive": 204800,
+   "hit": 204795,
+   "glass": 12655,
+   "emit": 0
+  },
+  {
+   "sample": 10,
+   "bounce": 1,
+   "alive": 203149,
+   "hit": 108953,
+   "glass": 7726,
+   "emit": 0
+  },
+  {
+   "sample": 10,
+   "bounce": 2,
+   "alive": 108634,
+   "hit": 75629,
+   "glass": 8183,
+   "emit": 0
+  },
+  {
+   "sample": 11,
+   "bounce": 0,
+   "alive": 204800,
+   "hit": 204795,
+   "glass": 12688,
+   "emit": 0
+  },
+  {
+   "sample": 11,
+   "bounce": 1,
+   "alive": 203069,
+   "hit": 108867,
+   "glass": 7631,
+   "emit": 0
+  },
+  {
+   "sample": 11,
+   "bounce": 2,
+   "alive": 108553,
+   "hit": 75263,
+   "glass": 8085,
+   "emit": 0
+  },
+  {
+   "sample": 12,
+   "bounce": 0,
+   "alive": 204800,
+   "hit": 204795,
+   "glass": 12653,
+   "emit": 0
+  },
+  {
+   "sample": 12,
+   "bounce": 1,
+   "alive": 203100,
+   "hit": 109198,
+   "glass": 7686,
+   "emit": 0
+  },
+  {
+   "sample": 12,
+   "bounce": 2,
+   "alive": 108868,
+   "hit": 75603,
+   "glass": 8098,
+   "emit": 0
+  },
+  {
+   "sample": 13,
+   "bounce": 0,
+   "alive": 204800,
+   "hit": 204795,
+   "glass": 12680,
+   "emit": 0
+  },
+  {
+   "sample": 13,
+   "bounce": 1,
+   "alive": 203151,
+   "hit": 108773,
+   "glass": 7629,
+   "emit": 0
+  },
+  {
+   "sample": 13,
+   "bounce": 2,
+   "alive": 108418,
+   "hit": 75393,
+   "glass": 8072,
+   "emit": 0
+  },
+  {
+   "sample": 14,
+   "bounce": 0,
+   "alive": 204800,
+   "hit": 204797,
+   "glass": 12690,
+   "emit": 0
+  },
+  {
+   "sample": 14,
+   "bounce": 1,
+   "alive": 203133,
+   "hit": 108597,
+   "glass": 7678,
+   "emit": 0
+  },
+  {
+   "sample": 14,
+   "bounce": 2,
+   "alive": 108249,
+   "hit": 74946,
+   "glass": 8102,
+   "emit": 0
+  },
+  {
+   "sample": 15,
+   "bounce": 0,
+   "alive": 204800,
+   "hit": 204794,
+   "glass": 12675,
+   "emit": 0
+  },
+  {
+   "sample": 15,
+   "bounce": 1,
+   "alive": 203073,
+   "hit": 109025,
+   "glass": 7686,
+   "emit": 0
+  },
+  {
+   "sample": 15,
+   "bounce": 2,
+   "alive": 108701,
+   "hit": 75600,
+   "glass": 7999,
+   "emit": 0
+  }
+ ],
+ "compare": {}
+}

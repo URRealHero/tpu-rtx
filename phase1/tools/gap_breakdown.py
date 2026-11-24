@@ -27,7 +27,8 @@ def exr_passes(p):
   out = {}
   for part in f.parts:
     for name, ch in part.channels.items():
-      out[name.replace("ViewLayer.", "")] = np.asarray(ch.pixels, dtype=np.float32)
+      key = name.split(".", 1)[1] if "." in name else name  # drop the view-layer name
+      out[key] = np.asarray(ch.pixels, dtype=np.float32)
   return out
 
 
@@ -53,6 +54,9 @@ def main():
   ap.add_argument("--variants", required=True)
   ap.add_argument("--twin", required=True)
   ap.add_argument("--exposure", type=float, default=0.55)
+  ap.add_argument("--npz", help="TPU-RTX export, for the depth check and material statistics")
+  ap.add_argument("--twin-view-png", help="the averaged twin image put through the scene's own view transform "
+                  "(blender_apply_view.py); used instead of Standard view when the scene is not Standard")
   ap.add_argument("--out", required=True)
   args = ap.parse_args()
   gt = png(args.gt)
@@ -82,8 +86,12 @@ def main():
   step("1 + TPU camera/bounces/no clamp", cy.get("cy_orig_set", {}).get("srgb"), "pinhole (no depth of field), 2 bounces after the first hit, box pixel filter, no sample clamping")
   step("2 + TPU lights", cy.get("cy_lights_set", {}).get("srgb"), "scene's 10 lamps and world replaced by TPU-RTX's 1 disk light, sun and gradient sky")
   step("3 + TPU materials/geometry export", cy.get("cy_scene_set", {}).get("srgb"), "TPU-RTX's exported triangles: one colour/roughness/material code per triangle, smooth vertex normals, no textures or bump")
+  twin_view = png(args.twin_view_png) if args.twin_view_png else None
   if "twin_def_" in tw:
-    step("4 + TPU light transport (Standard view)", tw["twin_def_"]["std"], f"TPU-RTX's path tracer (CPU twin, {64 * tw['twin_def_']['n_runs']} spp), shown with Blender's Standard view")
+    if twin_view is not None:
+      step("4 + TPU light transport (scene's view transform)", twin_view, f"TPU-RTX's path tracer (CPU twin, {64 * tw['twin_def_']['n_runs']} spp), through the scene's own view transform")
+    else:
+      step("4 + TPU light transport (Standard view)", tw["twin_def_"]["std"], f"TPU-RTX's path tracer (CPU twin, {64 * tw['twin_def_']['n_runs']} spp), shown with Blender's Standard view")
     step("5 + TPU tone curve (ACES-fit, exposure 0.55)", tw["twin_def_"]["aces"], "what TPU-RTX outputs, converged")
   if t16:
     vals = [score(np.load(f), gt) for f in t16]
@@ -102,7 +110,10 @@ def main():
     for tag, note in (("twin_def_", "TPU-RTX estimator as shipped"), ("twin_nosoft_", "without the +0.08 light falloff softening"),
                       ("twin_raw_", "without softening and clamps")):
       if tag in tw:
-        res["pairs"].append({"a": "Cycles on TPU-RTX's exported scene and lights", "b": f"CPU twin: {note}", **score(tw[tag]["std"], ref),
+        b_img = twin_view if (twin_view is not None and tag == "twin_def_") else tw[tag]["std"]
+        if twin_view is not None and tag != "twin_def_":
+          continue  # only the shipped estimator has a view-transformed image
+        res["pairs"].append({"a": "Cycles on TPU-RTX's exported scene and lights", "b": f"CPU twin: {note}", **score(b_img, ref),
                              "mean_lum_ratio_b_over_a": round(float(lum(tw[tag]["lin"]).mean() / lum(cy["cy_scene_set"]["exr"]["Combined"][..., :3]).mean()), 4)})
 
   # Linear mean luminance of each image relative to the reference render.
@@ -119,14 +130,16 @@ def main():
     a = np.load(aov_f[0])
     ex = cy["cy_orig_set"]["exr"]
     zc = ex.get("Depth.Z", ex.get("Depth"))
-    if zc is not None:
+    if zc is not None and args.npz:
       zc = zc.reshape(gt.shape[:2])
-      zt = a["depth"]
-      fin = np.isfinite(zt) & np.isfinite(zc) & (zc < 1e5)
+      ds = np.load(args.npz)
+      fwd = -ds["cam_xmat"][:, 2] / np.linalg.norm(ds["cam_xmat"][:, 2])  # the camera matrix may carry object scale
+      zt = (a["hit_pos"] - ds["cam_pos"]) @ fwd  # planar depth, as Cycles' Depth pass
+      fin = np.isfinite(a["depth"]) & np.isfinite(zc) & (zc < 1e5)
       rel = np.abs(zt[fin] - zc[fin]) / np.maximum(zc[fin], 1e-6)
       res["aov_checks"]["depth"] = {"pixels_compared": int(fin.sum()), "within_1pct": round(float(np.mean(rel < 0.01)), 4),
                                     "median_rel_err": float(np.median(rel)),
-                                    "note": "twin depth is distance from the near plane along the ray; Cycles Depth pass"}
+                                    "note": "planar depth of TPU-RTX's first hit (one jittered sample) vs Cycles' Depth pass (pixel-filtered)"}
     dc = ex.get("Diffuse Color")
     if dc is not None:
       dc = dc[..., :3]
@@ -138,6 +151,17 @@ def main():
                                      "mean_tpu": [round(float(x), 4) for x in alb[both].mean(0)],
                                      "mean_cycles": [round(float(x), 4) for x in dc[both].mean(0)],
                                      "note": "non-metal opaque pixels; Cycles Diffuse Color pass vs TPU-RTX per-triangle albedo"}
+  if args.npz:
+    ds = np.load(args.npz)
+    alb, mc = ds["tri_albedo"], ds["tri_mat_code"]
+    vals, cnt = np.unique(np.round(mc, 3), return_counts=True)
+    res["export_stats"] = {
+        "triangles": int(len(mc)),
+        "mat_code_share": {f"{v:.3f}": round(float(c) / len(mc), 4) for v, c in sorted(zip(vals, cnt), key=lambda t: -t[1])[:8]},
+        "albedo_default_0p70_share": round(float(np.all(np.abs(alb - 0.70) < 1e-4, axis=1).mean()), 4),
+        "albedo_white_0p99_share": round(float(np.all(np.abs(alb - 0.99) < 1e-4, axis=1).mean()), 4),
+        "note": "mat_code 0.95 = the exporter's code for a Glossy BSDF node (near-metal); 2.0 glass; >= 2.8 emitter",
+    }
   with open(args.out, "w") as f:
     json.dump(res, f, indent=1)
   print(json.dumps(res, indent=1))

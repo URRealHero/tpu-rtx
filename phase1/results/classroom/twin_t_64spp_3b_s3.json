@@ -1,0 +1,1560 @@
+{
+ "tag": "t_64spp_3b_s3",
+ "what": "CPU twin of TPU-RTX bvh_pbr_pt (NumPy shading port + Embree ray casts)",
+ "scene": "classroom",
+ "res": "360x640",
+ "spp": 64,
+ "max_bounces": 3,
+ "seed": 3,
+ "falloff_soften": 0.08,
+ "clamps": true,
+ "build_s": 1.8,
+ "render_s": 116.6,
+ "psnr_vs_gt_db": 11.129,
+ "ssim_vs_gt": 0.1331,
+ "psnr_standardview_vs_gt_db": 9.946,
+ "mean_linear_rgb": [
+  0.60601,
+  0.59952,
+  0.59683
+ ],
+ "stats": [
+  {
+   "sample": 0,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3579,
+   "emit": 1494
+  },
+  {
+   "sample": 0,
+   "bounce": 1,
+   "alive": 216176,
+   "hit": 216078,
+   "glass": 4575,
+   "emit": 7971
+  },
+  {
+   "sample": 0,
+   "bounce": 2,
+   "alive": 197883,
+   "hit": 197279,
+   "glass": 4749,
+   "emit": 5627
+  },
+  {
+   "sample": 1,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3582,
+   "emit": 1424
+  },
+  {
+   "sample": 1,
+   "bounce": 1,
+   "alive": 216174,
+   "hit": 216074,
+   "glass": 4618,
+   "emit": 8070
+  },
+  {
+   "sample": 1,
+   "bounce": 2,
+   "alive": 197870,
+   "hit": 197274,
+   "glass": 4724,
+   "emit": 5626
+  },
+  {
+   "sample": 2,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3556,
+   "emit": 1446
+  },
+  {
+   "sample": 2,
+   "bounce": 1,
+   "alive": 215957,
+   "hit": 215870,
+   "glass": 4581,
+   "emit": 7912
+  },
+  {
+   "sample": 2,
+   "bounce": 2,
+   "alive": 197838,
+   "hit": 197253,
+   "glass": 4796,
+   "emit": 5697
+  },
+  {
+   "sample": 3,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3564,
+   "emit": 1466
+  },
+  {
+   "sample": 3,
+   "bounce": 1,
+   "alive": 216316,
+   "hit": 216217,
+   "glass": 4568,
+   "emit": 8096
+  },
+  {
+   "sample": 3,
+   "bounce": 2,
+   "alive": 197940,
+   "hit": 197370,
+   "glass": 4657,
+   "emit": 5560
+  },
+  {
+   "sample": 4,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3553,
+   "emit": 1426
+  },
+  {
+   "sample": 4,
+   "bounce": 1,
+   "alive": 216326,
+   "hit": 216239,
+   "glass": 4590,
+   "emit": 8007
+  },
+  {
+   "sample": 4,
+   "bounce": 2,
+   "alive": 198008,
+   "hit": 197412,
+   "glass": 4715,
+   "emit": 5768
+  },
+  {
+   "sample": 5,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3572,
+   "emit": 1481
+  },
+  {
+   "sample": 5,
+   "bounce": 1,
+   "alive": 216168,
+   "hit": 216053,
+   "glass": 4566,
+   "emit": 7937
+  },
+  {
+   "sample": 5,
+   "bounce": 2,
+   "alive": 197903,
+   "hit": 197362,
+   "glass": 4708,
+   "emit": 5517
+  },
+  {
+   "sample": 6,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3571,
+   "emit": 1479
+  },
+  {
+   "sample": 6,
+   "bounce": 1,
+   "alive": 216230,
+   "hit": 216138,
+   "glass": 4569,
+   "emit": 7879
+  },
+  {
+   "sample": 6,
+   "bounce": 2,
+   "alive": 197920,
+   "hit": 197335,
+   "glass": 4716,
+   "emit": 5655
+  },
+  {
+   "sample": 7,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3577,
+   "emit": 1479
+  },
+  {
+   "sample": 7,
+   "bounce": 1,
+   "alive": 216349,
+   "hit": 216251,
+   "glass": 4592,
+   "emit": 8025
+  },
+  {
+   "sample": 7,
+   "bounce": 2,
+   "alive": 198021,
+   "hit": 197494,
+   "glass": 4634,
+   "emit": 5731
+  },
+  {
+   "sample": 8,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3582,
+   "emit": 1462
+  },
+  {
+   "sample": 8,
+   "bounce": 1,
+   "alive": 216191,
+   "hit": 216104,
+   "glass": 4566,
+   "emit": 8005
+  },
+  {
+   "sample": 8,
+   "bounce": 2,
+   "alive": 197995,
+   "hit": 197427,
+   "glass": 4675,
+   "emit": 5752
+  },
+  {
+   "sample": 9,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3560,
+   "emit": 1453
+  },
+  {
+   "sample": 9,
+   "bounce": 1,
+   "alive": 216221,
+   "hit": 216135,
+   "glass": 4538,
+   "emit": 7945
+  },
+  {
+   "sample": 9,
+   "bounce": 2,
+   "alive": 197980,
+   "hit": 197393,
+   "glass": 4731,
+   "emit": 5724
+  },
+  {
+   "sample": 10,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3560,
+   "emit": 1464
+  },
+  {
+   "sample": 10,
+   "bounce": 1,
+   "alive": 216006,
+   "hit": 215924,
+   "glass": 4669,
+   "emit": 7934
+  },
+  {
+   "sample": 10,
+   "bounce": 2,
+   "alive": 197969,
+   "hit": 197353,
+   "glass": 4755,
+   "emit": 5633
+  },
+  {
+   "sample": 11,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3555,
+   "emit": 1453
+  },
+  {
+   "sample": 11,
+   "bounce": 1,
+   "alive": 216213,
+   "hit": 216128,
+   "glass": 4535,
+   "emit": 7730
+  },
+  {
+   "sample": 11,
+   "bounce": 2,
+   "alive": 198272,
+   "hit": 197674,
+   "glass": 4700,
+   "emit": 5553
+  },
+  {
+   "sample": 12,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3579,
+   "emit": 1431
+  },
+  {
+   "sample": 12,
+   "bounce": 1,
+   "alive": 216187,
+   "hit": 216103,
+   "glass": 4583,
+   "emit": 8017
+  },
+  {
+   "sample": 12,
+   "bounce": 2,
+   "alive": 197822,
+   "hit": 197238,
+   "glass": 4666,
+   "emit": 5754
+  },
+  {
+   "sample": 13,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3573,
+   "emit": 1477
+  },
+  {
+   "sample": 13,
+   "bounce": 1,
+   "alive": 216310,
+   "hit": 216231,
+   "glass": 4527,
+   "emit": 8006
+  },
+  {
+   "sample": 13,
+   "bounce": 2,
+   "alive": 198017,
+   "hit": 197406,
+   "glass": 4665,
+   "emit": 5598
+  },
+  {
+   "sample": 14,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230399,
+   "glass": 3582,
+   "emit": 1453
+  },
+  {
+   "sample": 14,
+   "bounce": 1,
+   "alive": 216260,
+   "hit": 216156,
+   "glass": 4574,
+   "emit": 7921
+  },
+  {
+   "sample": 14,
+   "bounce": 2,
+   "alive": 198090,
+   "hit": 197480,
+   "glass": 4721,
+   "emit": 5617
+  },
+  {
+   "sample": 15,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3568,
+   "emit": 1476
+  },
+  {
+   "sample": 15,
+   "bounce": 1,
+   "alive": 216246,
+   "hit": 216169,
+   "glass": 4602,
+   "emit": 7925
+  },
+  {
+   "sample": 15,
+   "bounce": 2,
+   "alive": 198150,
+   "hit": 197577,
+   "glass": 4685,
+   "emit": 5649
+  },
+  {
+   "sample": 16,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3564,
+   "emit": 1468
+  },
+  {
+   "sample": 16,
+   "bounce": 1,
+   "alive": 216336,
+   "hit": 216237,
+   "glass": 4470,
+   "emit": 8037
+  },
+  {
+   "sample": 16,
+   "bounce": 2,
+   "alive": 198133,
+   "hit": 197579,
+   "glass": 4574,
+   "emit": 5677
+  },
+  {
+   "sample": 17,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3569,
+   "emit": 1438
+  },
+  {
+   "sample": 17,
+   "bounce": 1,
+   "alive": 216443,
+   "hit": 216365,
+   "glass": 4623,
+   "emit": 7957
+  },
+  {
+   "sample": 17,
+   "bounce": 2,
+   "alive": 198134,
+   "hit": 197587,
+   "glass": 4686,
+   "emit": 5644
+  },
+  {
+   "sample": 18,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3576,
+   "emit": 1470
+  },
+  {
+   "sample": 18,
+   "bounce": 1,
+   "alive": 216074,
+   "hit": 215987,
+   "glass": 4631,
+   "emit": 7917
+  },
+  {
+   "sample": 18,
+   "bounce": 2,
+   "alive": 197944,
+   "hit": 197332,
+   "glass": 4755,
+   "emit": 5716
+  },
+  {
+   "sample": 19,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3560,
+   "emit": 1450
+  },
+  {
+   "sample": 19,
+   "bounce": 1,
+   "alive": 216272,
+   "hit": 216184,
+   "glass": 4654,
+   "emit": 8071
+  },
+  {
+   "sample": 19,
+   "bounce": 2,
+   "alive": 197892,
+   "hit": 197359,
+   "glass": 4763,
+   "emit": 5516
+  },
+  {
+   "sample": 20,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3590,
+   "emit": 1455
+  },
+  {
+   "sample": 20,
+   "bounce": 1,
+   "alive": 216086,
+   "hit": 216002,
+   "glass": 4576,
+   "emit": 8046
+  },
+  {
+   "sample": 20,
+   "bounce": 2,
+   "alive": 197947,
+   "hit": 197380,
+   "glass": 4695,
+   "emit": 5697
+  },
+  {
+   "sample": 21,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3573,
+   "emit": 1446
+  },
+  {
+   "sample": 21,
+   "bounce": 1,
+   "alive": 216143,
+   "hit": 216057,
+   "glass": 4542,
+   "emit": 7978
+  },
+  {
+   "sample": 21,
+   "bounce": 2,
+   "alive": 197959,
+   "hit": 197365,
+   "glass": 4674,
+   "emit": 5521
+  },
+  {
+   "sample": 22,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3585,
+   "emit": 1464
+  },
+  {
+   "sample": 22,
+   "bounce": 1,
+   "alive": 216173,
+   "hit": 216071,
+   "glass": 4623,
+   "emit": 8090
+  },
+  {
+   "sample": 22,
+   "bounce": 2,
+   "alive": 197778,
+   "hit": 197190,
+   "glass": 4737,
+   "emit": 5664
+  },
+  {
+   "sample": 23,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3570,
+   "emit": 1444
+  },
+  {
+   "sample": 23,
+   "bounce": 1,
+   "alive": 216253,
+   "hit": 216170,
+   "glass": 4603,
+   "emit": 7968
+  },
+  {
+   "sample": 23,
+   "bounce": 2,
+   "alive": 197984,
+   "hit": 197462,
+   "glass": 4660,
+   "emit": 5576
+  },
+  {
+   "sample": 24,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3564,
+   "emit": 1445
+  },
+  {
+   "sample": 24,
+   "bounce": 1,
+   "alive": 216109,
+   "hit": 216004,
+   "glass": 4561,
+   "emit": 7999
+  },
+  {
+   "sample": 24,
+   "bounce": 2,
+   "alive": 197896,
+   "hit": 197309,
+   "glass": 4720,
+   "emit": 5615
+  },
+  {
+   "sample": 25,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3569,
+   "emit": 1452
+  },
+  {
+   "sample": 25,
+   "bounce": 1,
+   "alive": 216134,
+   "hit": 216028,
+   "glass": 4568,
+   "emit": 8024
+  },
+  {
+   "sample": 25,
+   "bounce": 2,
+   "alive": 197868,
+   "hit": 197296,
+   "glass": 4638,
+   "emit": 5588
+  },
+  {
+   "sample": 26,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3574,
+   "emit": 1471
+  },
+  {
+   "sample": 26,
+   "bounce": 1,
+   "alive": 216120,
+   "hit": 216019,
+   "glass": 4546,
+   "emit": 7969
+  },
+  {
+   "sample": 26,
+   "bounce": 2,
+   "alive": 197830,
+   "hit": 197284,
+   "glass": 4613,
+   "emit": 5669
+  },
+  {
+   "sample": 27,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3572,
+   "emit": 1454
+  },
+  {
+   "sample": 27,
+   "bounce": 1,
+   "alive": 216069,
+   "hit": 215980,
+   "glass": 4585,
+   "emit": 7999
+  },
+  {
+   "sample": 27,
+   "bounce": 2,
+   "alive": 197794,
+   "hit": 197188,
+   "glass": 4703,
+   "emit": 5615
+  },
+  {
+   "sample": 28,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230398,
+   "glass": 3559,
+   "emit": 1426
+  },
+  {
+   "sample": 28,
+   "bounce": 1,
+   "alive": 216363,
+   "hit": 216261,
+   "glass": 4590,
+   "emit": 7995
+  },
+  {
+   "sample": 28,
+   "bounce": 2,
+   "alive": 198172,
+   "hit": 197600,
+   "glass": 4701,
+   "emit": 5555
+  },
+  {
+   "sample": 29,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230399,
+   "glass": 3560,
+   "emit": 1440
+  },
+  {
+   "sample": 29,
+   "bounce": 1,
+   "alive": 216236,
+   "hit": 216130,
+   "glass": 4574,
+   "emit": 8053
+  },
+  {
+   "sample": 29,
+   "bounce": 2,
+   "alive": 197958,
+   "hit": 197327,
+   "glass": 4741,
+   "emit": 5623
+  },
+  {
+   "sample": 30,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3589,
+   "emit": 1460
+  },
+  {
+   "sample": 30,
+   "bounce": 1,
+   "alive": 216049,
+   "hit": 215949,
+   "glass": 4598,
+   "emit": 7940
+  },
+  {
+   "sample": 30,
+   "bounce": 2,
+   "alive": 197831,
+   "hit": 197244,
+   "glass": 4727,
+   "emit": 5576
+  },
+  {
+   "sample": 31,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3579,
+   "emit": 1463
+  },
+  {
+   "sample": 31,
+   "bounce": 1,
+   "alive": 216141,
+   "hit": 216051,
+   "glass": 4588,
+   "emit": 7961
+  },
+  {
+   "sample": 31,
+   "bounce": 2,
+   "alive": 197931,
+   "hit": 197348,
+   "glass": 4808,
+   "emit": 5619
+  },
+  {
+   "sample": 32,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3587,
+   "emit": 1460
+  },
+  {
+   "sample": 32,
+   "bounce": 1,
+   "alive": 216209,
+   "hit": 216106,
+   "glass": 4598,
+   "emit": 8048
+  },
+  {
+   "sample": 32,
+   "bounce": 2,
+   "alive": 198049,
+   "hit": 197467,
+   "glass": 4647,
+   "emit": 5684
+  },
+  {
+   "sample": 33,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3581,
+   "emit": 1466
+  },
+  {
+   "sample": 33,
+   "bounce": 1,
+   "alive": 216100,
+   "hit": 216008,
+   "glass": 4585,
+   "emit": 8095
+  },
+  {
+   "sample": 33,
+   "bounce": 2,
+   "alive": 197686,
+   "hit": 197108,
+   "glass": 4708,
+   "emit": 5649
+  },
+  {
+   "sample": 34,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3575,
+   "emit": 1462
+  },
+  {
+   "sample": 34,
+   "bounce": 1,
+   "alive": 216262,
+   "hit": 216148,
+   "glass": 4580,
+   "emit": 8057
+  },
+  {
+   "sample": 34,
+   "bounce": 2,
+   "alive": 197889,
+   "hit": 197294,
+   "glass": 4753,
+   "emit": 5589
+  },
+  {
+   "sample": 35,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3565,
+   "emit": 1470
+  },
+  {
+   "sample": 35,
+   "bounce": 1,
+   "alive": 216097,
+   "hit": 215996,
+   "glass": 4611,
+   "emit": 8055
+  },
+  {
+   "sample": 35,
+   "bounce": 2,
+   "alive": 197748,
+   "hit": 197154,
+   "glass": 4806,
+   "emit": 5476
+  },
+  {
+   "sample": 36,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3573,
+   "emit": 1494
+  },
+  {
+   "sample": 36,
+   "bounce": 1,
+   "alive": 216124,
+   "hit": 216022,
+   "glass": 4615,
+   "emit": 8057
+  },
+  {
+   "sample": 36,
+   "bounce": 2,
+   "alive": 197899,
+   "hit": 197289,
+   "glass": 4716,
+   "emit": 5776
+  },
+  {
+   "sample": 37,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3567,
+   "emit": 1456
+  },
+  {
+   "sample": 37,
+   "bounce": 1,
+   "alive": 216183,
+   "hit": 216090,
+   "glass": 4586,
+   "emit": 7880
+  },
+  {
+   "sample": 37,
+   "bounce": 2,
+   "alive": 197851,
+   "hit": 197300,
+   "glass": 4744,
+   "emit": 5646
+  },
+  {
+   "sample": 38,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3560,
+   "emit": 1454
+  },
+  {
+   "sample": 38,
+   "bounce": 1,
+   "alive": 216275,
+   "hit": 216200,
+   "glass": 4645,
+   "emit": 7972
+  },
+  {
+   "sample": 38,
+   "bounce": 2,
+   "alive": 198148,
+   "hit": 197586,
+   "glass": 4738,
+   "emit": 5653
+  },
+  {
+   "sample": 39,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3562,
+   "emit": 1436
+  },
+  {
+   "sample": 39,
+   "bounce": 1,
+   "alive": 216135,
+   "hit": 216044,
+   "glass": 4562,
+   "emit": 7986
+  },
+  {
+   "sample": 39,
+   "bounce": 2,
+   "alive": 197668,
+   "hit": 197122,
+   "glass": 4671,
+   "emit": 5701
+  },
+  {
+   "sample": 40,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3556,
+   "emit": 1469
+  },
+  {
+   "sample": 40,
+   "bounce": 1,
+   "alive": 216134,
+   "hit": 216048,
+   "glass": 4578,
+   "emit": 7892
+  },
+  {
+   "sample": 40,
+   "bounce": 2,
+   "alive": 197853,
+   "hit": 197278,
+   "glass": 4683,
+   "emit": 5584
+  },
+  {
+   "sample": 41,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3563,
+   "emit": 1480
+  },
+  {
+   "sample": 41,
+   "bounce": 1,
+   "alive": 216323,
+   "hit": 216221,
+   "glass": 4589,
+   "emit": 7953
+  },
+  {
+   "sample": 41,
+   "bounce": 2,
+   "alive": 198045,
+   "hit": 197462,
+   "glass": 4674,
+   "emit": 5730
+  },
+  {
+   "sample": 42,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3572,
+   "emit": 1459
+  },
+  {
+   "sample": 42,
+   "bounce": 1,
+   "alive": 216264,
+   "hit": 216174,
+   "glass": 4623,
+   "emit": 7924
+  },
+  {
+   "sample": 42,
+   "bounce": 2,
+   "alive": 198087,
+   "hit": 197477,
+   "glass": 4678,
+   "emit": 5695
+  },
+  {
+   "sample": 43,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3566,
+   "emit": 1434
+  },
+  {
+   "sample": 43,
+   "bounce": 1,
+   "alive": 216169,
+   "hit": 216081,
+   "glass": 4634,
+   "emit": 8074
+  },
+  {
+   "sample": 43,
+   "bounce": 2,
+   "alive": 197832,
+   "hit": 197229,
+   "glass": 4753,
+   "emit": 5670
+  },
+  {
+   "sample": 44,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230399,
+   "glass": 3575,
+   "emit": 1476
+  },
+  {
+   "sample": 44,
+   "bounce": 1,
+   "alive": 216114,
+   "hit": 216011,
+   "glass": 4574,
+   "emit": 7953
+  },
+  {
+   "sample": 44,
+   "bounce": 2,
+   "alive": 197934,
+   "hit": 197366,
+   "glass": 4721,
+   "emit": 5588
+  },
+  {
+   "sample": 45,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3567,
+   "emit": 1457
+  },
+  {
+   "sample": 45,
+   "bounce": 1,
+   "alive": 216369,
+   "hit": 216288,
+   "glass": 4531,
+   "emit": 7959
+  },
+  {
+   "sample": 45,
+   "bounce": 2,
+   "alive": 198271,
+   "hit": 197716,
+   "glass": 4642,
+   "emit": 5707
+  },
+  {
+   "sample": 46,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3572,
+   "emit": 1431
+  },
+  {
+   "sample": 46,
+   "bounce": 1,
+   "alive": 216125,
+   "hit": 216032,
+   "glass": 4591,
+   "emit": 7892
+  },
+  {
+   "sample": 46,
+   "bounce": 2,
+   "alive": 197821,
+   "hit": 197232,
+   "glass": 4667,
+   "emit": 5730
+  },
+  {
+   "sample": 47,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3573,
+   "emit": 1453
+  },
+  {
+   "sample": 47,
+   "bounce": 1,
+   "alive": 216235,
+   "hit": 216171,
+   "glass": 4541,
+   "emit": 8026
+  },
+  {
+   "sample": 47,
+   "bounce": 2,
+   "alive": 197854,
+   "hit": 197278,
+   "glass": 4726,
+   "emit": 5681
+  },
+  {
+   "sample": 48,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3591,
+   "emit": 1464
+  },
+  {
+   "sample": 48,
+   "bounce": 1,
+   "alive": 216204,
+   "hit": 216109,
+   "glass": 4533,
+   "emit": 7984
+  },
+  {
+   "sample": 48,
+   "bounce": 2,
+   "alive": 197982,
+   "hit": 197380,
+   "glass": 4639,
+   "emit": 5692
+  },
+  {
+   "sample": 49,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230399,
+   "glass": 3579,
+   "emit": 1439
+  },
+  {
+   "sample": 49,
+   "bounce": 1,
+   "alive": 216388,
+   "hit": 216298,
+   "glass": 4584,
+   "emit": 7912
+  },
+  {
+   "sample": 49,
+   "bounce": 2,
+   "alive": 198045,
+   "hit": 197453,
+   "glass": 4736,
+   "emit": 5733
+  },
+  {
+   "sample": 50,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3553,
+   "emit": 1472
+  },
+  {
+   "sample": 50,
+   "bounce": 1,
+   "alive": 216110,
+   "hit": 216030,
+   "glass": 4547,
+   "emit": 7962
+  },
+  {
+   "sample": 50,
+   "bounce": 2,
+   "alive": 197791,
+   "hit": 197209,
+   "glass": 4653,
+   "emit": 5673
+  },
+  {
+   "sample": 51,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3552,
+   "emit": 1470
+  },
+  {
+   "sample": 51,
+   "bounce": 1,
+   "alive": 216217,
+   "hit": 216121,
+   "glass": 4526,
+   "emit": 7917
+  },
+  {
+   "sample": 51,
+   "bounce": 2,
+   "alive": 198157,
+   "hit": 197537,
+   "glass": 4554,
+   "emit": 5812
+  },
+  {
+   "sample": 52,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3571,
+   "emit": 1432
+  },
+  {
+   "sample": 52,
+   "bounce": 1,
+   "alive": 216221,
+   "hit": 216128,
+   "glass": 4504,
+   "emit": 8096
+  },
+  {
+   "sample": 52,
+   "bounce": 2,
+   "alive": 197963,
+   "hit": 197332,
+   "glass": 4655,
+   "emit": 5649
+  },
+  {
+   "sample": 53,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3562,
+   "emit": 1472
+  },
+  {
+   "sample": 53,
+   "bounce": 1,
+   "alive": 216048,
+   "hit": 215953,
+   "glass": 4547,
+   "emit": 8002
+  },
+  {
+   "sample": 53,
+   "bounce": 2,
+   "alive": 197788,
+   "hit": 197214,
+   "glass": 4716,
+   "emit": 5518
+  },
+  {
+   "sample": 54,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3590,
+   "emit": 1456
+  },
+  {
+   "sample": 54,
+   "bounce": 1,
+   "alive": 216243,
+   "hit": 216170,
+   "glass": 4610,
+   "emit": 8010
+  },
+  {
+   "sample": 54,
+   "bounce": 2,
+   "alive": 197889,
+   "hit": 197313,
+   "glass": 4779,
+   "emit": 5571
+  },
+  {
+   "sample": 55,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3573,
+   "emit": 1467
+  },
+  {
+   "sample": 55,
+   "bounce": 1,
+   "alive": 216229,
+   "hit": 216126,
+   "glass": 4610,
+   "emit": 7857
+  },
+  {
+   "sample": 55,
+   "bounce": 2,
+   "alive": 198232,
+   "hit": 197673,
+   "glass": 4732,
+   "emit": 5585
+  },
+  {
+   "sample": 56,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230399,
+   "glass": 3574,
+   "emit": 1444
+  },
+  {
+   "sample": 56,
+   "bounce": 1,
+   "alive": 216182,
+   "hit": 216086,
+   "glass": 4661,
+   "emit": 7996
+  },
+  {
+   "sample": 56,
+   "bounce": 2,
+   "alive": 197827,
+   "hit": 197272,
+   "glass": 4759,
+   "emit": 5640
+  },
+  {
+   "sample": 57,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3587,
+   "emit": 1444
+  },
+  {
+   "sample": 57,
+   "bounce": 1,
+   "alive": 216117,
+   "hit": 216012,
+   "glass": 4561,
+   "emit": 8090
+  },
+  {
+   "sample": 57,
+   "bounce": 2,
+   "alive": 197674,
+   "hit": 197098,
+   "glass": 4758,
+   "emit": 5722
+  },
+  {
+   "sample": 58,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230399,
+   "glass": 3561,
+   "emit": 1435
+  },
+  {
+   "sample": 58,
+   "bounce": 1,
+   "alive": 216108,
+   "hit": 216036,
+   "glass": 4535,
+   "emit": 7969
+  },
+  {
+   "sample": 58,
+   "bounce": 2,
+   "alive": 198033,
+   "hit": 197478,
+   "glass": 4646,
+   "emit": 5675
+  },
+  {
+   "sample": 59,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3583,
+   "emit": 1463
+  },
+  {
+   "sample": 59,
+   "bounce": 1,
+   "alive": 216173,
+   "hit": 216084,
+   "glass": 4560,
+   "emit": 8046
+  },
+  {
+   "sample": 59,
+   "bounce": 2,
+   "alive": 197662,
+   "hit": 197055,
+   "glass": 4685,
+   "emit": 5529
+  },
+  {
+   "sample": 60,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3593,
+   "emit": 1415
+  },
+  {
+   "sample": 60,
+   "bounce": 1,
+   "alive": 216187,
+   "hit": 216093,
+   "glass": 4564,
+   "emit": 8013
+  },
+  {
+   "sample": 60,
+   "bounce": 2,
+   "alive": 197872,
+   "hit": 197303,
+   "glass": 4711,
+   "emit": 5592
+  },
+  {
+   "sample": 61,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3587,
+   "emit": 1440
+  },
+  {
+   "sample": 61,
+   "bounce": 1,
+   "alive": 216379,
+   "hit": 216293,
+   "glass": 4653,
+   "emit": 7966
+  },
+  {
+   "sample": 61,
+   "bounce": 2,
+   "alive": 198150,
+   "hit": 197575,
+   "glass": 4745,
+   "emit": 5663
+  },
+  {
+   "sample": 62,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3581,
+   "emit": 1472
+  },
+  {
+   "sample": 62,
+   "bounce": 1,
+   "alive": 216185,
+   "hit": 216089,
+   "glass": 4568,
+   "emit": 8059
+  },
+  {
+   "sample": 62,
+   "bounce": 2,
+   "alive": 197883,
+   "hit": 197296,
+   "glass": 4672,
+   "emit": 5599
+  },
+  {
+   "sample": 63,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3590,
+   "emit": 1447
+  },
+  {
+   "sample": 63,
+   "bounce": 1,
+   "alive": 216173,
+   "hit": 216078,
+   "glass": 4576,
+   "emit": 7917
+  },
+  {
+   "sample": 63,
+   "bounce": 2,
+   "alive": 197877,
+   "hit": 197301,
+   "glass": 4668,
+   "emit": 5627
+  }
+ ],
+ "compare": {}
+}

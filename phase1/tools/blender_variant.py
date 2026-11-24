@@ -40,6 +40,9 @@ ap.add_argument("--max-bounces", type=int)
 ap.add_argument("--box-filter", action="store_true")
 ap.add_argument("--no-clamp", action="store_true")
 ap.add_argument("--seed", type=int, default=0)
+ap.add_argument("--view", help="view transform to use (tpu_scene defaults to Standard)")
+ap.add_argument("--look", default="None")
+ap.add_argument("--exposure-stops", type=float, default=0.0)
 args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
 rig = json.load(open(args.rig)) if args.rig else None
 info = {"args": vars(args)}
@@ -137,10 +140,10 @@ if args.mode in ("tpu_lights", "tpu_scene"):
   tr.set_tpu_sky(rig)
   tr.add_area_light(rig)
   tr.add_sun(rig)
-if args.mode == "tpu_scene":
-  sc.view_settings.view_transform = "Standard"
-  sc.view_settings.look = "None"
-  sc.view_settings.exposure = 0.0
+if args.view or args.mode == "tpu_scene":
+  sc.view_settings.view_transform = args.view or "Standard"
+  sc.view_settings.look = args.look
+  sc.view_settings.exposure = args.exposure_stops
 
 sc.render.engine = "CYCLES"
 cy = sc.cycles

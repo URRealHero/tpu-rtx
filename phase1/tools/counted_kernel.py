@@ -1,4 +1,4 @@
-"""TPU-RTX's Wide-BVH-64 closest-hit kernel (bvh_pbr_pt.pbr_raycast_tpu) with fetch counters.
+"""TPU-RTX's Wide-BVH-64 kernel (bvh_pbr_pt.pbr_raycast_tpu, closest-hit or any-hit) with fetch counters.
 
 The traversal is copied unchanged from experiments/w7_pathtracer_1b/bvh_pbr_pt.py:198-457;
 the only additions are a (1, 128) counter row carried through the three nested loops and
@@ -29,7 +29,7 @@ N_COUNTERS = 5
 
 
 def pbr_raycast_counted(l2_roots_dev, l2_dev, l0_dev, leaf_dev, ro, rd, t_limit, H: int, W: int,
-                        interpret=True) -> Tuple[jax.Array, ...]:
+                        interpret=True, any_hit: bool = False) -> Tuple[jax.Array, ...]:
   B, R, _ = ro.shape
   rays_2d, n_tiles, can_2d_tile = _pack_rays_tiled(ro, rd, t_limit, H, W)
   total_tiles = B * n_tiles
@@ -120,6 +120,12 @@ def pbr_raycast_counted(l2_roots_dev, l2_dev, l0_dev, leaf_dev, ro, rd, t_limit,
           v = f * (rdx * qx + rdy * qy + rdz * qz)
           t = f * (e2x * qx + e2y * qy + e2z * qz)
           hit_t = ok_a & (u >= 0.0) & (v >= 0.0) & ((u + v) <= 1.0) & (t >= 0.0) & (t < bd0)
+          if any_hit:  # bvh_pbr_pt.py:335-341, unchanged
+            hit_opq = hit_t & (pk[23:24, :] < 1.8)
+            any_ray_hit = jnp.any(hit_opq, axis=1, keepdims=True)
+            new_bd = jnp.where(any_ray_hit, 0.0, bd0)
+            t0_next = jnp.min(jnp.where((tmin0_eff < new_bd) & (unvis0_next_f > 0.5), tmin0_eff, 1e20), axis=0, keepdims=True)
+            return (t0_next, unvis0_next_f, new_bd, nx0, ny0, nz0, ar0, ag0, ab0, pk0, cn0)
           t_cand = jnp.where(hit_t, t, MJ_MAXVAL)
           min_t = jnp.min(t_cand, axis=1, keepdims=True)
           imp = min_t < bd0

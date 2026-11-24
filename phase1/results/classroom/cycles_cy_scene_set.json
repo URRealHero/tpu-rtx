@@ -1,0 +1,45 @@
+{
+ "args": {
+  "mode": "tpu_scene",
+  "out": "cy_scene_set",
+  "res": [
+   640,
+   360
+  ],
+  "spp": 1024,
+  "rig": "rig_classroom.json",
+  "npz": "$PHASE1/runs/export/classroom.npz",
+  "pinhole": true,
+  "max_bounces": 2,
+  "box_filter": true,
+  "no_clamp": true,
+  "seed": 0
+ },
+ "tpu_scene": {
+  "tris": 606140,
+  "opaque": 582632,
+  "glass": 23500,
+  "emissive": 8
+ },
+ "hidden_scene_lights": 0,
+ "settings": {
+  "samples": 1024,
+  "max_bounces": 2,
+  "diffuse_bounces": 2,
+  "glossy_bounces": 2,
+  "transmission_bounces": 2,
+  "sample_clamp_direct": 0.0,
+  "sample_clamp_indirect": 0.0,
+  "pixel_filter_type": "BOX",
+  "filter_width": 1.0,
+  "view_transform": "Standard",
+  "look": "None",
+  "exposure": 0.0,
+  "dof": false,
+  "res": [
+   640,
+   360
+  ]
+ },
+ "render_s": 50.2
+}

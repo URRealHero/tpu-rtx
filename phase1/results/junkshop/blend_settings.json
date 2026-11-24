@@ -1,0 +1,438 @@
+{
+ "file": "$PHASE1/scenes/junkshop/main.blend",
+ "resolution": [
+  2000,
+  1000,
+  100
+ ],
+ "samples": 240,
+ "adaptive_sampling": false,
+ "adaptive_threshold": 0.009999999776482582,
+ "denoising": false,
+ "max_bounces": 4,
+ "diffuse_bounces": 4,
+ "glossy_bounces": 6,
+ "transmission_bounces": 12,
+ "transparent_max_bounces": 8,
+ "sample_clamp_direct": 0.0,
+ "sample_clamp_indirect": 0.0,
+ "light_threshold": 0.009999999776482582,
+ "caustics_reflective": true,
+ "caustics_refractive": true,
+ "filter_glossy": 0.5,
+ "view_transform": "Filmic",
+ "look": "Medium High Contrast",
+ "exposure": 0.0,
+ "gamma": 1.0,
+ "display_device": "sRGB",
+ "camera": "SplashScreen Camera",
+ "camera_lens_mm": 24.972034454345703,
+ "camera_sensor_fit": "AUTO",
+ "camera_dof": true,
+ "motion_blur": false,
+ "film_transparent": true,
+ "pixel_filter_width": 1.5,
+ "lights": [
+  {
+   "name": "Area Red Right",
+   "type": "AREA",
+   "energy": 3534.291748046875,
+   "color": [
+    1.0,
+    0.34191441535949707,
+    0.06847818195819855
+   ],
+   "hide_render": false,
+   "size": 30.0,
+   "shape": "SQUARE",
+   "location": [
+    17.01082420349121,
+    13.949943542480469,
+    0.2544330656528473
+   ]
+  },
+  {
+   "name": "Area.007",
+   "type": "AREA",
+   "energy": 1.5707963705062866,
+   "color": [
+    0.6938718557357788,
+    0.42640581727027893,
+    0.3138999342918396
+   ],
+   "hide_render": false,
+   "size": 0.30000001192092896,
+   "shape": "RECTANGLE",
+   "location": [
+    -0.44278934597969055,
+    -1.0840378999710083,
+    1.0831751823425293
+   ]
+  },
+  {
+   "name": "Area.020",
+   "type": "AREA",
+   "energy": 1.5707963705062866,
+   "color": [
+    0.6938718557357788,
+    0.42640581727027893,
+    0.3138999342918396
+   ],
+   "hide_render": false,
+   "size": 0.30000001192092896,
+   "shape": "RECTANGLE",
+   "location": [
+    0.182856947183609,
+    -1.0840378999710083,
+    1.0831751823425293
+   ]
+  },
+  {
+   "name": "Area.027",
+   "type": "AREA",
+   "energy": 785.398193359375,
+   "color": [
+    0.6938718557357788,
+    0.4699805676937103,
+    0.26863375306129456
+   ],
+   "hide_render": false,
+   "size": 9.0,
+   "shape": "RECTANGLE",
+   "location": [
+    0.4226672649383545,
+    -0.8823487758636475,
+    5.877476215362549
+   ]
+  },
+  {
+   "name": "Background Blue",
+   "type": "AREA",
+   "energy": 15707.962890625,
+   "color": [
+    0.09530746936798096,
+    0.40197786688804626,
+    1.0
+   ],
+   "hide_render": false,
+   "size": 30.0,
+   "shape": "SQUARE",
+   "location": [
+    -62.37548065185547,
+    5.761997222900391,
+    45.2467041015625
+   ]
+  },
+  {
+   "name": "Bounce Enviroment",
+   "type": "POINT",
+   "energy": 750.0,
+   "color": [
+    0.6938718557357788,
+    0.4699805676937103,
+    0.26863375306129456
+   ],
+   "hide_render": false,
+   "size": null,
+   "shape": null,
+   "location": [
+    -8.516979217529297,
+    -5.113537788391113,
+    3.8084731101989746
+   ]
+  },
+  {
+   "name": "Bounce Light Cat Head",
+   "type": "AREA",
+   "energy": 39.2699089050293,
+   "color": [
+    0.5692026019096375,
+    0.6540323495864868,
+    0.6938718557357788
+   ],
+   "hide_render": false,
+   "size": 0.25,
+   "shape": "RECTANGLE",
+   "location": [
+    5.291011810302734,
+    -5.113537311553955,
+    3.4155611991882324
+   ]
+  },
+  {
+   "name": "Bounce Light Left Robot",
+   "type": "POINT",
+   "energy": 10.0,
+   "color": [
+    0.6297382116317749,
+    0.6737804412841797,
+    0.6938718557357788
+   ],
+   "hide_render": false,
+   "size": null,
+   "shape": null,
+   "location": [
+    -1.1992298364639282,
+    -2.9859492778778076,
+    0.1804725080728531
+   ]
+  },
+  {
+   "name": "Converstaion Light",
+   "type": "POINT",
+   "energy": 300.0,
+   "color": [
+    0.5711249709129333,
+    0.6514057517051697,
+    0.6938718557357788
+   ],
+   "hide_render": false,
+   "size": null,
+   "shape": null,
+   "location": [
+    -2.3943982124328613,
+    -2.436001777648926,
+    2.0704801082611084
+   ]
+  },
+  {
+   "name": "No Uso",
+   "type": "POINT",
+   "energy": 0.0,
+   "color": [
+    0.5711249709129333,
+    0.6514057517051697,
+    0.6938718557357788
+   ],
+   "hide_render": false,
+   "size": null,
+   "shape": null,
+   "location": [
+    -1.2393027544021606,
+    -1.8601864576339722,
+    0.1047801822423935
+   ]
+  },
+  {
+   "name": "No Uso 2",
+   "type": "POINT",
+   "energy": 0.0,
+   "color": [
+    0.6938718557357788,
+    0.23299123346805573,
+    0.12461090087890625
+   ],
+   "hide_render": false,
+   "size": null,
+   "shape": null,
+   "location": [
+    -0.8836631774902344,
+    -0.7683867812156677,
+    2.0907130241394043
+   ]
+  },
+  {
+   "name": "No Uso.001",
+   "type": "POINT",
+   "energy": 0.0,
+   "color": [
+    0.6938718557357788,
+    0.4699805676937103,
+    0.26863375306129456
+   ],
+   "hide_render": false,
+   "size": null,
+   "shape": null,
+   "location": [
+    -9.812444686889648,
+    2.535435199737549,
+    7.03554105758667
+   ]
+  },
+  {
+   "name": "PO Box Red",
+   "type": "AREA",
+   "energy": 15.707962989807129,
+   "color": [
+    0.6938718557357788,
+    0.26663458347320557,
+    0.183658629655838
+   ],
+   "hide_render": false,
+   "size": 1.0,
+   "shape": "SQUARE",
+   "location": [
+    -1.7207485437393188,
+    1.1729481220245361,
+    2.935887336730957
+   ]
+  },
+  {
+   "name": "Radio Luz 02",
+   "type": "POINT",
+   "energy": 12.0,
+   "color": [
+    0.6938718557357788,
+    0.4677838385105133,
+    0.2704978287220001
+   ],
+   "hide_render": false,
+   "size": null,
+   "shape": null,
+   "location": [
+    1.823638677597046,
+    -1.3431658744812012,
+    0.9038752317428589
+   ]
+  },
+  {
+   "name": "Radio Luz 03",
+   "type": "POINT",
+   "energy": 12.0,
+   "color": [
+    0.6938718557357788,
+    0.4677838385105133,
+    0.2704978287220001
+   ],
+   "hide_render": false,
+   "size": null,
+   "shape": null,
+   "location": [
+    1.3726246356964111,
+    -1.460702896118164,
+    0.9038752317428589
+   ]
+  },
+  {
+   "name": "RadioLuz",
+   "type": "POINT",
+   "energy": 12.0,
+   "color": [
+    0.6938718557357788,
+    0.4677838385105133,
+    0.2704978287220001
+   ],
+   "hide_render": false,
+   "size": null,
+   "shape": null,
+   "location": [
+    1.594031572341919,
+    -1.3923673629760742,
+    0.9038752317428589
+   ]
+  },
+  {
+   "name": "Right Commodore Cat",
+   "type": "POINT",
+   "energy": 30.0,
+   "color": [
+    0.6938718557357788,
+    0.4677838385105133,
+    0.2704978287220001
+   ],
+   "hide_render": false,
+   "size": null,
+   "shape": null,
+   "location": [
+    1.2313119173049927,
+    -1.8591402769088745,
+    0.2223830223083496
+   ]
+  },
+  {
+   "name": "Rim Light Girl",
+   "type": "AREA",
+   "energy": 15.707962989807129,
+   "color": [
+    0.6938718557357788,
+    0.4677838385105133,
+    0.2704978287220001
+   ],
+   "hide_render": false,
+   "size": 1.0,
+   "shape": "SQUARE",
+   "location": [
+    1.2596335411071777,
+    1.2713420391082764,
+    2.857988119125366
+   ]
+  },
+  {
+   "name": "Rim Light Girl 02",
+   "type": "AREA",
+   "energy": 7.8539814949035645,
+   "color": [
+    0.6938718557357788,
+    0.4677838385105133,
+    0.2704978287220001
+   ],
+   "hide_render": false,
+   "size": 1.6250780820846558,
+   "shape": "SQUARE",
+   "location": [
+    0.7081051468849182,
+    1.2738759517669678,
+    3.505260944366455
+   ]
+  },
+  {
+   "name": "Shop Frontal Left",
+   "type": "AREA",
+   "energy": 27.488935470581055,
+   "color": [
+    0.6938718557357788,
+    0.4677838385105133,
+    0.2704978287220001
+   ],
+   "hide_render": false,
+   "size": 0.5,
+   "shape": "SQUARE",
+   "location": [
+    -3.195827007293701,
+    0.2226923555135727,
+    4.91237735748291
+   ]
+  }
+ ],
+ "n_lights_rendered": 20,
+ "world": {
+  "name": "World",
+  "nodes": [
+   {
+    "type": "OUTPUT_WORLD",
+    "name": "World Output",
+    "image": null
+   },
+   {
+    "type": "BACKGROUND",
+    "name": "Background",
+    "image": null
+   },
+   {
+    "type": "BLACKBODY",
+    "name": "Blackbody",
+    "image": null
+   }
+  ]
+ },
+ "materials_in_use": 37,
+ "material_node_type_counts": {
+  "TEX_IMAGE": 145,
+  "OUTPUT_MATERIAL": 37,
+  "BSDF_PRINCIPLED": 36,
+  "NORMAL_MAP": 34,
+  "MAPPING": 33,
+  "TEX_COORD": 33,
+  "VALTORGB": 5,
+  "EMISSION": 5,
+  "ADD_SHADER": 5,
+  "INVERT": 3,
+  "MIX": 3,
+  "MIX_SHADER": 3,
+  "BSDF_HAIR": 2,
+  "LIGHT_PATH": 1,
+  "MATH": 1,
+  "BSDF_TRANSPARENT": 1,
+  "BSDF_DIFFUSE": 1
+ }
+}

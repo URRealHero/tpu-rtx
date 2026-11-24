@@ -1,0 +1,2 @@
+EXPORTED classroom.npz: verts=319329 tris=606140 fovy=39.60 native=1920x1080@100% lights=10
+CYCLES GT classroom_cycles_gt.png (640x360 @ 1024 spp) rendered in 38.50s

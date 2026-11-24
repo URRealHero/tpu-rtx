@@ -1,0 +1,268 @@
+{
+ "file": "$PHASE1/scenes/classroom/main.blend",
+ "resolution": [
+  1920,
+  1080,
+  100
+ ],
+ "samples": 300,
+ "adaptive_sampling": false,
+ "adaptive_threshold": 0.009999999776482582,
+ "denoising": false,
+ "max_bounces": 8,
+ "diffuse_bounces": 2,
+ "glossy_bounces": 3,
+ "transmission_bounces": 6,
+ "transparent_max_bounces": 8,
+ "sample_clamp_direct": 5.5,
+ "sample_clamp_indirect": 3.0,
+ "light_threshold": 0.0,
+ "caustics_reflective": true,
+ "caustics_refractive": true,
+ "filter_glossy": 1.2000000476837158,
+ "view_transform": "Standard",
+ "look": "None",
+ "exposure": 0.0,
+ "gamma": 1.0,
+ "display_device": "sRGB",
+ "camera": "renderCam",
+ "camera_lens_mm": 25.0,
+ "camera_sensor_fit": "AUTO",
+ "camera_dof": true,
+ "motion_blur": false,
+ "film_transparent": true,
+ "pixel_filter_width": 1.5,
+ "lights": [
+  {
+   "name": "blackBoard_light",
+   "type": "AREA",
+   "energy": 0.7853981852531433,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "hide_render": false,
+   "size": 2.434000015258789,
+   "shape": "RECTANGLE",
+   "location": [
+    0.8977931141853333,
+    3.1193857192993164,
+    1.9841032028198242
+   ]
+  },
+  {
+   "name": "coridor_ceilingLight",
+   "type": "POINT",
+   "energy": 60.0,
+   "color": [
+    1.0,
+    0.8887802958488464,
+    0.7552453279495239
+   ],
+   "hide_render": false,
+   "size": null,
+   "shape": null,
+   "location": [
+    -3.7724454402923584,
+    2.196984052658081,
+    2.8151257038116455
+   ]
+  },
+  {
+   "name": "exterior_fillLight",
+   "type": "AREA",
+   "energy": 1963.495361328125,
+   "color": [
+    1.0,
+    0.9224593639373779,
+    0.8110519647598267
+   ],
+   "hide_render": false,
+   "size": 0.75,
+   "shape": "RECTANGLE",
+   "location": [
+    4.049891471862793,
+    -0.6099263429641724,
+    2.5967631340026855
+   ]
+  },
+  {
+   "name": "Spot.002",
+   "type": "SPOT",
+   "energy": 100.0,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "hide_render": false,
+   "size": null,
+   "shape": null,
+   "location": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "Spot.004",
+   "type": "SPOT",
+   "energy": 100.0,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "hide_render": false,
+   "size": null,
+   "shape": null,
+   "location": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "Spot.005",
+   "type": "SPOT",
+   "energy": 100.0,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "hide_render": false,
+   "size": null,
+   "shape": null,
+   "location": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "Spot.007",
+   "type": "SPOT",
+   "energy": 100.0,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "hide_render": false,
+   "size": null,
+   "shape": null,
+   "location": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "Spot.008",
+   "type": "SPOT",
+   "energy": 100.0,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "hide_render": false,
+   "size": null,
+   "shape": null,
+   "location": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "sun",
+   "type": "SUN",
+   "energy": 1.0,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "hide_render": false,
+   "size": null,
+   "shape": null,
+   "location": [
+    7.989772319793701,
+    1.3079590797424316,
+    4.849038124084473
+   ]
+  },
+  {
+   "name": "Point.001",
+   "type": "POINT",
+   "energy": 1.0,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "hide_render": false,
+   "size": null,
+   "shape": null,
+   "location": [
+    0.0,
+    0.0,
+    -0.3646366596221924
+   ]
+  }
+ ],
+ "n_lights_rendered": 10,
+ "world": {
+  "name": "World",
+  "nodes": [
+   {
+    "type": "OUTPUT_WORLD",
+    "name": "World Output",
+    "image": null
+   },
+   {
+    "type": "BACKGROUND",
+    "name": "Background",
+    "image": null
+   }
+  ]
+ },
+ "materials_in_use": 85,
+ "material_node_type_counts": {
+  "OUTPUT_MATERIAL": 87,
+  "TEX_IMAGE": 70,
+  "BSDF_DIFFUSE": 63,
+  "MIX": 55,
+  "BSDF_GLOSSY": 43,
+  "BUMP": 38,
+  "MIX_SHADER": 35,
+  "TEX_COORD": 24,
+  "VALTORGB": 23,
+  "MAPPING": 22,
+  "MATH": 22,
+  "ATTRIBUTE": 20,
+  "TEX_NOISE": 19,
+  "CURVE_RGB": 15,
+  "DISPLACEMENT": 7,
+  "HUE_SAT": 5,
+  "RGB": 5,
+  "OBJECT_INFO": 4,
+  "EMISSION": 3,
+  "INVERT": 3,
+  "GROUP": 3,
+  "BSDF_TRANSPARENT": 3,
+  "BSDF_GLASS": 3,
+  "NEW_GEOMETRY": 2,
+  "FRAME": 2,
+  "BSDF_PRINCIPLED": 2,
+  "BSDF_TRANSLUCENT": 2,
+  "TEX_WAVE": 1,
+  "TEX_SKY": 1,
+  "GAMMA": 1,
+  "BLACKBODY": 1,
+  "BRIGHTCONTRAST": 1
+ }
+}

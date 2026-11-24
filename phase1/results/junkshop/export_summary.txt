@@ -1,0 +1,2 @@
+EXPORTED junkshop.npz: verts=1583549 tris=3148725 fovy=35.53 native=2000x1000@100% lights=20
+CYCLES GT junkshop_cycles_gt.png (640x320 @ 1024 spp) rendered in 56.37s

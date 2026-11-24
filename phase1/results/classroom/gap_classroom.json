@@ -1,0 +1,141 @@
+{
+ "gt": "$PHASE1/runs/export/classroom_cycles_gt.png",
+ "steps": [
+  {
+   "step": "0 Cycles, same settings, new seed",
+   "note": "noise floor of the 1024-spp reference",
+   "psnr_db": 80.857,
+   "ssim": 1.0
+  },
+  {
+   "step": "1 + TPU camera/bounces/no clamp",
+   "note": "pinhole (no depth of field), 2 bounces after the first hit, box pixel filter, no sample clamping",
+   "psnr_db": 26.276,
+   "ssim": 0.8744
+  },
+  {
+   "step": "2 + TPU lights",
+   "note": "scene's 10 lamps and world replaced by TPU-RTX's 1 disk light, sun and gradient sky",
+   "psnr_db": 19.642,
+   "ssim": 0.8074
+  },
+  {
+   "step": "3 + TPU materials/geometry export",
+   "note": "TPU-RTX's exported triangles: one colour/roughness/material code per triangle, smooth vertex normals, no textures or bump",
+   "psnr_db": 10.846,
+   "ssim": 0.3899
+  },
+  {
+   "step": "4 + TPU light transport (Standard view)",
+   "note": "TPU-RTX's path tracer (CPU twin, 1024 spp), shown with Blender's Standard view",
+   "psnr_db": 10.638,
+   "ssim": 0.2898
+  },
+  {
+   "step": "5 + TPU tone curve (ACES-fit, exposure 0.55)",
+   "note": "what TPU-RTX outputs, converged",
+   "psnr_db": 12.07,
+   "ssim": 0.3044
+  },
+  {
+   "step": "6 + 16 spp noise",
+   "note": "TPU-RTX's output at 16 spp, mean of 4 seeds (reported: 9.44 dB)",
+   "psnr_db": 9.472,
+   "ssim": 0.0819
+  }
+ ],
+ "single_changes": [
+  {
+   "change": "depth of field off",
+   "psnr_db": 32.772,
+   "ssim": 0.9484
+  },
+  {
+   "change": "bounces capped at 2 after the first hit",
+   "psnr_db": 45.736,
+   "ssim": 0.9987
+  },
+  {
+   "change": "no sample clamping (scene clamps indirect at 3.0)",
+   "psnr_db": 28.617,
+   "ssim": 0.9409
+  },
+  {
+   "change": "TPU-RTX's lights only",
+   "psnr_db": 20.294,
+   "ssim": 0.8584
+  }
+ ],
+ "pairs": [
+  {
+   "a": "Cycles on TPU-RTX's exported scene and lights",
+   "b": "CPU twin: TPU-RTX estimator as shipped",
+   "psnr_db": 19.821,
+   "ssim": 0.5878,
+   "mean_lum_ratio_b_over_a": 1.0712
+  },
+  {
+   "a": "Cycles on TPU-RTX's exported scene and lights",
+   "b": "CPU twin: without the +0.08 light falloff softening",
+   "psnr_db": 19.838,
+   "ssim": 0.5887,
+   "mean_lum_ratio_b_over_a": 1.0716
+  },
+  {
+   "a": "Cycles on TPU-RTX's exported scene and lights",
+   "b": "CPU twin: without softening and clamps",
+   "psnr_db": 19.208,
+   "ssim": 0.5516,
+   "mean_lum_ratio_b_over_a": 1.1145
+  }
+ ],
+ "aov_checks": {
+  "depth": {
+   "pixels_compared": 229320,
+   "within_1pct": 0.9714,
+   "median_rel_err": 0.0004046996764373034,
+   "note": "planar depth of TPU-RTX's first hit (one jittered sample) vs Cycles' Depth pass (pixel-filtered)"
+  },
+  "albedo": {
+   "pixels_compared": 125834,
+   "psnr_db_linear": 7.411,
+   "mean_tpu": [
+    0.716,
+    0.7017,
+    0.6935
+   ],
+   "mean_cycles": [
+    0.4198,
+    0.3587,
+    0.2765
+   ],
+   "note": "non-metal opaque pixels; Cycles Diffuse Color pass vs TPU-RTX per-triangle albedo"
+  }
+ },
+ "luminance": {
+  "cy_ref_s2": 1.0,
+  "cy_orig_set": 1.4406,
+  "cy_lights_set": 0.8423,
+  "cy_scene_set": 2.4758,
+  "cy_pin": 1.0001,
+  "cy_b2": 0.9976,
+  "cy_noclamp": 1.4435,
+  "cy_lights": 0.8122,
+  "twin_def_": 2.6521,
+  "twin_raw_": 2.7593,
+  "twin_nosoft_": 2.6531
+ },
+ "export_stats": {
+  "triangles": 606140,
+  "mat_code_share": {
+   "0.950": 0.6114,
+   "0.000": 0.3498,
+   "2.000": 0.0388,
+   "4.000": 0.0,
+   "3.100": 0.0
+  },
+  "albedo_default_0p70_share": 0.0254,
+  "albedo_white_0p99_share": 0.1463,
+  "note": "mat_code 0.95 = the exporter's code for a Glossy BSDF node (near-metal); 2.0 glass; >= 2.8 emitter"
+ }
+}

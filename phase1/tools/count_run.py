@@ -23,9 +23,14 @@ CHUNK = 1024  # rays per kernel call (8 packets); fixed so each worker compiles 
 _G = {}
 
 
-def _worker_init(npz_path):
+def _worker_init(npz_path, counter, cores):
+  # Pin each worker to one core before JAX starts: XLA sizes its CPU thread pool from the
+  # affinity mask, so the worker runs one thread instead of one per host core.
+  with counter.get_lock():
+    k = counter.value
+    counter.value += 1
+  os.sched_setaffinity(0, {cores[k % len(cores)]})
   os.environ["JAX_PLATFORMS"] = "cpu"
-  os.environ["XLA_FLAGS"] = "--xla_cpu_multi_thread_eigen=false intra_op_parallelism_threads=1"
   import common  # noqa: F401
   import jax
   import jax.numpy as jnp
@@ -34,19 +39,20 @@ def _worker_init(npz_path):
   ds = np.load(npz_path, allow_pickle=False)
   bvh = build_pbr_wide_bvh("s", ds["verts"], ds["faces"], ds["tri_albedo"], ds["tri_roughness"], ds["tri_mat_code"], vert_normals=ds["vnorm"])
   _G["bv"] = [jnp.asarray(x) for x in (bvh.l2_roots_aabb, bvh.l2_aabbs, bvh.l0_aabbs, bvh.leaf_bank)]
-  _G["fn"] = jax.jit(lambda a, b, c, d, o, r, t: pbr_raycast_counted(a, b, c, d, o, r, t, 1, CHUNK, interpret=True))
+  _G["fn"] = {ah: jax.jit(lambda a, b, c, d, o, r, t, ah=ah: pbr_raycast_counted(a, b, c, d, o, r, t, 1, CHUNK, interpret=True, any_hit=ah))
+              for ah in (False, True)}
 
 
 def _worker_run(task):
   import jax.numpy as jnp
-  key, ro, rd, tl = task
+  key, ro, rd, tl, any_hit = task
   n = len(ro)
   if n < CHUNK:  # pad with dead rays (t_limit 0), which never drive traversal
     pad = CHUNK - n
     ro = np.concatenate([ro, np.zeros((pad, 3), np.float32)])
     rd = np.concatenate([rd, np.tile(np.array([[0.0, 0.0, 1.0]], np.float32), (pad, 1))])
     tl = np.concatenate([tl, np.zeros(pad, np.float32)])
-  dist, cnt = _G["fn"](*_G["bv"], jnp.asarray(ro[None]), jnp.asarray(rd[None]), jnp.asarray(tl[None]))
+  dist, cnt = _G["fn"][any_hit](*_G["bv"], jnp.asarray(ro[None]), jnp.asarray(rd[None]), jnp.asarray(tl[None]))
   return key, np.asarray(dist)[0, :n], np.asarray(cnt)
 
 
@@ -126,6 +132,7 @@ def main():
   ap.add_argument("--bounces", type=int, nargs="*", default=[0, 1, 2])
   ap.add_argument("--orders", nargs="*", default=["pixel_tiles", "compact", "sort_origin", "sort_octant_origin", "sort_dir256_origin", "sort_cell_dir256"])
   ap.add_argument("--max-rays", type=int, default=None, help="debug: only the first N rays of each ordering")
+  ap.add_argument("--ray-set", default="closest", choices=["closest", "area_shadow", "sun_shadow"])
   args = ap.parse_args()
 
   import common
@@ -133,18 +140,27 @@ def main():
   lo, hi = ds["verts"].min(0), ds["verts"].max(0)
   rays = np.load(args.rays)
   ctx = mp.get_context("spawn")
+  cores = sorted(os.sched_getaffinity(0))
+  counter = ctx.Value("i", 0)
   results = {"what": "TPU-RTX Wide-BVH-64 closest-hit kernel with fetch counters, Pallas interpret mode on CPU",
              "scene_npz": os.path.abspath(args.npz), "rays": os.path.abspath(args.rays), "chunk": CHUNK, "runs": []}
-  with ctx.Pool(args.workers, initializer=_worker_init, initargs=(os.path.abspath(args.npz),)) as pool:
+  with ctx.Pool(args.workers, initializer=_worker_init, initargs=(os.path.abspath(args.npz), counter, cores)) as pool:
     for b in args.bounces:
-      ro, rd, tl = rays[f"b{b}_ro"], rays[f"b{b}_rd"], rays[f"b{b}_tlim"]
-      t_ref, _ = common.embree_closest_hit(ds["verts"], ds["faces"], ro[tl > 0], rd[tl > 0])
+      pre = {"closest": "", "area_shadow": "sh_", "sun_shadow": "sun_"}[args.ray_set]
+      any_hit = args.ray_set != "closest"
+      ro, rd, tl = rays[f"b{b}_{pre}ro"], rays[f"b{b}_{pre}rd"], rays[f"b{b}_{pre}tlim"]
       t_ref_full = np.full(len(ro), np.inf, np.float32)
-      t_ref_full[tl > 0] = t_ref
+      if any_hit:  # occluded by an opaque triangle (the any-hit kernel skips glass and emitters)
+        from twin import EmbreeTracer
+        occ = EmbreeTracer(ds["verts"], ds["faces"].astype(np.int64), ds["tri_mat_code"]).occluded(ro, rd, tl)
+        t_ref_full[occ] = 0.0
+      else:
+        t_ref, _ = common.embree_closest_hit(ds["verts"], ds["faces"], ro[tl > 0], rd[tl > 0])
+        t_ref_full[tl > 0] = t_ref
       for nm, idx in orderings(ro, rd, tl, args.H, args.W, lo, hi, args.orders).items():
         if args.max_rays:
           idx = idx[: args.max_rays]
-        tasks = [((i,), ro[idx[i:i + CHUNK]], rd[idx[i:i + CHUNK]], tl[idx[i:i + CHUNK]]) for i in range(0, len(idx), CHUNK)]
+        tasks = [((i,), ro[idx[i:i + CHUNK]], rd[idx[i:i + CHUNK]], tl[idx[i:i + CHUNK]], any_hit) for i in range(0, len(idx), CHUNK)]
         t0 = time.perf_counter()
         cnt_all, dist_all = [], np.empty(len(idx), np.float32)
         for key, dist, cnt in pool.imap_unordered(_worker_run, tasks, chunksize=1):
@@ -158,7 +174,7 @@ def main():
         hit_e = np.isfinite(t_ref_full[idx]) & (t_ref_full[idx] < tl[idx]) & live_mask
         packets = cnt[cnt[:, 4] > 0]
         rec = {
-            "bounce": b, "order": nm, "live_rays": int(live_mask.sum()), "packets_with_live_rays": int(len(packets)),
+            "bounce": b, "ray_set": args.ray_set, "order": nm, "live_rays": int(live_mask.sum()), "packets_with_live_rays": int(len(packets)),
             "packets_total": int(len(cnt)),
             "l2_fetches": int(cnt[:, 0].sum()), "l1_fetches": int(cnt[:, 1].sum()), "leaf_fetches": int(cnt[:, 2].sum()),
             "ray_leaf_pairs_needed": int(cnt[:, 3].sum()),

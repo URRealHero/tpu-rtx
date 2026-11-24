@@ -1,0 +1,26 @@
+{
+ "area_disk": {
+  "pixel": 1.4996590614318848,
+  "tpu_expect": 1.5,
+  "ratio": 0.9997727076212565
+ },
+ "sun": {
+  "pixel": 0.6366198062896729,
+  "tpu_expect": 0.6366197723675814,
+  "ratio": 1.0000000532846967
+ },
+ "uniform_world": {
+  "pixel": 0.5,
+  "tpu_expect": 0.5,
+  "ratio": 1.0
+ },
+ "emission_direct": {
+  "pixel": 2.0,
+  "tpu_expect": 2.0,
+  "ratio": 1.0
+ },
+ "sky": {
+  "max_abs_err_assumed_orientation": 0.005295002426025086,
+  "note": "95th-percentile per-pixel max abs error vs formula (pixel centres; sun glow is sharp)"
+ }
+}

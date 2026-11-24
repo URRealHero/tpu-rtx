@@ -1,0 +1,32 @@
+{
+ "tag": "t_1spp_1b_s1",
+ "what": "CPU twin of TPU-RTX bvh_pbr_pt (NumPy shading port + Embree ray casts)",
+ "scene": "classroom",
+ "res": "360x640",
+ "spp": 1,
+ "max_bounces": 1,
+ "seed": 1,
+ "falloff_soften": 0.08,
+ "clamps": true,
+ "build_s": 2.5,
+ "render_s": 1.1,
+ "psnr_vs_gt_db": 7.15,
+ "ssim_vs_gt": 0.0249,
+ "psnr_standardview_vs_gt_db": 7.192,
+ "mean_linear_rgb": [
+  0.13504,
+  0.13431,
+  0.13405
+ ],
+ "stats": [
+  {
+   "sample": 0,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3564,
+   "emit": 1470
+  }
+ ],
+ "compare": {}
+}

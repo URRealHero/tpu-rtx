@@ -1,0 +1,408 @@
+{
+ "tag": "t_16spp_3b_s1",
+ "what": "CPU twin of TPU-RTX bvh_pbr_pt (NumPy shading port + Embree ray casts)",
+ "scene": "classroom",
+ "res": "360x640",
+ "spp": 16,
+ "max_bounces": 3,
+ "seed": 1,
+ "falloff_soften": 0.08,
+ "clamps": true,
+ "build_s": 2.1,
+ "render_s": 38.4,
+ "psnr_vs_gt_db": 9.463,
+ "ssim_vs_gt": 0.0819,
+ "psnr_standardview_vs_gt_db": 8.7,
+ "mean_linear_rgb": [
+  0.60662,
+  0.60016,
+  0.59747
+ ],
+ "stats": [
+  {
+   "sample": 0,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3564,
+   "emit": 1470
+  },
+  {
+   "sample": 0,
+   "bounce": 1,
+   "alive": 216169,
+   "hit": 216075,
+   "glass": 4614,
+   "emit": 7990
+  },
+  {
+   "sample": 0,
+   "bounce": 2,
+   "alive": 198086,
+   "hit": 197533,
+   "glass": 4744,
+   "emit": 5695
+  },
+  {
+   "sample": 1,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3577,
+   "emit": 1446
+  },
+  {
+   "sample": 1,
+   "bounce": 1,
+   "alive": 216100,
+   "hit": 215999,
+   "glass": 4632,
+   "emit": 8056
+  },
+  {
+   "sample": 1,
+   "bounce": 2,
+   "alive": 197559,
+   "hit": 197031,
+   "glass": 4688,
+   "emit": 5628
+  },
+  {
+   "sample": 2,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3571,
+   "emit": 1439
+  },
+  {
+   "sample": 2,
+   "bounce": 1,
+   "alive": 216134,
+   "hit": 216042,
+   "glass": 4555,
+   "emit": 8050
+  },
+  {
+   "sample": 2,
+   "bounce": 2,
+   "alive": 197848,
+   "hit": 197288,
+   "glass": 4693,
+   "emit": 5547
+  },
+  {
+   "sample": 3,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3562,
+   "emit": 1439
+  },
+  {
+   "sample": 3,
+   "bounce": 1,
+   "alive": 216123,
+   "hit": 216036,
+   "glass": 4588,
+   "emit": 8008
+  },
+  {
+   "sample": 3,
+   "bounce": 2,
+   "alive": 197833,
+   "hit": 197293,
+   "glass": 4751,
+   "emit": 5643
+  },
+  {
+   "sample": 4,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230399,
+   "glass": 3590,
+   "emit": 1464
+  },
+  {
+   "sample": 4,
+   "bounce": 1,
+   "alive": 216253,
+   "hit": 216183,
+   "glass": 4638,
+   "emit": 8003
+  },
+  {
+   "sample": 4,
+   "bounce": 2,
+   "alive": 197941,
+   "hit": 197382,
+   "glass": 4784,
+   "emit": 5613
+  },
+  {
+   "sample": 5,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3579,
+   "emit": 1453
+  },
+  {
+   "sample": 5,
+   "bounce": 1,
+   "alive": 216077,
+   "hit": 216000,
+   "glass": 4634,
+   "emit": 7936
+  },
+  {
+   "sample": 5,
+   "bounce": 2,
+   "alive": 198070,
+   "hit": 197489,
+   "glass": 4707,
+   "emit": 5752
+  },
+  {
+   "sample": 6,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3562,
+   "emit": 1431
+  },
+  {
+   "sample": 6,
+   "bounce": 1,
+   "alive": 216063,
+   "hit": 215975,
+   "glass": 4595,
+   "emit": 8002
+  },
+  {
+   "sample": 6,
+   "bounce": 2,
+   "alive": 197673,
+   "hit": 197072,
+   "glass": 4714,
+   "emit": 5670
+  },
+  {
+   "sample": 7,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3578,
+   "emit": 1480
+  },
+  {
+   "sample": 7,
+   "bounce": 1,
+   "alive": 216340,
+   "hit": 216247,
+   "glass": 4531,
+   "emit": 7878
+  },
+  {
+   "sample": 7,
+   "bounce": 2,
+   "alive": 198317,
+   "hit": 197753,
+   "glass": 4651,
+   "emit": 5610
+  },
+  {
+   "sample": 8,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3586,
+   "emit": 1450
+  },
+  {
+   "sample": 8,
+   "bounce": 1,
+   "alive": 216197,
+   "hit": 216090,
+   "glass": 4567,
+   "emit": 8075
+  },
+  {
+   "sample": 8,
+   "bounce": 2,
+   "alive": 197760,
+   "hit": 197156,
+   "glass": 4752,
+   "emit": 5538
+  },
+  {
+   "sample": 9,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230399,
+   "glass": 3553,
+   "emit": 1461
+  },
+  {
+   "sample": 9,
+   "bounce": 1,
+   "alive": 215984,
+   "hit": 215897,
+   "glass": 4637,
+   "emit": 7957
+  },
+  {
+   "sample": 9,
+   "bounce": 2,
+   "alive": 197825,
+   "hit": 197251,
+   "glass": 4704,
+   "emit": 5639
+  },
+  {
+   "sample": 10,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3560,
+   "emit": 1456
+  },
+  {
+   "sample": 10,
+   "bounce": 1,
+   "alive": 216237,
+   "hit": 216156,
+   "glass": 4510,
+   "emit": 8076
+  },
+  {
+   "sample": 10,
+   "bounce": 2,
+   "alive": 197816,
+   "hit": 197248,
+   "glass": 4665,
+   "emit": 5679
+  },
+  {
+   "sample": 11,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230398,
+   "glass": 3568,
+   "emit": 1487
+  },
+  {
+   "sample": 11,
+   "bounce": 1,
+   "alive": 216031,
+   "hit": 215944,
+   "glass": 4657,
+   "emit": 7988
+  },
+  {
+   "sample": 11,
+   "bounce": 2,
+   "alive": 197832,
+   "hit": 197284,
+   "glass": 4752,
+   "emit": 5672
+  },
+  {
+   "sample": 12,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3558,
+   "emit": 1450
+  },
+  {
+   "sample": 12,
+   "bounce": 1,
+   "alive": 216304,
+   "hit": 216211,
+   "glass": 4584,
+   "emit": 7836
+  },
+  {
+   "sample": 12,
+   "bounce": 2,
+   "alive": 198241,
+   "hit": 197682,
+   "glass": 4745,
+   "emit": 5565
+  },
+  {
+   "sample": 13,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230399,
+   "glass": 3576,
+   "emit": 1464
+  },
+  {
+   "sample": 13,
+   "bounce": 1,
+   "alive": 216071,
+   "hit": 215971,
+   "glass": 4569,
+   "emit": 7998
+  },
+  {
+   "sample": 13,
+   "bounce": 2,
+   "alive": 197772,
+   "hit": 197191,
+   "glass": 4684,
+   "emit": 5534
+  },
+  {
+   "sample": 14,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3560,
+   "emit": 1474
+  },
+  {
+   "sample": 14,
+   "bounce": 1,
+   "alive": 216232,
+   "hit": 216148,
+   "glass": 4612,
+   "emit": 7897
+  },
+  {
+   "sample": 14,
+   "bounce": 2,
+   "alive": 198112,
+   "hit": 197523,
+   "glass": 4716,
+   "emit": 5540
+  },
+  {
+   "sample": 15,
+   "bounce": 0,
+   "alive": 230400,
+   "hit": 230400,
+   "glass": 3589,
+   "emit": 1416
+  },
+  {
+   "sample": 15,
+   "bounce": 1,
+   "alive": 216381,
+   "hit": 216304,
+   "glass": 4572,
+   "emit": 7962
+  },
+  {
+   "sample": 15,
+   "bounce": 2,
+   "alive": 198110,
+   "hit": 197500,
+   "glass": 4705,
+   "emit": 5630
+  }
+ ],
+ "compare": {}
+}

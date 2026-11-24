@@ -68,7 +68,7 @@ def main():
     np.savez_compressed(os.path.join(args.out, f"{tag}_aovs.npz"), **res["aovs"])
   if res["dumps"]:
     np.savez_compressed(os.path.join(args.out, f"{tag}_rays.npz"),
-                        **{f"b{d['bounce']}_{k}": d[k] for d in res["dumps"] for k in ("ro", "rd", "tlim", "alive")})
+                        **{f"b{d['bounce']}_{k}": d[k] for d in res["dumps"] for k in d if k != "bounce"})
   rec = {
       "tag": tag, "what": "CPU twin of TPU-RTX bvh_pbr_pt (NumPy shading port + Embree ray casts)",
       "scene": args.scene, "res": f"{H}x{W}", "spp": args.spp, "max_bounces": args.bounces, "seed": args.seed,

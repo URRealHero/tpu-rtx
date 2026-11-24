@@ -1,0 +1,41 @@
+{
+ "args": {
+  "mode": "original",
+  "out": "cy_orig_set",
+  "res": [
+   512,
+   512
+  ],
+  "spp": 1024,
+  "rig": null,
+  "npz": null,
+  "pinhole": true,
+  "max_bounces": 2,
+  "box_filter": true,
+  "no_clamp": true,
+  "seed": 0,
+  "view": null,
+  "look": "None",
+  "exposure_stops": 0.0
+ },
+ "settings": {
+  "samples": 1024,
+  "max_bounces": 2,
+  "diffuse_bounces": 2,
+  "glossy_bounces": 2,
+  "transmission_bounces": 2,
+  "sample_clamp_direct": 0.0,
+  "sample_clamp_indirect": 0.0,
+  "pixel_filter_type": "BOX",
+  "filter_width": 1.0,
+  "view_transform": "Filmic",
+  "look": "High Contrast",
+  "exposure": 0.30000001192092896,
+  "dof": false,
+  "res": [
+   512,
+   512
+  ]
+ },
+ "render_s": 84.9
+}

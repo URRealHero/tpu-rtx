@@ -274,6 +274,8 @@ class Twin:
         need_sh = is_opq & (cos_s > 0.0) & (cos_l > 0.0)
         sh_o = hit_pos + n_ff * 1.5e-3
         sh_lim = np.where(need_sh, np.maximum(dist_l - 2.0e-3, 0.0), 0.0).astype(np.float32)
+        if opts.dump_rays_sample == s:
+          dumps[-1].update({"sh_ro": sh_o.astype(np.float32), "sh_rd": wi_l.astype(np.float32), "sh_tlim": sh_lim.copy()})
         occ = self.tracer.occluded(sh_o, wi_l, sh_lim)
         vis = np.where(need_sh & (~occ | (sh_lim <= 1e-4)), 1.0, 0.0)
         brdf_a = _eval_pbr_brdf(n_ff, wo, wi_l, alb, metallic, rgh)
@@ -291,6 +293,8 @@ class Twin:
           cos_sun = np.maximum(np.sum(n_ff * wi_sun, -1), 0.0)
           need_sun = is_opq & (cos_sun > 0.0)
           sun_lim = np.where(need_sun, np.float32(self.zfar * 0.9), 0.0).astype(np.float32)
+          if opts.dump_rays_sample == s:
+            dumps[-1].update({"sun_ro": sh_o.astype(np.float32), "sun_rd": wi_sun.astype(np.float32), "sun_tlim": sun_lim.copy()})
           occ_s = self.tracer.occluded(sh_o, wi_sun, sun_lim)
           vis_sun = np.where(need_sun & ~occ_s, 1.0, 0.0)
           brdf_sun = _eval_pbr_brdf(n_ff, wo, wi_sun, alb, metallic, rgh)

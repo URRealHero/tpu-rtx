@@ -1,0 +1,2 @@
+EXPORTED monster.npz: verts=801257 tris=1602400 fovy=23.91 native=1024x1024@100% lights=9
+CYCLES GT monster_cycles_gt.png (512x512 @ 1024 spp) rendered in 98.61s

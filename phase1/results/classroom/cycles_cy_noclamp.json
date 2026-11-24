@@ -1,0 +1,38 @@
+{
+ "args": {
+  "mode": "original",
+  "out": "cy_noclamp",
+  "res": [
+   640,
+   360
+  ],
+  "spp": 1024,
+  "rig": null,
+  "npz": null,
+  "pinhole": false,
+  "max_bounces": null,
+  "box_filter": false,
+  "no_clamp": true,
+  "seed": 0
+ },
+ "settings": {
+  "samples": 1024,
+  "max_bounces": 8,
+  "diffuse_bounces": 2,
+  "glossy_bounces": 3,
+  "transmission_bounces": 6,
+  "sample_clamp_direct": 0.0,
+  "sample_clamp_indirect": 0.0,
+  "pixel_filter_type": "GAUSSIAN",
+  "filter_width": 1.5,
+  "view_transform": "Standard",
+  "look": "None",
+  "exposure": 0.0,
+  "dof": true,
+  "res": [
+   640,
+   360
+  ]
+ },
+ "render_s": 52.9
+}

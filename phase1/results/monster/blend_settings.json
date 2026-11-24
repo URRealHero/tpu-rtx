@@ -1,0 +1,249 @@
+{
+ "file": "$PHASE1/scenes/monster/main.blend",
+ "resolution": [
+  1024,
+  1024,
+  100
+ ],
+ "samples": 256,
+ "adaptive_sampling": false,
+ "adaptive_threshold": 0.009999999776482582,
+ "denoising": false,
+ "max_bounces": 18,
+ "diffuse_bounces": 6,
+ "glossy_bounces": 6,
+ "transmission_bounces": 18,
+ "transparent_max_bounces": 12,
+ "sample_clamp_direct": 0.0,
+ "sample_clamp_indirect": 10.0,
+ "light_threshold": 0.009999999776482582,
+ "caustics_reflective": true,
+ "caustics_refractive": true,
+ "filter_glossy": 1.0,
+ "view_transform": "Filmic",
+ "look": "High Contrast",
+ "exposure": 0.30000001192092896,
+ "gamma": 1.149999976158142,
+ "display_device": "sRGB",
+ "camera": "Camera",
+ "camera_lens_mm": 85.0,
+ "camera_sensor_fit": "AUTO",
+ "camera_dof": false,
+ "motion_blur": false,
+ "film_transparent": false,
+ "pixel_filter_width": 1.5,
+ "lights": [
+  {
+   "name": "Light controlled falloff",
+   "type": "AREA",
+   "energy": 7.8539814949035645,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "hide_render": false,
+   "size": 1.0,
+   "shape": "SQUARE",
+   "location": [
+    -0.800000011920929,
+    -1.6999999284744263,
+    3.0
+   ]
+  },
+  {
+   "name": "Light controlled falloff.001",
+   "type": "AREA",
+   "energy": 7.8539814949035645,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "hide_render": false,
+   "size": 2.5,
+   "shape": "RECTANGLE",
+   "location": [
+    -1.4945560693740845,
+    1.5262556076049805,
+    2.0009498596191406
+   ]
+  },
+  {
+   "name": "Light controlled falloff.002",
+   "type": "AREA",
+   "energy": 7.8539814949035645,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "hide_render": false,
+   "size": 1.0,
+   "shape": "SQUARE",
+   "location": [
+    -0.800000011920929,
+    -2.0,
+    1.3000000715255737
+   ]
+  },
+  {
+   "name": "Light controlled falloff.003",
+   "type": "AREA",
+   "energy": 7.8539814949035645,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "hide_render": false,
+   "size": 1.0,
+   "shape": "RECTANGLE",
+   "location": [
+    -1.7134068012237549,
+    0.3528096675872803,
+    2.299999952316284
+   ]
+  },
+  {
+   "name": "Light controlled falloff.004",
+   "type": "AREA",
+   "energy": 7.8539814949035645,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "hide_render": false,
+   "size": 1.0,
+   "shape": "RECTANGLE",
+   "location": [
+    2.0865933895111084,
+    0.05280965566635132,
+    2.299999952316284
+   ]
+  },
+  {
+   "name": "Light controlled falloff.005",
+   "type": "AREA",
+   "energy": 7.8539814949035645,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "hide_render": false,
+   "size": 0.5,
+   "shape": "RECTANGLE",
+   "location": [
+    0.7174805402755737,
+    -1.6591538190841675,
+    2.4382612705230713
+   ]
+  },
+  {
+   "name": "Light controlled falloff.006",
+   "type": "AREA",
+   "energy": 7.8539814949035645,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "hide_render": false,
+   "size": 0.6000000238418579,
+   "shape": "RECTANGLE",
+   "location": [
+    0.7191700339317322,
+    -0.9232243299484253,
+    2.864717721939087
+   ]
+  },
+  {
+   "name": "Light controlled falloff.007",
+   "type": "AREA",
+   "energy": 7.8539814949035645,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "hide_render": false,
+   "size": 2.5,
+   "shape": "RECTANGLE",
+   "location": [
+    2.1993579864501953,
+    1.5262556076049805,
+    2.0009498596191406
+   ]
+  },
+  {
+   "name": "Light controlled falloff.008",
+   "type": "AREA",
+   "energy": 7.8539814949035645,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "hide_render": false,
+   "size": 1.5,
+   "shape": "SQUARE",
+   "location": [
+    0.9846439361572266,
+    0.4810582399368286,
+    2.8951644897460938
+   ]
+  }
+ ],
+ "n_lights_rendered": 9,
+ "world": {
+  "name": "World",
+  "nodes": [
+   {
+    "type": "OUTPUT_WORLD",
+    "name": "World Output",
+    "image": null
+   },
+   {
+    "type": "BACKGROUND",
+    "name": "Background",
+    "image": null
+   }
+  ]
+ },
+ "materials_in_use": 20,
+ "material_node_type_counts": {
+  "TEX_IMAGE": 42,
+  "BSDF_PRINCIPLED": 30,
+  "MATH": 27,
+  "OUTPUT_MATERIAL": 21,
+  "TEX_COORD": 16,
+  "MAPPING": 15,
+  "LAYER_WEIGHT": 15,
+  "NORMAL_MAP": 14,
+  "MIX_SHADER": 11,
+  "SEPARATE_COLOR": 10,
+  "COMBINE_COLOR": 10,
+  "MIX": 9,
+  "FRAME": 7,
+  "BUMP": 5,
+  "CURVE_RGB": 4,
+  "REROUTE": 4,
+  "RGB": 3,
+  "INVERT": 3,
+  "VALTORGB": 2,
+  "TEX_GRADIENT": 2,
+  "HUE_SAT": 2,
+  "TEX_NOISE": 2,
+  "BSDF_DIFFUSE": 1,
+  "GROUP": 1,
+  "TEX_BRICK": 1,
+  "EMISSION": 1,
+  "BLACKBODY": 1,
+  "TEX_VORONOI": 1,
+  "DISPLACEMENT": 1,
+  "SEPXYZ": 1,
+  "COMBXYZ": 1
+ }
+}
