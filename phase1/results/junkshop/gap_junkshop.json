@@ -1,0 +1,97 @@
+{
+ "gt": "$PHASE1/runs/export/junkshop_cycles_gt.png",
+ "steps": [
+  {
+   "step": "0 Cycles, same settings, new seed",
+   "note": "noise floor of the 1024-spp reference",
+   "psnr_db": 38.501,
+   "ssim": 0.9649
+  },
+  {
+   "step": "1 + TPU camera/bounces/no clamp",
+   "note": "pinhole (no depth of field), 2 bounces after the first hit, box pixel filter, no sample clamping",
+   "psnr_db": 30.141,
+   "ssim": 0.8978
+  },
+  {
+   "step": "2 + TPU lights",
+   "note": "scene's 10 lamps and world replaced by TPU-RTX's 1 disk light, sun and gradient sky",
+   "psnr_db": 15.261,
+   "ssim": 0.5314
+  },
+  {
+   "step": "3 + TPU materials/geometry export",
+   "note": "TPU-RTX's exported triangles: one colour/roughness/material code per triangle, smooth vertex normals, no textures or bump",
+   "psnr_db": 11.503,
+   "ssim": 0.3376
+  },
+  {
+   "step": "4 + TPU light transport (scene's view transform)",
+   "note": "TPU-RTX's path tracer (CPU twin, 1088 spp), through the scene's own view transform",
+   "psnr_db": 11.274,
+   "ssim": 0.3362
+  },
+  {
+   "step": "5 + TPU tone curve (ACES-fit, exposure 0.55)",
+   "note": "what TPU-RTX outputs, converged",
+   "psnr_db": 10.874,
+   "ssim": 0.3265
+  },
+  {
+   "step": "6 + 16 spp noise",
+   "note": "TPU-RTX's output at 16 spp, mean of 2 seeds (reported: 9.44 dB)",
+   "psnr_db": 10.834,
+   "ssim": 0.2218
+  }
+ ],
+ "single_changes": [],
+ "pairs": [
+  {
+   "a": "Cycles on TPU-RTX's exported scene and lights",
+   "b": "CPU twin: TPU-RTX estimator as shipped",
+   "psnr_db": 24.518,
+   "ssim": 0.9048,
+   "mean_lum_ratio_b_over_a": 1.0672
+  }
+ ],
+ "aov_checks": {
+  "depth": {
+   "pixels_compared": 204792,
+   "within_1pct": 0.9633,
+   "median_rel_err": 0.0004900536732748151,
+   "note": "planar depth of TPU-RTX's first hit (one jittered sample) vs Cycles' Depth pass (pixel-filtered)"
+  },
+  "albedo": {
+   "pixels_compared": 186437,
+   "psnr_db_linear": 11.343,
+   "mean_tpu": [
+    0.3686,
+    0.3072,
+    0.2594
+   ],
+   "mean_cycles": [
+    0.1013,
+    0.069,
+    0.0503
+   ],
+   "note": "non-metal opaque pixels; Cycles Diffuse Color pass vs TPU-RTX per-triangle albedo"
+  }
+ },
+ "luminance": {
+  "cy_ref_s2": 1.0,
+  "cy_orig_set": 0.985,
+  "cy_lights_set": 1.0779,
+  "cy_scene_set": 2.126,
+  "twin_def_": 2.2689
+ },
+ "export_stats": {
+  "triangles": 3148725,
+  "mat_code_share": {
+   "0.000": 0.7041,
+   "2.000": 0.2959
+  },
+  "albedo_default_0p70_share": 0.0,
+  "albedo_white_0p99_share": 0.0175,
+  "note": "mat_code 0.95 = the exporter's code for a Glossy BSDF node (near-metal); 2.0 glass; >= 2.8 emitter"
+ }
+}

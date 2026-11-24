@@ -10,7 +10,7 @@ The TPU chips were busy all night with another job, so nothing here ran on a TPU
 ## Short version
 
 - **TPU-RTX's geometry and camera are exact.** First-hit depth matches Cycles within 1% on 97% of Classroom's pixels.
-- **The image gap is mostly scene translation, not light transport.** On Classroom, swapping in TPU-RTX's lights costs 6.6 dB and swapping in its exported materials costs another 8.8 dB. When both render the same exported scene, Cycles and TPU-RTX's estimator agree only to 19.8 dB PSNR.
+- **The image gap is mostly scene translation, not light transport.** Swapping TPU-RTX's lights and exported materials into a Cycles render takes it from 26–38 dB down to 10–12 dB on all three scenes. Lights dominate on Monster and Junkshop, materials on Classroom. Separately, when both render the same exported scene, Cycles and TPU-RTX's estimator agree only to 19–25 dB PSNR.
 - **There are concrete exporter bugs:**
   - The only area light kept for Classroom points out of the room.
   - Instanced lamps are read at the origin.
@@ -82,7 +82,15 @@ Single changes against the reference:
 
 - **The two renderers disagree on the same scene.** Rendering TPU-RTX's exported scene and lights, Cycles and the twin agree only to 19.8 dB, with TPU-RTX 7% brighter.
 - **Two candidates are ruled out.** The `+0.08` added to the light's squared distance changes nothing measurable. The clamps lower brightness by about 4%.
-- **The rest is not yet attributed.** Remaining candidates: the BSDF model (its weights are not Principled's), glass handling, and no multiple importance sampling (combining light sampling with BSDF sampling).
+- **Metals and glass are ruled out too.** I re-rendered edited exports in both renderers with the same lights ([`results/classroom/renderer_isolation.json`](../results/classroom/renderer_isolation.json)):
+
+  | Edit | Agreement | TPU-RTX brightness vs Cycles |
+  |---|---|---|
+  | Every opaque triangle non-metal | 19.0 dB | 1.20× |
+  | Window glass removed | 20.1 dB | 1.07× |
+  | Both | 19.3 dB | 1.20× |
+
+- **The rest is not yet attributed.** That TPU-RTX is 20% brighter on an all-diffuse scene points at its BSDF weights. Its bounce weights for the diffuse lobe don't subtract the specular part, and its terms aren't Principled's. Not checked yet: the missing sky lighting at the last vertex, and no multiple importance sampling (combining light sampling with BSDF sampling).
 
 **4. Geometry and camera are not a cause**
 
@@ -94,7 +102,27 @@ Single changes against the reference:
 
 ### Monster and Junkshop
 
-MONSTER_JUNKSHOP_GAP
+Same chain on the other two benchmark scenes. Steps 4–6 for Monster and Junkshop show the twin's output through each scene's own Filmic view transform, applied by Blender (`tools/blender_apply_view.py`). Data: [`results/monster/gap_monster.json`](../results/monster/gap_monster.json), [`results/junkshop/gap_junkshop.json`](../results/junkshop/gap_junkshop.json).
+
+| Step (PSNR against the Cycles reference) | Classroom | Monster | Junkshop |
+|---|---|---|---|
+| 0 Cycles again, new seed (noise floor of the reference) | 80.9 dB | 35.1 dB | 38.5 dB |
+| 1 + TPU-RTX's camera and path settings | 26.3 dB | 38.3 dB* | 30.1 dB |
+| 2 + TPU-RTX's lights | 19.6 dB | 12.9 dB | 15.3 dB |
+| 3 + TPU-RTX's exported materials | 10.8 dB | 10.3 dB | 11.5 dB |
+| 4 + TPU-RTX's light transport | 10.6 dB | 10.3 dB | 11.3 dB |
+| 5 + TPU-RTX's tone curve | 12.1 dB | 10.1 dB | 10.9 dB |
+| 6 + 16-spp noise: as benchmarked | 9.47 dB | 9.86 dB | 10.83 dB |
+| Renderer only: Cycles vs TPU-RTX's estimator on the same exported scene and lights | 19.8 dB | 19.4 dB | 24.5 dB |
+| First-hit depth within 1% of Cycles | 97.1% | 99.6% | 96.3% |
+
+\* The Cycles renders in steps 1–3 use the same seed as the reference, so their noise is correlated with it. On Monster, whose 1,024-spp reference has a 35 dB noise floor, step 1 therefore scores above step 0. Steps far below the floor are unaffected.
+
+- **Monster and Junkshop lose most to the lights.** TPU-RTX's lights cost 25.5 dB on Monster, where they make the image 2.2× too bright, and 14.9 dB on Junkshop.
+- **Materials cost less there, but the exports are still wrong.**
+  - Monster: every triangle is exported as plain diffuse, and 55% are white where a texture could not be read.
+  - Junkshop: 30% of triangles are exported as glass. Its non-metal colours average (0.37, 0.31, 0.26) against Cycles' (0.10, 0.07, 0.05).
+- **TPU-RTX's light transport adds almost nothing at this level.** Step 4 barely moves the score once the scene is already this far off. On identical exported scenes, the two renderers still agree only to 19–25 dB.
 
 ### What this means for the proposal
 
@@ -104,7 +132,7 @@ MONSTER_JUNKSHOP_GAP
   - a real material translation: Principled, Diffuse/Glossy mixes, and per-pixel textures, which means interpolating UVs and fetching textures in the kernel;
   - normal and bump maps;
   - the scene's own view transform.
-- **The renderer gap is the part a TPU path tracer must close itself.** That is the 19.8 dB on an identical scene. It should be split further (BSDF, glass, MIS) before any speed claim.
+- **The renderer gap is the part a TPU path tracer must close itself.** That is the 19–25 dB on identical scenes. Metals and glass don't explain it; the BSDF weights are the next suspect, and they should be checked before any speed claim.
 
 ## B. WP1: what sorting rays between bounces buys
 
@@ -151,4 +179,5 @@ What the numbers say:
 - **Code.** Branch `phase1` of this fork: tools in `phase1/tools/`, result JSONs in `phase1/results/`. Upstream code is unchanged.
 - **Machine.** Everything ran on the CPUs of one shared TPU host, at low priority, without touching the TPU chips.
 - **Over-threading incident.** For about 2 minutes, my twin processes each started a full BLAS thread pool, and my counting workers' XLA thread pools spun, pushing the host's load average to about 950. Fixed with one BLAS thread per process and one core per counting worker (`tools/common.py`, `tools/count_run.py`).
-- **Faithful long run.** A run of TPU-RTX's own path tracer on CPU (Classroom, 16 spp, 3 bounces) was still running at the time of writing. It is an extra check on the twin; its result goes to `results/classroom/real_renderer_16spp_3b.json` if it finishes.
+- **Stopped long run.** A run of TPU-RTX's own path tracer on CPU (Classroom, 16 spp, 3 bounces) was stopped unfinished after 10 hours. It is not needed: the twin already matches the real renderer at 1 spp and reproduces TPU-RTX's TPU-measured PSNR on all three scenes.
+- **Nothing left running.** No processes of mine remain on the host. Scenes, Blender, the venv and raw renders stay in `~/phase1` on that host, about 5 GB.

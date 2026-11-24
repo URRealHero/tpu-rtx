@@ -1,0 +1,17 @@
+{
+ "nometal": {
+  "psnr_db": 19.013,
+  "ssim": 0.6074,
+  "mean_lum_ratio_twin_over_cycles": 1.2044
+ },
+ "noglass": {
+  "psnr_db": 20.11,
+  "ssim": 0.5881,
+  "mean_lum_ratio_twin_over_cycles": 1.0694
+ },
+ "nometal_noglass": {
+  "psnr_db": 19.295,
+  "ssim": 0.6067,
+  "mean_lum_ratio_twin_over_cycles": 1.2013
+ }
+}
