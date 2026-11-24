@@ -180,4 +180,4 @@ What the numbers say:
 - **Machine.** Everything ran on the CPUs of one shared TPU host, at low priority, without touching the TPU chips.
 - **Over-threading incident.** For about 2 minutes, my twin processes each started a full BLAS thread pool, and my counting workers' XLA thread pools spun, pushing the host's load average to about 950. Fixed with one BLAS thread per process and one core per counting worker (`tools/common.py`, `tools/count_run.py`).
 - **Stopped long run.** A run of TPU-RTX's own path tracer on CPU (Classroom, 16 spp, 3 bounces) was stopped unfinished after 10 hours. It is not needed: the twin already matches the real renderer at 1 spp and reproduces TPU-RTX's TPU-measured PSNR on all three scenes.
-- **Nothing left running.** No processes of mine remain on the host. Scenes, Blender, the venv and raw renders stay in `~/phase1` on that host, about 5 GB.
+- **Nothing left running.** No processes of mine remain on the host. Scenes, Blender, the venv and raw renders stay in `~/phase1` on that host (4.2 GB, plus 0.6 GB of uv cache).
