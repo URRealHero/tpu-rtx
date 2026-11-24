@@ -34,6 +34,7 @@ def main():
   ap.add_argument("--bounces", type=int, default=3)
   ap.add_argument("--seed", type=int, default=0)
   ap.add_argument("--tag", default=None)
+  ap.add_argument("--rig", help="light rig JSON to use instead of deriving it from the .npz")
   ap.add_argument("--no-soften", action="store_true")
   ap.add_argument("--no-clamps", action="store_true")
   ap.add_argument("--aovs", action="store_true")
@@ -45,7 +46,11 @@ def main():
 
   gt = np.asarray(Image.open(args.gt).convert("RGB"), dtype=np.float32) / 255.0
   H, W = gt.shape[:2]
-  rig = load_rig(args.npz, args.scene)
+  if args.rig:  # a fixed rig (e.g. when the .npz was edited and its bounding box changed)
+    from run_opendata_pt import LightRig
+    rig = LightRig(**{k: (tuple(v) if isinstance(v, list) else v) for k, v in json.load(open(args.rig)).items()})
+  else:
+    rig = load_rig(args.npz, args.scene)
   t0 = time.perf_counter()
   tw = Twin(args.npz, rig, H, W)
   t_build = time.perf_counter() - t0

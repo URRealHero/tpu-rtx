@@ -10,7 +10,7 @@ The TPU chips were busy all night with another job, so nothing here ran on a TPU
 ## Short version
 
 - **TPU-RTX's geometry and camera are exact.** First-hit depth matches Cycles within 1% on 97% of Classroom's pixels.
-- **The image gap is mostly scene translation, not light transport.** On Classroom, swapping in TPU-RTX's lights costs 6.6 dB and swapping in its exported materials costs another 8.8 dB. Cycles and TPU-RTX's estimator disagree by 19.8 dB when both render the same exported scene.
+- **The image gap is mostly scene translation, not light transport.** On Classroom, swapping in TPU-RTX's lights costs 6.6 dB and swapping in its exported materials costs another 8.8 dB. When both render the same exported scene, Cycles and TPU-RTX's estimator agree only to 19.8 dB PSNR.
 - **There are concrete exporter bugs:**
   - The only area light kept for Classroom points out of the room.
   - Instanced lamps are read at the origin.
@@ -66,7 +66,7 @@ Single changes against the reference:
 **1. Lights**
 
 - **The kept area light points out of the room.** The exporter keeps one area, point or spot light, chosen by energy over squared distance to the scene centre, plus the sun. In Classroom that is `exterior_fillLight` (1,963.5 W, at the window wall), which emits toward (0.73, 0, 0.68), away from the room. Of the 644,509 rays traced in one 640×360 sample (3 bounces), 11 lead to an area-light shadow test.
-- **Instanced lamps are read at the origin.** The five ceiling spots come from collection instances. The exporter reads light positions from `bpy.data.objects`, not the evaluated depsgraph, so they appear at (0, 0, 0).
+- **Instanced lamps are read at the origin.** The five spot lamps come from collection instances. The exporter reads light positions from `bpy.data.objects`, not the evaluated depsgraph, so they appear at (0, 0, 0).
 - **The sun is 10× too strong.** The sun's strength becomes 10 × its colour; the scene's sun is 1.0 W/m².
 - **A sky is invented.** Classroom's world is black at strength 0, and TPU-RTX adds a gradient sky with radiance 0.10–0.80, plus a glow around the sun.
 - **Noise follows from this.** The interior is lit only by sun patches and sky light found by random bounces through the windows. That is why 17% of the 16-spp image's pixels are exactly black, and why noise costs 2.6 dB (rows 5 → 6).
@@ -128,8 +128,8 @@ What the numbers say:
 
 - **Incoherence is the cost.** On Classroom, bounce-1 packets fetch 273 leaves each, against 31 for camera-ray packets. Only 6% of the ray-leaf pairs tested at bounce 1 involve a ray that needed that leaf, against 73% for camera rays.
 - **Bounce rays sort poorly.** The best key puts the direction class first (16–36 octahedral bins, or the octant), then the hit point's Morton code. It saves 1.15–2.6× depending on scene and bounce.
-  - Sorting by hit point alone barely helps, because rays leaving nearby points scatter in random directions.
-  - 256 direction bins spread the rays too thin.
+  - At bounce 1, sorting by hit point alone saves only 4.5% on Classroom, because rays leaving nearby points scatter in random directions. By bounce 2 it does better (1.7× on Classroom, and Monster's best key).
+  - 256 direction bins spread the rays too thin: 1.2× on Classroom at bounce 1, against 1.8× for 36 bins.
 - **Shadow rays sort well.** Rays toward one light from nearby points share a direction. Sorting by hit point alone saves 10–12× on Classroom's sun rays at bounces 1–2, and 2.6–3.4× on area-light rays.
 - **Removing finished rays matters for shadow rays, not bounce rays.** For closest-hit rays it changes leaf fetches by −20% to +6%, since few paths end before bounce 2. For shadow rays, many shading points need no shadow ray, so packing only the live ones saves 19–45% at bounces 1–2.
 - **Sorting alone will not reach M1's 10×.** As shipped, leaf fetches sit 15–19× above the floor; the best sort removes 1.5–2.8× of that. The rest needs rays grouped by the leaves they need, which is WP2's per-treelet ray queues. Keep WP1 as the cheap first step, especially for shadow rays, and treat WP2 as the main lever.
